@@ -4,11 +4,20 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    background-color: white;
+    background-color: rgb(20, 20, 20);
     font-family: Arial, sans-serif;
-    background-image: url('main/automat/background-pixilart.png');
-    background-size: cover;
-    background-position: center;
+
+
+}
+body::before{
+    content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 101%; height: 101%;
+  background-image: url(main/automat/bg-purple.png);
+  filter: blur(2px);
+  background-size: cover;
+  background-position: center;
 }
 
 .slot-machine-container {
@@ -43,7 +52,7 @@ body {
 }
 
 .reel {
-width: 7.8vw;
+width: 7.9vw;
 height: 17vw;
 overflow: hidden;
 position: relative;
@@ -122,9 +131,9 @@ img {
 
 .screen{
     position: absolute;
-    width: 24.7vw;
+    width: 25.1vw;
     top: 11.6vw;
-    right: 37.575vw;
+    right: 37.45vw;
 }
 .screen img{
     position: absolute;
@@ -133,6 +142,7 @@ img {
     animation: slowflicker 3s infinite alternate;
 }
 #text{
+    left: 0.55vw;
     animation: flicker 0.2s infinite alternate;
 }
 @keyframes flicker {
@@ -185,4 +195,43 @@ img {
 .button img{
     width: 100%;
     z-index: 10;
+}
+
+.door {
+    position: absolute;
+    width: 30vw;
+    height: 12vw;
+    z-index: 1;
+    top: 35vw;
+    left: 30.5vw;
+    background-color: rgb(45, 45, 45);
+    pointer-events: auto;
+}
+
+.doorPart{
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    height: auto;
+    bottom: 0;
+}
+
+.wallet{
+    position: absolute;
+    width: 30vw;
+    height: 12vw;
+    bottom: -20vw;
+    left: 30.5vw; 
+}
+.wallet img{
+    position: absolute;
+    width: 100%;
+    height: auto;
+    bottom: 0;
+}
+.top{
+    z-index: 50;
+}
+.bottom{
+    z-index: 40;
 }

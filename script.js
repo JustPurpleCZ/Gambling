@@ -16,7 +16,40 @@ const reels = document.querySelectorAll('.reel');
 const lever = document.querySelector('.lever-image');
 const winText = document.querySelector('#text');
 const musicToggle = document.querySelector('.music-toggle');
+const AVAILABLE_NOTES = [100, 50, 20, 10, 5, 1];
+const cashoutButton = document.querySelector('.button');
+const doorStack = document.querySelector('.door img');
+const door = document.querySelector('.door');
+const cashoutSound = new Audio('sound/cashout.mp3');
+const pickupSound = new Audio('sound/note.mp3');
+const wallet = document.querySelector('.wallet');
+let notesAwaitingPickup = 0;
 let isSpinning = false;
+let mouseX = 0;
+let mouseY = 0;
+
+// Track mouse position
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+document.addEventListener('click', () => {
+    const notes = Array.from(document.querySelectorAll('.banknote'));
+    if (notes.length === 0) return;
+    
+    // Find notes under cursor
+    const hoveredNotes = notes.filter(note => {
+        const rect = note.getBoundingClientRect();
+        return mouseX >= rect.left && mouseX <= rect.right &&
+               mouseY >= rect.top && mouseY <= rect.bottom;
+    });
+    
+    // If any notes are hovered, pick up the last one (topmost in DOM)
+    if (hoveredNotes.length > 0) {
+        pickupNote(hoveredNotes[hoveredNotes.length - 1]);
+    }
+});
+
 
 // Convert measurements to vw
 const SYMBOL_HEIGHT = 7; // 5vw to match CSS
@@ -41,7 +74,7 @@ const NOTE_SPRITES = [
     'main/radio/notes/note3.png',
     'main/radio/notes/note4.png'
 ];
-let playerCredit = 800; // Starting credit
+let playerCredit = 1000; // Starting credit
 let betAmount = 5;
 
 function updateCreditDisplay() {
@@ -61,7 +94,7 @@ function updateCreditDisplay() {
         clearCreditDisplay();
         
         // Calculate base position - this should be where the credit text ends
-        const baseRight = 33.5; // Position where credit text ends
+        const baseRight = 32; // Position where credit text ends
         const digitWidth = 11; // Width of each digit in percentage
         
         // Create and position each digit
@@ -74,13 +107,49 @@ function updateCreditDisplay() {
             digitImg.style.width = 'auto';
             // Position from left to right, starting at baseRight
             digitImg.style.right = `${baseRight - (index * digitWidth)}%`;
-            digitImg.style.top = '1.05vw';
+            digitImg.style.top = '1.1vw';
             digitImg.style.animation = 'flicker 0.2s infinite alternate';
             document.querySelector('.screen').appendChild(digitImg);
         });
     }
 }
+function openDoor() {
+    return new Promise(resolve => {
+        doorStack.style.transition = 'transform 1s ease-out';
+        doorStack.style.transform = 'translateY(-100%)';
+        
+        setTimeout(() => {
+            doorStack.style.visibility = 'hidden';
+            doorStack.style.transform = 'translateY(0)';
+            doorStack.style.transition = 'none';
+            doorStack.style.bottom = '5vw'; // Set and maintain this position
+            resolve();
+        }, 1000);
+    });
+}
 
+function closeDoor() {
+    doorStack.style.visibility = 'visible';
+    doorStack.style.transition = 'bottom 0.5s ease-out';
+    doorStack.style.bottom = '0';
+    
+    setTimeout(() => {
+        cashoutButton.style.pointerEvents = 'auto';
+    }, 500);
+}
+function calculateNotes(amount) {
+    const notes = [];
+    let remaining = amount;
+    
+    for (const note of AVAILABLE_NOTES) {
+        while (remaining >= note) {
+            notes.push(note);
+            remaining -= note;
+        }
+    }
+    
+    return notes;
+}
 function clearCreditDisplay() {
     // Remove all credit digits
     const digits = document.querySelectorAll('.credit-digit');
@@ -140,6 +209,8 @@ const winSound = new Audio('sound/win.mp3');
 const bigWinSound = new Audio('sound/bigwin.mp3');
 const squeakSound = new Audio('sound/squeak.mp3');
 const reelTickSound = new Audio('sound/tick2.mp3');
+const wrong = new Audio('sound/wrong.mp3');
+wrong.volume = 0.2;
 reelTickSound.volume = 0.3;
 backgroundMusic.loop = true;
 
@@ -235,6 +306,12 @@ function playLeverAnimation() {
 function shakeSound() {
     squeakSound.currentTime = 0;
     squeakSound.play().catch(error => {
+        console.log('Sound play failed:', error);
+    });
+}
+function noSound() {
+    wrong.currentTime = 0;
+    wrong.play().catch(error => {
         console.log('Sound play failed:', error);
     });
 }
@@ -410,6 +487,9 @@ async function spin() {
     }
     
     if (playerCredit < betAmount) {
+        shakeLever();
+        shakeSound();
+        noSound();
         return;
     }
     
@@ -445,6 +525,111 @@ async function spin() {
         }, 5000);
     }
 }
+async function spawnNote(noteValue) {
+    return new Promise(resolve => {
+        const note = document.createElement('img');
+        note.src = `money/${noteValue}.png`;
+        note.style.position = 'absolute';
+        note.style.width = '65%';
+        note.style.left = '15%';
+        note.style.bottom = '0';
+        note.style.zIndex = '1';
+        note.style.transition = 'transform 0.5s ease-out';
+        note.className = 'banknote';
+        
+        // Add an index to track stacking order
+        
+        door.appendChild(note);
+
+        cashoutSound.currentTime = 0;
+        cashoutSound.play().catch(error => {
+            console.log('Sound play failed:', error);
+        });
+
+        setTimeout(() => {
+            resolve();
+        }, 100);
+    });
+}
+function pickupNote(note) {
+    if (note.dataset.isAnimating) return;
+    note.dataset.isAnimating = 'true';
+    
+    // Play sound
+    pickupSound.currentTime = 0;
+    pickupSound.play().catch(error => {
+        console.log('Sound play failed:', error);
+    });
+    
+    // Get the current position and size of the note
+    const noteRect = note.getBoundingClientRect();
+    const walletRect = wallet.getBoundingClientRect();
+    
+    // Create a new note element at the body level
+    const flyingNote = document.createElement('img');
+    flyingNote.src = note.src;
+    flyingNote.style.position = 'fixed';  // Use fixed positioning
+    flyingNote.style.width = note.offsetWidth + 'px';
+    flyingNote.style.height = note.offsetHeight + 'px';
+    flyingNote.style.left = noteRect.left + 'px';
+    flyingNote.style.top = noteRect.top + 'px';
+    flyingNote.style.zIndex = '49';
+    
+    // Remove the original note
+    note.remove();
+    
+    // Add the new note to the body
+    document.body.appendChild(flyingNote);
+    
+    // Calculate the distance to travel
+    const deltaX = walletRect.left - noteRect.left + (walletRect.width / 4);
+    const deltaY = walletRect.top - noteRect.top + (walletRect.height / 2);
+    
+    // Trigger animation in the next frame
+    requestAnimationFrame(() => {
+        flyingNote.style.transition = 'all 0.5s ease-out';
+        flyingNote.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        flyingNote.style.opacity = '0.6';
+    });
+    
+    setTimeout(() => {
+        flyingNote.remove();
+        notesAwaitingPickup--;
+        
+        if (notesAwaitingPickup === 0) {
+            closeDoor();
+        }
+    }, 500);
+}
+const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
+const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
+const buttonImage = document.querySelector('.button img')
+
+async function cashout() {
+    if (playerCredit <= 0 || isSpinning || notesAwaitingPickup > 0) return;
+    buttonImage.src = BUTTON_PRESSED;
+    
+    // Wait for animation
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Reset button image
+    buttonImage.src = BUTTON_NORMAL;
+    const notesToDispense = calculateNotes(playerCredit);
+    
+    // Disable button during cashout
+    cashoutButton.style.pointerEvents = 'none';
+    
+    // Set credit to 0 immediately
+    playerCredit = 0;
+    updateCreditDisplay();
+
+    notesAwaitingPickup = notesToDispense.length;
+    for (let i = 0; i < notesToDispense.length; i++) {
+        await spawnNote(notesToDispense[i]);
+        await new Promise(resolve => setTimeout(resolve, 540)); // Delay between notes
+    }
+    await openDoor();
+}
 function calculateWinAmount() {
     // Get the current win display image src
     const currentWin = winText.src;
@@ -455,6 +640,7 @@ function calculateWinAmount() {
     if (currentWin.includes('low.png')) return 5;
     return 0;
 }
+cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', updateCreditDisplay);
 // Initialize
 lever.src = LEVER_STATIC;
