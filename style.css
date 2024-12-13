@@ -100,6 +100,7 @@ img {
     height: auto;
     transition: 0.3s ease;
     filter: brightness(50%) blur(1px);
+    z-index: 2;
 }
 
 .music-toggle:hover {
@@ -161,4 +162,27 @@ img {
     100% {
         filter: brightness(100%);
     }
+}
+.music-note {
+    position: absolute;
+    width: 3vw;
+    height: 3vw;
+    object-fit: contain;
+    pointer-events: none;
+    transition: transform 0.05s linear;
+    z-index: -10;
+    bottom: 5vw;
+    right: 5vw;
+}
+.button{
+    position: absolute;
+    width: 12vw;
+    height: 12vw;
+    z-index: 10;
+    top: 38vw;
+    left: 20vw;
+}
+.button img{
+    width: 100%;
+    z-index: 10;
 }

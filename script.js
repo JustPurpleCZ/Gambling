@@ -31,10 +31,106 @@ const LEVER_STATIC = 'main/automat/paka.png';
 // Music states
 const MUSIC_STATES = {
     STATIC: 'main/radio/radio.png',
-    PLAYING_START: 'main/radio/ni.gif',
-    PLAYING: 'main/music_playing.gif',
-    STOPPING: 'main/music_stop.gif'
+    PLAYING_START: 'main/radio/ni.gif'
 };
+
+// Add note sprites
+const NOTE_SPRITES = [
+    'main/radio/notes/note1.png',
+    'main/radio/notes/note2.png',
+    'main/radio/notes/note3.png',
+    'main/radio/notes/note4.png'
+];
+let playerCredit = 800; // Starting credit
+let betAmount = 5;
+
+function updateCreditDisplay() {
+    // Check if there's no win being displayed
+    if (!winText.src.includes('low.png') && 
+        !winText.src.includes('mid.png') && 
+        !winText.src.includes('big.png') && 
+        !winText.src.includes('giant.png')) {
+        
+        // Set the credit text image
+        winText.src = 'main/screen/credit.png';
+        
+        // Get the digits without padding, but ensure at least one digit (0)
+        const digits = String(Math.max(0, playerCredit)).split('');
+        
+        // Clear any existing digits first
+        clearCreditDisplay();
+        
+        // Calculate base position - this should be where the credit text ends
+        const baseRight = 33.5; // Position where credit text ends
+        const digitWidth = 11; // Width of each digit in percentage
+        
+        // Create and position each digit
+        digits.forEach((digit, index) => {
+            const digitImg = document.createElement('img');
+            digitImg.src = `main/screen/${digit}.png`;
+            digitImg.className = 'credit-digit';
+            digitImg.style.position = 'absolute';
+            digitImg.style.height = '2.6vw';
+            digitImg.style.width = 'auto';
+            // Position from left to right, starting at baseRight
+            digitImg.style.right = `${baseRight - (index * digitWidth)}%`;
+            digitImg.style.top = '1.05vw';
+            digitImg.style.animation = 'flicker 0.2s infinite alternate';
+            document.querySelector('.screen').appendChild(digitImg);
+        });
+    }
+}
+
+function clearCreditDisplay() {
+    // Remove all credit digits
+    const digits = document.querySelectorAll('.credit-digit');
+    digits.forEach(digit => digit.remove());
+}
+
+class MusicNote {
+    constructor(container) {
+        this.element = document.createElement('img');
+        this.element.className = 'music-note';
+        this.element.src = NOTE_SPRITES[Math.floor(Math.random() * NOTE_SPRITES.length)];
+        
+        // Random starting position near the radio
+        this.x = -10; // -10 to 10vw
+        this.y = -13;
+        
+        // Random movement parameters
+        this.speedX = (Math.random() - 0.5) * 0.1; // -1 to 1
+        this.speedY = -Math.random() * 0.1 - 0.1; // -3 to -1
+        this.rotation = Math.random() * 360;
+        this.rotationSpeed = (Math.random() - 0.5) * 4;
+        
+        // Random hue rotation
+        const hue = Math.random() * 360;
+        this.element.style.filter = `hue-rotate(${hue}deg) blur(1px)`;
+        
+        // Set initial position
+        this.updatePosition();
+        
+        container.appendChild(this.element);
+    }
+    
+    updatePosition() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.rotation += this.rotationSpeed;
+        
+        this.element.style.transform = `translate(${this.x}vw, ${this.y}vw) rotate(${this.rotation}deg)`;
+        
+        // Check if note should be removed (out of view)
+        if (this.y < -50) {
+            this.element.remove();
+            return false;
+        }
+        return true;
+    }
+}
+
+let musicNotes = [];
+let noteInterval = null;
 
 // Create audio elements
 const leverSound = new Audio('sound/lever.mp3');
@@ -151,29 +247,55 @@ function playLeverSound() {
 }
 
 async function toggleMusic() {
+    const noteContainer = document.querySelector('.music-container');
+    
     if (!isMusicPlaying) {
         musicToggle.src = MUSIC_STATES.PLAYING_START;
-        await new Promise(resolve => setTimeout(resolve, 500));
-        musicToggle.src = MUSIC_STATES.PLAYING;
         
         try {
             await backgroundMusic.play();
             isMusicPlaying = true;
+            
+            // Start spawning notes
+            noteInterval = setInterval(() => {
+                const note = new MusicNote(noteContainer);
+                musicNotes.push(note);
+            }, 300);
+            
+            // Start animation loop if not already running
+            if (!window.musicAnimationFrame) {
+                function animateNotes() {
+                    musicNotes = musicNotes.filter(note => note.updatePosition());
+                    window.musicAnimationFrame = requestAnimationFrame(animateNotes);
+                }
+                window.musicAnimationFrame = requestAnimationFrame(animateNotes);
+            }
+            
         } catch (error) {
             console.log('Music playback failed:', error);
             musicToggle.src = MUSIC_STATES.STATIC;
         }
     } else {
-        musicToggle.src = MUSIC_STATES.STOPPING;
+        musicToggle.src = MUSIC_STATES.PLAYING_START;
         backgroundMusic.pause();
         backgroundMusic.currentTime = 0;
+        
+        // Stop spawning new notes
+        if (noteInterval) {
+            clearInterval(noteInterval);
+            noteInterval = null;
+        }
+        
+        // Let existing notes continue moving until they're off screen
+        // The animation loop will continue until all notes are gone
+        
         await new Promise(resolve => setTimeout(resolve, 500));
         musicToggle.src = MUSIC_STATES.STATIC;
         isMusicPlaying = false;
     }
 }
-
 function checkWin() {
+    clearCreditDisplay();
     winText.src = '';
     
     const middleRow = getSymbolsAtPosition(1);
@@ -192,7 +314,6 @@ function checkWin() {
         }
         
         winText.src = symbolWinAmounts[baseSymbol];
-        // Determine win type from symbol
         let winType = 'low';
         if (baseSymbol === 'icon/4.png') {
             winType = 'big';
@@ -203,6 +324,7 @@ function checkWin() {
         playWinSound(winType);
         return true;
     }
+    updateCreditDisplay();
     return false;
 }
 
@@ -287,9 +409,16 @@ async function spin() {
         return;
     }
     
+    if (playerCredit < betAmount) {
+        return;
+    }
+    
     isSpinning = true;
-    winText.src = ''; // Clear win display when spinning starts
-
+    
+    // Update credit immediately when bet is placed
+    playerCredit -= betAmount;
+    updateCreditDisplay();
+    
     playLeverSound();
     playLeverAnimation();
 
@@ -302,9 +431,31 @@ async function spin() {
     await Promise.all(spinPromises);
     
     isSpinning = false;
-    checkWin();
+    const hasWon = checkWin();
+    
+    if (hasWon) {
+        const winAmount = calculateWinAmount();
+        playerCredit += winAmount;
+        
+        // After win display, update credit
+        setTimeout(() => {
+            clearCreditDisplay();
+            winText.src = '';
+            updateCreditDisplay();
+        }, 5000);
+    }
 }
-
+function calculateWinAmount() {
+    // Get the current win display image src
+    const currentWin = winText.src;
+    
+    if (currentWin.includes('giant.png')) return 2700;
+    if (currentWin.includes('big.png')) return 250;
+    if (currentWin.includes('mid.png')) return 50;
+    if (currentWin.includes('low.png')) return 5;
+    return 0;
+}
+window.addEventListener('load', updateCreditDisplay);
 // Initialize
 lever.src = LEVER_STATIC;
 reels.forEach(initializeReel);
