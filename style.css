@@ -14,8 +14,8 @@ body {
 .slot-machine-container {
     position: relative;
     width: 95vw;
-    height: 95vh;
-    top: 5vh;
+    height: 50vw;
+    top: 2vw;
     z-index: 5;
 }
 
@@ -32,8 +32,8 @@ body {
 .reels-container {
     position: absolute;
     display: flex;
-    gap: 2rem;
-    top: 54vh;
+    gap: 2vw;
+    top: 27.5vw;
     left: 46.6vw;
     transform: translate(-55%, -50%);
     z-index: 2;
@@ -44,7 +44,7 @@ body {
 
 .reel {
 width: 7.8vw;
-height: 35vh;
+height: 17vw;
 overflow: hidden;
 position: relative;
 }
@@ -52,7 +52,7 @@ position: relative;
 .symbol {
     position: absolute;
     width: 100%;
-    height: 10vh;
+    height: 5vw;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -60,16 +60,15 @@ position: relative;
 }
 
 .symbol img {
-    width: 70%;
-    height: auto;
+    height: 100%;
     object-fit: contain;
 }
 
 .lever-container {
     position: absolute;
     top: 10%;
-    right: 24.5vw;
-    height: 80vh;
+    right: 23.6vw;
+    height: 45vw;
     cursor: pointer;
     z-index: 6;
   }
@@ -88,42 +87,24 @@ img {
     image-rendering: crisp-edges;
 }
 
-.win-message {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: gold;
-    padding: 1rem 2rem;
-    border-radius: 1rem;
-    font-weight: bold;
-    font-size: 1.5rem;
-    display: none;
-    animation: bounce 0.5s infinite alternate;
-    z-index: 1000;
-}
-
 .music-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    right: -9vw;
     z-index: 1000;
     cursor: pointer;
+    bottom: -2vw;
 }
 
 .music-toggle {
-    width: 50px;
-    height: 50px;
-    transition: transform 0.3s ease;
+    width: 35vw;
+    height: auto;
+    transition: 0.3s ease;
+    filter: brightness(50%) blur(1px);
 }
 
 .music-toggle:hover {
-    transform: scale(1.1);
-}
-
-@keyframes bounce {
-    from { transform: translateX(-50%) translateY(0); }
-    to { transform: translateX(-50%) translateY(-10px); }
+    transform: scale(1.01);
+    filter: brightness(100%) blur(0);
 }
 
 @keyframes shake {
@@ -136,4 +117,48 @@ img {
 
 .shake {
     animation: shake 0.2s ease-in-out;
+}
+
+.screen{
+    position: absolute;
+    width: 24.7vw;
+    top: 11.6vw;
+    right: 37.575vw;
+}
+.screen img{
+    position: absolute;
+    width: 100%;
+    height: auto;
+    animation: slowflicker 3s infinite alternate;
+}
+#text{
+    animation: flicker 0.2s infinite alternate;
+}
+@keyframes flicker {
+    0% {
+        filter: brightness(90%) drop-shadow(0 0 0.4vw rgba(255, 255, 255, 0.4));
+    }
+    100% {
+        filter: brightness(120%) drop-shadow(0 0 0.7vw rgba(255, 255, 255, 0.7));
+    }
+}
+@keyframes slowflicker {
+    0% {
+        filter: brightness(95%);
+    }
+    90% {
+        filter: brightness(80%);
+    }
+    92% {
+        filter: brightness(100%);
+    }
+    94% {
+        filter: brightness(80%);
+    }
+    96% {
+        filter: brightness(100%);
+    }
+    100% {
+        filter: brightness(100%);
+    }
 }
