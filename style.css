@@ -6,7 +6,7 @@ body {
     margin: 0;
     background-color: rgb(20, 20, 20);
     font-family: Arial, sans-serif;
-
+    overflow: hidden;
 
 }
 body::before{
@@ -75,9 +75,9 @@ position: relative;
 
 .lever-container {
     position: absolute;
-    top: 10%;
-    right: 23.6vw;
-    height: 45vw;
+    top: 10vw;
+    right: 25vw;
+    height: 33vw;
     cursor: pointer;
     z-index: 6;
   }
@@ -97,18 +97,19 @@ img {
 }
 
 .music-container {
-    position: fixed;
-    right: -9vw;
+    position: absolute;
+    right: -10.5vw;
     z-index: 1000;
     cursor: pointer;
     bottom: -2vw;
+    overflow: visible;
 }
 
 .music-toggle {
     width: 35vw;
     height: auto;
     transition: 0.3s ease;
-    filter: brightness(50%) blur(1px);
+    filter: brightness(50%) blur(2px);
     z-index: 2;
 }
 
@@ -220,8 +221,8 @@ img {
     position: absolute;
     width: 30vw;
     height: 12vw;
-    bottom: -20vw;
-    left: 30.5vw; 
+    bottom: -15vw;
+    right: 1vw; 
 }
 .wallet img{
     position: absolute;
@@ -234,4 +235,34 @@ img {
 }
 .bottom{
     z-index: 40;
+}
+.vlad{
+    position: absolute;
+    width: auto;
+    height: 12vw;
+    top: 30vw;
+    left: 0vw;
+    z-index: 500;
+}
+.vlad img{
+    position: absolute;
+    width: 100%;
+    height: auto;
+    bottom: 0;
+    filter: blur(2px) brightness(70%);
+    z-index: 500;
+}
+.exit{
+    position: absolute;
+    width: 15vw;
+    height: 5vw;
+    top: 1vw;
+    left: 2vw;
+    z-index: 501;
+}
+.exit img{
+    position: absolute;
+    width: 100%;
+    height: auto;
+    bottom: 0;
 }

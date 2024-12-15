@@ -27,6 +27,12 @@ let notesAwaitingPickup = 0;
 let isSpinning = false;
 let mouseX = 0;
 let mouseY = 0;
+let screenClickCount = 0;
+let lastScreenClickTime = 0;
+const SCREEN_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
+const SCREEN_CLICK_TARGET = 10;
+const screenClickSound = new Audio('sound/screentap.mp3');
+screenClickSound.volume = 0.2;
 
 // Track mouse position
 document.addEventListener('mousemove', (e) => {
@@ -34,6 +40,8 @@ document.addEventListener('mousemove', (e) => {
     mouseY = e.clientY;
 });
 document.addEventListener('click', () => {
+    if (!isDoorOpen) return; // Only allow note pickup when door is open
+    
     const notes = Array.from(document.querySelectorAll('.banknote'));
     if (notes.length === 0) return;
     
@@ -132,6 +140,10 @@ function closeDoor() {
     doorStack.style.visibility = 'visible';
     doorStack.style.transition = 'bottom 0.5s ease-out';
     doorStack.style.bottom = '0';
+    isDoorOpen = false;
+    
+    // Move wallet back down after door closes
+    updateWalletPosition(false);
     
     setTimeout(() => {
         cashoutButton.style.pointerEvents = 'auto';
@@ -210,7 +222,10 @@ const bigWinSound = new Audio('sound/bigwin.mp3');
 const squeakSound = new Audio('sound/squeak.mp3');
 const reelTickSound = new Audio('sound/tick2.mp3');
 const wrong = new Audio('sound/wrong.mp3');
+const clickSound = new Audio('sound/button.mp3');
+const radioSound = new Audio('sound/radio.mp3');
 wrong.volume = 0.2;
+yaySound.volume = 0.3;
 reelTickSound.volume = 0.3;
 backgroundMusic.loop = true;
 
@@ -325,7 +340,9 @@ function playLeverSound() {
 
 async function toggleMusic() {
     const noteContainer = document.querySelector('.music-container');
-    
+    radioSound.play().catch(error => {
+        console.log('Sound play failed:', error);
+    });
     if (!isMusicPlaying) {
         musicToggle.src = MUSIC_STATES.PLAYING_START;
         
@@ -532,7 +549,7 @@ async function spawnNote(noteValue) {
         note.style.position = 'absolute';
         note.style.width = '65%';
         note.style.left = '15%';
-        note.style.bottom = '0';
+        note.style.bottom = '1vw';
         note.style.zIndex = '1';
         note.style.transition = 'transform 0.5s ease-out';
         note.className = 'banknote';
@@ -568,12 +585,13 @@ function pickupNote(note) {
     // Create a new note element at the body level
     const flyingNote = document.createElement('img');
     flyingNote.src = note.src;
-    flyingNote.style.position = 'fixed';  // Use fixed positioning
+    flyingNote.style.position = 'fixed';
     flyingNote.style.width = note.offsetWidth + 'px';
     flyingNote.style.height = note.offsetHeight + 'px';
     flyingNote.style.left = noteRect.left + 'px';
     flyingNote.style.top = noteRect.top + 'px';
     flyingNote.style.zIndex = '49';
+    flyingNote.style.transform = 'translate(0, 0)'; // Set initial position
     
     // Remove the original note
     note.remove();
@@ -581,54 +599,76 @@ function pickupNote(note) {
     // Add the new note to the body
     document.body.appendChild(flyingNote);
     
-    // Calculate the distance to travel
-    const deltaX = walletRect.left - noteRect.left + (walletRect.width / 4);
-    const deltaY = walletRect.top - noteRect.top + (walletRect.height / 2);
+    // Calculate positions
+    const targetX = walletRect.left - noteRect.left + (walletRect.width / 5);
+    const aboveWalletY = walletRect.top - noteRect.top - 300; // Position above wallet
+    const finalY = walletRect.top - noteRect.top * 1.01; // Final wallet position
     
-    // Trigger animation in the next frame
+    // Force a reflow to ensure initial position is set
+    flyingNote.offsetHeight;
+    
     requestAnimationFrame(() => {
-        flyingNote.style.transition = 'all 0.5s ease-out';
-        flyingNote.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-        flyingNote.style.opacity = '0.6';
-    });
-    
-    setTimeout(() => {
-        flyingNote.remove();
-        notesAwaitingPickup--;
+        // First animation: Move above wallet
+        flyingNote.style.transition = 'transform 0.3s ease-out';
+        flyingNote.style.transform = `translate(${targetX}px, ${aboveWalletY}px)`;
         
-        if (notesAwaitingPickup === 0) {
-            closeDoor();
-        }
-    }, 500);
+        flyingNote.addEventListener('transitionend', function dropDown() {
+            flyingNote.removeEventListener('transitionend', dropDown);
+            
+            // Second animation: Drop into wallet
+            flyingNote.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out';
+            flyingNote.style.transform = `translate(${targetX}px, ${finalY}px)`;
+            flyingNote.style.opacity = '0.6';
+            
+            setTimeout(() => {
+                flyingNote.remove();
+                notesAwaitingPickup--;
+                
+                if (notesAwaitingPickup === 0) {
+                    closeDoor();
+                }
+            }, 200);
+        }, { once: true });
+    });
 }
 const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
 const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
 const buttonImage = document.querySelector('.button img')
 
+let isDoorOpen = false;
+let isProcessingCashout = false;
+
 async function cashout() {
-    if (playerCredit <= 0 || isSpinning || notesAwaitingPickup > 0) return;
-    buttonImage.src = BUTTON_PRESSED;
+    if (playerCredit <= 0 || isSpinning || notesAwaitingPickup > 0 || isProcessingCashout) return;
     
-    // Wait for animation
+    isProcessingCashout = true;
+    buttonImage.src = BUTTON_PRESSED;
+    clickSound.play().catch(error => {
+        console.log('Sound play failed:', error);
+    });
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    // Reset button image
     buttonImage.src = BUTTON_NORMAL;
     const notesToDispense = calculateNotes(playerCredit);
     
-    // Disable button during cashout
     cashoutButton.style.pointerEvents = 'none';
     
-    // Set credit to 0 immediately
     playerCredit = 0;
     updateCreditDisplay();
+    
+    // Move wallet up before spawning notes
+    updateWalletPosition(true);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for wallet to move
 
     notesAwaitingPickup = notesToDispense.length;
     for (let i = 0; i < notesToDispense.length; i++) {
         await spawnNote(notesToDispense[i]);
-        await new Promise(resolve => setTimeout(resolve, 540)); // Delay between notes
+        await new Promise(resolve => setTimeout(resolve, 540));
     }
+    
     await openDoor();
+    isDoorOpen = true;
+    isProcessingCashout = false;
 }
 function calculateWinAmount() {
     // Get the current win display image src
@@ -640,9 +680,361 @@ function calculateWinAmount() {
     if (currentWin.includes('low.png')) return 5;
     return 0;
 }
+
+// Define the robot's states and animations
+const ROBOT_STATES = {
+    IDLE: {
+        position: '1vw',
+        size: '20vw',
+        top: '30vw',
+        blur: '2px',
+        brightness: '70%',
+        gif: 'robot/idlefull.gif'
+    },
+    ACTIVE: {
+        position: '1vw',
+        size: '45vw',
+        top: '40vw',
+        blur: '0px',
+        brightness: '100%',
+        gif: 'robot/idle.gif'
+    },
+    OFFSCREEN_LEFT: {
+        position: '-40vw',
+        size: '30vw',
+        top: '45vw',
+        blur: '1px',
+        brightness: '100%'
+    }
+};
+
+// Define dialogue sequences with their corresponding animations
+const DIALOGUE_SEQUENCES = [
+    {
+        id: 'sequence1',
+        sound: 'robot/dialogue/motivace.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 4500 },
+            { gif: 'robot/talkswitch.gif', duration: 290 },
+            { gif: 'robot/talk2.gif', duration: 3000 },
+            { gif: 'robot/talk2end.gif', duration: 500 },
+        ]
+    },
+    {
+        id: 'sequence2',
+        sound: 'robot/dialogue/investice.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 2000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
+        ]
+    },
+    {
+        id: 'sequence3',
+        sound: 'robot/dialogue/99.wav',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 4000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
+        ]
+    },
+    {
+        id: 'sequence4',
+        sound: 'robot/dialogue/moudro.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 2000 },
+            { gif: 'robot/talkswitch2.gif', duration: 250 },
+            { gif: 'robot/sing.gif', duration: 4500 },
+            { gif: 'robot/singend.gif', duration: 600 }
+        ]
+    }
+];
+
+class RobotController {
+    constructor() {
+        this.robot = document.querySelector('.vlad img');
+        this.container = document.querySelector('.vlad');
+        this.isAnimating = false;
+        this.currentState = 'IDLE';
+        this.isInActiveState = false;
+        this.dialogueAudio = new Audio();
+        this.squeakSound = new Audio('sound/slab.mp3');
+        this.idleSound = new Audio('robot/dialogue/anyways.mp3');  // Add new sound
+        this.squeakSound.volume = 0.15;
+        
+        // Initialize robot
+        this.updateRobotState(ROBOT_STATES.IDLE);
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        this.container.addEventListener('click', () => this.handleClick());
+    }
+
+    updateRobotState(state, transition = true) {
+        this.container.style.transition = transition ? 'all 0.5s ease-out' : 'none';
+        this.container.style.left = state.position;
+        this.container.style.width = state.size;
+        this.container.style.top = state.top;
+        this.robot.style.filter = `blur(${state.blur}) brightness(${state.brightness})`;
+        if (state.gif) {
+            this.robot.src = state.gif;
+        }
+    }
+
+    async handleClick() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+
+        try {
+            if (!this.isInActiveState) {
+                // Initial activation sequence
+                await this.growthSequence();
+                await this.transformAndReturn();
+                const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
+                await this.playDialogueSequence(sequence);
+                
+                // Instead of returning to idle, stay and start idle animation
+                this.isInActiveState = true;
+                await this.playIdleSequence();
+            } else {
+                // If already active, return to initial state
+                await this.returnToIdle();
+                this.isInActiveState = false;
+            }
+        } catch (error) {
+            console.error('Animation sequence failed:', error);
+        } finally {
+            this.isAnimating = false;
+        }
+    }
+
+    async growthSequence() {
+        const startTime = Date.now();
+        const duration = 4200;
+        const initialSize = 20;
+        const targetSize = 25;
+        const initialTop = 30;
+        const targetTop = 38;
+
+        this.squeakSound.currentTime = 0;
+        this.squeakSound.play().catch(err => console.error('Squeak failed:', err));
+
+        this.container.style.transition = 'none';
+
+        return new Promise(resolve => {
+            const animate = () => {
+                const currentTime = Date.now();
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const currentSize = initialSize + (targetSize - initialSize) * progress;
+                const currentTop = initialTop + (targetTop - initialTop) * progress;
+
+                this.container.style.width = `${currentSize}vw`;
+                this.container.style.top = `${currentTop}vw`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    this.container.style.transition = 'all 0.5s ease-out';
+                    resolve();
+                }
+            };
+
+            requestAnimationFrame(animate);
+        });
+    }
+
+    async playIdleSequence() {
+        while (this.isInActiveState && !this.isAnimating) {
+            // No need to switch the animation here, we're already in idle
+            await this.delay(3000);
+        }
+    }
+
+    async transformAndReturn() {
+        this.updateRobotState({
+            ...ROBOT_STATES.OFFSCREEN_LEFT,
+            size: this.container.style.width,
+            top: this.container.style.top
+        });
+        await this.delay(500);
+    
+        this.container.style.transition = 'none';
+        
+        this.container.style.width = ROBOT_STATES.ACTIVE.size;
+        this.container.style.top = ROBOT_STATES.ACTIVE.top;
+        this.robot.style.filter = `blur(${ROBOT_STATES.ACTIVE.blur}) brightness(${ROBOT_STATES.ACTIVE.brightness})`;
+        this.robot.src = ROBOT_STATES.ACTIVE.gif;
+        
+        this.container.offsetHeight;
+        
+        this.container.style.transition = 'left 0.5s ease-out';
+        this.container.style.left = ROBOT_STATES.ACTIVE.position;
+    
+        const slotMachine = document.querySelector('.slot-machine-container');
+        slotMachine.style.transition = 'filter 0.5s ease-out';
+        slotMachine.style.filter = 'blur(2px)';
+        
+        await this.delay(500);
+    }
+
+    async playDialogueSequence(sequence) {
+        this.dialogueAudio.src = sequence.sound;
+        this.robot.src = sequence.animations[0].gif;
+        await this.delay(200);
+        
+        const audioPromise = this.dialogueAudio.play()
+            .catch(err => console.error('Audio playback failed:', err));
+        
+        for (const animation of sequence.animations) {
+            this.robot.src = animation.gif;
+            await this.delay(animation.duration);
+        }
+
+        await audioPromise;
+        
+        // Play idle transition sound
+        this.idleSound.currentTime = 0;
+        await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        
+        // Switch to idle animation
+        this.robot.src = 'robot/idle.gif';
+    }
+
+    async returnToIdle() {
+        // First move off screen at current size
+        this.container.style.transition = 'left 0.5s ease-out';
+        this.container.style.left = '-40vw';
+        
+        // Remove blur from slot machine
+        const slotMachine = document.querySelector('.slot-machine-container');
+        slotMachine.style.transition = 'filter 0.5s ease-out';
+        slotMachine.style.filter = 'blur(0px)';
+        
+        await this.delay(500);
+    
+        // Now that robot is off screen, disable transitions and set final state
+        this.container.style.transition = 'none';
+        this.container.style.width = ROBOT_STATES.IDLE.size;
+        this.container.style.top = ROBOT_STATES.IDLE.top;
+        this.robot.style.filter = `blur(${ROBOT_STATES.IDLE.blur}) brightness(${ROBOT_STATES.IDLE.brightness})`;
+        this.robot.src = ROBOT_STATES.IDLE.gif;
+        
+        // Force a reflow
+        this.container.offsetHeight;
+        
+        // Slide back in with new size
+        this.container.style.transition = 'left 0.5s ease-out';
+        this.container.style.left = ROBOT_STATES.IDLE.position;
+    
+        await this.delay(500);
+    }
+    async playSpecialSequence() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+
+        try {
+            // Growth and transform
+            await this.growthSequence();
+            await this.transformAndReturn();
+            
+            // Play the special sequence
+            await this.playDialogueSequence(SPECIAL_SEQUENCE);
+            
+            // Return to idle immediately without staying in active state
+            await this.returnToIdle();
+        } catch (error) {
+            console.error('Special sequence failed:', error);
+        } finally {
+            this.isAnimating = false;
+            this.isInActiveState = false;
+        }
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+function updateWalletPosition(hasNotes = false) {
+    const walletElement = document.querySelector('.wallet');
+    walletElement.style.transition = 'bottom 0.5s ease-out';
+    walletElement.style.bottom = hasNotes ? '-2vw' : '-15vw';
+}
+
+// Initialize the robot controller
+const robotController = new RobotController();
+document.querySelector('.screen').addEventListener('click', (e) => {
+    const currentTime = Date.now();
+    
+    // Reset counter if too much time has passed since last click
+    if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
+        screenClickCount = 0;
+    }
+    
+    // Play click sound
+    screenClickSound.currentTime = 0;
+    screenClickSound.play().catch(err => console.error('Screen sound failed:', err));
+    
+    // Update counter and time
+    screenClickCount++;
+    lastScreenClickTime = currentTime;
+    
+    // Check if we've reached the target number of clicks
+    if (screenClickCount === SCREEN_CLICK_TARGET) {
+        screenClickCount = 0; // Reset counter
+        robotController.playSpecialSequence(); // Trigger special sequence
+    }
+});
+let isMouseOverScreen = false;
+
+// Function to check if coordinates are within screen bounds
+function isWithinScreenBounds(x, y) {
+    const screen = document.querySelector('.screen');
+    const rect = screen.getBoundingClientRect();
+    return (
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top &&
+        y <= rect.bottom
+    );
+}
+document.addEventListener('mousedown', (e) => {
+    if (!isMouseOverScreen) return;
+    
+    const currentTime = Date.now();
+    
+    // Reset counter if too much time has passed since last click
+    if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
+        screenClickCount = 0;
+    }
+    
+    // Play click sound
+    screenClickSound.currentTime = 0;
+    screenClickSound.play().catch(err => console.error('Screen sound failed:', err));
+    
+    // Update counter and time
+    screenClickCount++;
+    lastScreenClickTime = currentTime;
+    
+    // Check if we've reached the target number of clicks
+    if (screenClickCount === SCREEN_CLICK_TARGET) {
+        screenClickCount = 0; // Reset counter
+        robotController.playSpecialSequence(); // Trigger special sequence
+    }
+});
+
+
+
+
 cashoutButton.addEventListener('click', cashout);
-window.addEventListener('load', updateCreditDisplay);
-// Initialize
+window.addEventListener('load', () => {
+    updateWalletPosition(false);
+    updateCreditDisplay();
+});
 lever.src = LEVER_STATIC;
 reels.forEach(initializeReel);
 
