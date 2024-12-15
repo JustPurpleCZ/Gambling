@@ -59,8 +59,8 @@ document.addEventListener('click', () => {
 });
 
 
-// Convert measurements to vw
-const SYMBOL_HEIGHT = 7; // 5vw to match CSS
+// Convert measurements to vh
+const SYMBOL_HEIGHT = 14; // 5vh to match CSS
 const VISIBLE_SYMBOLS = 3;
 const BUFFER_SYMBOLS = 2;
 const TOTAL_SYMBOLS = VISIBLE_SYMBOLS + BUFFER_SYMBOLS;
@@ -111,11 +111,11 @@ function updateCreditDisplay() {
             digitImg.src = `main/screen/${digit}.png`;
             digitImg.className = 'credit-digit';
             digitImg.style.position = 'absolute';
-            digitImg.style.height = '2.6vw';
+            digitImg.style.height = '5vh';
             digitImg.style.width = 'auto';
             // Position from left to right, starting at baseRight
             digitImg.style.right = `${baseRight - (index * digitWidth)}%`;
-            digitImg.style.top = '1.1vw';
+            digitImg.style.top = '2vh';
             digitImg.style.animation = 'flicker 0.2s infinite alternate';
             document.querySelector('.screen').appendChild(digitImg);
         });
@@ -130,7 +130,7 @@ function openDoor() {
             doorStack.style.visibility = 'hidden';
             doorStack.style.transform = 'translateY(0)';
             doorStack.style.transition = 'none';
-            doorStack.style.bottom = '5vw'; // Set and maintain this position
+            doorStack.style.bottom = '5vh'; // Set and maintain this position
             resolve();
         }, 1000);
     });
@@ -175,7 +175,7 @@ class MusicNote {
         this.element.src = NOTE_SPRITES[Math.floor(Math.random() * NOTE_SPRITES.length)];
         
         // Random starting position near the radio
-        this.x = -10; // -10 to 10vw
+        this.x = -10; // -10 to 10vh
         this.y = -13;
         
         // Random movement parameters
@@ -199,7 +199,7 @@ class MusicNote {
         this.y += this.speedY;
         this.rotation += this.rotationSpeed;
         
-        this.element.style.transform = `translate(${this.x}vw, ${this.y}vw) rotate(${this.rotation}deg)`;
+        this.element.style.transform = `translate(${this.x}vh, ${this.y}vh) rotate(${this.rotation}deg)`;
         
         // Check if note should be removed (out of view)
         if (this.y < -50) {
@@ -285,9 +285,9 @@ function playWinSound(win_type) {
     }
 }
 
-// Helper function to convert vw to pixels
-function vwToPx(vw) {
-    return (window.innerWidth * vw) / 100;
+// Helper function to convert vh to pixels
+function vhToPx(vh) {
+    return (window.innerWidth * vh) / 100;
 }
 
 function initializeReel(reel) {
@@ -300,7 +300,7 @@ function initializeReel(reel) {
         img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
         img.alt = 'Slot Symbol';
         symbol.appendChild(img);
-        symbol.style.top = `${i * SYMBOL_HEIGHT}vw`;
+        symbol.style.top = `${i * SYMBOL_HEIGHT}vh`;
         reel.appendChild(symbol);
     }
 }
@@ -459,7 +459,7 @@ function animateReel(reel, speed, duration) {
                     img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                 }
 
-                symbol.style.top = `${top}vw`;
+                symbol.style.top = `${top}vh`;
             });
 
             if (elapsed < duration) {
@@ -475,7 +475,7 @@ function animateReel(reel, speed, duration) {
                     const currentTop = parseFloat(symbol.style.top);
                     const finalTop = currentTop + distance;
                     symbol.style.transition = 'top 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
-                    symbol.style.top = `${finalTop}vw`;
+                    symbol.style.top = `${finalTop}vh`;
                 });
 
                 setTimeout(() => {
@@ -484,7 +484,7 @@ function animateReel(reel, speed, duration) {
                         let top = parseFloat(symbol.style.top);
                         if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                             top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                            symbol.style.top = `${top}vw`;
+                            symbol.style.top = `${top}vh`;
                         }
                     });
                     resolve();
@@ -521,7 +521,7 @@ async function spin() {
 
     const spinPromises = Array.from(reels).map((reel, index) => {
         const duration = 2000 + (index * 1000);
-        const speed = 1.5;
+        const speed = 4;
         return animateReel(reel, speed, duration);
     });
 
@@ -549,7 +549,7 @@ async function spawnNote(noteValue) {
         note.style.position = 'absolute';
         note.style.width = '65%';
         note.style.left = '15%';
-        note.style.bottom = '1vw';
+        note.style.bottom = '1vh';
         note.style.zIndex = '1';
         note.style.transition = 'transform 0.5s ease-out';
         note.className = 'banknote';
@@ -684,25 +684,25 @@ function calculateWinAmount() {
 // Define the robot's states and animations
 const ROBOT_STATES = {
     IDLE: {
-        position: '1vw',
-        size: '20vw',
-        top: '30vw',
+        position: '2vh',
+        size: '40vh',
+        top: '60vh',
         blur: '2px',
         brightness: '70%',
         gif: 'robot/idlefull.gif'
     },
     ACTIVE: {
-        position: '1vw',
-        size: '45vw',
-        top: '40vw',
+        position: '2vh',
+        size: '90vh',
+        top: '80vh',
         blur: '0px',
         brightness: '100%',
         gif: 'robot/idle.gif'
     },
     OFFSCREEN_LEFT: {
-        position: '-40vw',
-        size: '30vw',
-        top: '45vw',
+        position: '-80vh',
+        size: '60vh',
+        top: '90vh',
         blur: '1px',
         brightness: '100%'
     }
@@ -814,10 +814,10 @@ class RobotController {
     async growthSequence() {
         const startTime = Date.now();
         const duration = 4200;
-        const initialSize = 20;
-        const targetSize = 25;
-        const initialTop = 30;
-        const targetTop = 38;
+        const initialSize = 40;
+        const targetSize = 50;
+        const initialTop = 60;
+        const targetTop = 76;
 
         this.squeakSound.currentTime = 0;
         this.squeakSound.play().catch(err => console.error('Squeak failed:', err));
@@ -833,8 +833,8 @@ class RobotController {
                 const currentSize = initialSize + (targetSize - initialSize) * progress;
                 const currentTop = initialTop + (targetTop - initialTop) * progress;
 
-                this.container.style.width = `${currentSize}vw`;
-                this.container.style.top = `${currentTop}vw`;
+                this.container.style.width = `${currentSize}vh`;
+                this.container.style.top = `${currentTop}vh`;
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
@@ -908,7 +908,7 @@ class RobotController {
     async returnToIdle() {
         // First move off screen at current size
         this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '-40vw';
+        this.container.style.left = '-80vh';
         
         // Remove blur from slot machine
         const slotMachine = document.querySelector('.slot-machine-container');
@@ -962,7 +962,7 @@ class RobotController {
 function updateWalletPosition(hasNotes = false) {
     const walletElement = document.querySelector('.wallet');
     walletElement.style.transition = 'bottom 0.5s ease-out';
-    walletElement.style.bottom = hasNotes ? '-2vw' : '-15vw';
+    walletElement.style.bottom = hasNotes ? '-4vh' : '-30vh';
 }
 
 // Initialize the robot controller
