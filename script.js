@@ -175,12 +175,12 @@ class MusicNote {
         this.element.src = NOTE_SPRITES[Math.floor(Math.random() * NOTE_SPRITES.length)];
         
         // Random starting position near the radio
-        this.x = -10; // -10 to 10vh
-        this.y = -13;
+        this.x = -20; // -10 to 10vh
+        this.y = -26;
         
         // Random movement parameters
-        this.speedX = (Math.random() - 0.5) * 0.1; // -1 to 1
-        this.speedY = -Math.random() * 0.1 - 0.1; // -3 to -1
+        this.speedX = (Math.random() - 0.5) * 0.2; // -1 to 1
+        this.speedY = -Math.random() * 0.1 - 0.2; // -3 to -1
         this.rotation = Math.random() * 360;
         this.rotationSpeed = (Math.random() - 0.5) * 4;
         
@@ -202,7 +202,7 @@ class MusicNote {
         this.element.style.transform = `translate(${this.x}vh, ${this.y}vh) rotate(${this.rotation}deg)`;
         
         // Check if note should be removed (out of view)
-        if (this.y < -50) {
+        if (this.y < -100) {
             this.element.remove();
             return false;
         }
@@ -549,7 +549,7 @@ async function spawnNote(noteValue) {
         note.style.position = 'absolute';
         note.style.width = '65%';
         note.style.left = '15%';
-        note.style.bottom = '1vh';
+        note.style.bottom = '2vh';
         note.style.zIndex = '1';
         note.style.transition = 'transform 0.5s ease-out';
         note.className = 'banknote';
