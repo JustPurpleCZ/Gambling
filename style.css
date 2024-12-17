@@ -76,8 +76,8 @@ body::before{
 .lever-container {
     position: absolute;
     top: 19vh;     /* Scaled from 10vh */
-    right: 47.5vh; /* Scaled from 25vh */
-    height: 62.7vh;/* Scaled from 33vh */
+    right: 47.8vh; /* Scaled from 25vh */
+    width: 12.6vh;/* Scaled from 33vh */
     cursor: pointer;
     z-index: 6;
 }
@@ -133,7 +133,8 @@ img {
 
 .screen {
     position: absolute;
-    width: 47.69vh;  /* Scaled from 25.1vh */
+    width: 47.69vh;
+    height: 20vh;  /* Scaled from 25.1vh */
     top: 22vh;      /* Scaled from 11.6vh */
     right: 71.16vh; /* Scaled from 37.45vh */
 }

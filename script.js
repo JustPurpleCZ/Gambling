@@ -993,11 +993,16 @@ function isWithinScreenBounds(x, y) {
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    const screen = document.querySelector('.screen');
+    const rect = screen.getBoundingClientRect();
     isMouseOverScreen = isWithinScreenBounds(mouseX, mouseY);
+    
+    // Log these values to see what's happening:
+    
 });
 document.addEventListener('mousedown', (e) => {
     if (!isMouseOverScreen) return;
-    
+    console.log("screen clicked");
     const currentTime = Date.now();
     
     if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
