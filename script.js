@@ -749,8 +749,17 @@ const DIALOGUE_SEQUENCES = [
             { gif: 'robot/sing.gif', duration: 4500 },
             { gif: 'robot/singend.gif', duration: 600 }
         ]
-    }
+    },
 ];
+const SPECIAL_SEQUENCE = {
+    id: 'special',
+    sound: 'robot/dialogue/special.mp3',
+    animations: [
+        { gif: 'robot/speakstart.gif', duration: 250 },
+        { gif: 'robot/talk.gif', duration: 2000 },
+        { gif: 'robot/talkend.gif', duration: 600 }
+    ]
+};
 
 class RobotController {
     constructor() {
@@ -967,28 +976,7 @@ function updateWalletPosition(hasNotes = false) {
 
 // Initialize the robot controller
 const robotController = new RobotController();
-document.querySelector('.screen').addEventListener('click', (e) => {
-    const currentTime = Date.now();
-    
-    // Reset counter if too much time has passed since last click
-    if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
-        screenClickCount = 0;
-    }
-    
-    // Play click sound
-    screenClickSound.currentTime = 0;
-    screenClickSound.play().catch(err => console.error('Screen sound failed:', err));
-    
-    // Update counter and time
-    screenClickCount++;
-    lastScreenClickTime = currentTime;
-    
-    // Check if we've reached the target number of clicks
-    if (screenClickCount === SCREEN_CLICK_TARGET) {
-        screenClickCount = 0; // Reset counter
-        robotController.playSpecialSequence(); // Trigger special sequence
-    }
-});
+
 let isMouseOverScreen = false;
 
 // Function to check if coordinates are within screen bounds
@@ -1002,30 +990,32 @@ function isWithinScreenBounds(x, y) {
         y <= rect.bottom
     );
 }
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    isMouseOverScreen = isWithinScreenBounds(mouseX, mouseY);
+});
 document.addEventListener('mousedown', (e) => {
     if (!isMouseOverScreen) return;
     
     const currentTime = Date.now();
     
-    // Reset counter if too much time has passed since last click
     if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
         screenClickCount = 0;
     }
     
-    // Play click sound
     screenClickSound.currentTime = 0;
     screenClickSound.play().catch(err => console.error('Screen sound failed:', err));
     
-    // Update counter and time
     screenClickCount++;
     lastScreenClickTime = currentTime;
     
-    // Check if we've reached the target number of clicks
     if (screenClickCount === SCREEN_CLICK_TARGET) {
-        screenClickCount = 0; // Reset counter
-        robotController.playSpecialSequence(); // Trigger special sequence
+        screenClickCount = 0;
+        robotController.playSpecialSequence();
     }
 });
+
 
 
 
