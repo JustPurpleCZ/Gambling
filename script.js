@@ -32,7 +32,6 @@ let lastScreenClickTime = 0;
 const SCREEN_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
 const SCREEN_CLICK_TARGET = 10;
 const screenClickSound = new Audio('sound/screentap.mp3');
-screenClickSound.volume = 0.2;
 
 // Track mouse position
 document.addEventListener('mousemove', (e) => {
@@ -337,9 +336,43 @@ function playLeverSound() {
         console.log('Sound play failed:', error);
     });
 }
+let radioClickCount = 0;
+let lastRadioClickTime = 0;
+const RADIO_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
+const RADIO_CLICK_TARGET = 10;
 
 async function toggleMusic() {
     const noteContainer = document.querySelector('.music-container');
+    const currentTime = Date.now();
+    
+    // Check if it's a rapid click
+    if (currentTime - lastRadioClickTime > RADIO_CLICK_RESET_TIME) {
+        radioClickCount = 0;
+    }
+    
+    radioClickCount++;
+    lastRadioClickTime = currentTime;
+    
+    // Check if we've reached the target number of clicks
+    if (radioClickCount === RADIO_CLICK_TARGET) {
+        radioClickCount = 0;
+        // Stop any playing music first
+        if (isMusicPlaying) {
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+            musicToggle.src = MUSIC_STATES.STATIC;
+            isMusicPlaying = false;
+            if (noteInterval) {
+                clearInterval(noteInterval);
+                noteInterval = null;
+            }
+        }
+        // Trigger robot's special sequence
+        await robotController.playRadioSpecialSequence();
+        return;
+    }
+
+    // Normal music toggle behavior
     radioSound.play().catch(error => {
         console.log('Sound play failed:', error);
     });
@@ -756,9 +789,19 @@ const SPECIAL_SEQUENCE = {
     sound: 'robot/dialogue/do not the glass.mp3',
     animations: [
         { gif: 'robot/speakstart.gif', duration: 250 },
-        { gif: 'robot/talk.gif', duration: 3500 },
-        { gif: 'robot/talkend.gif', duration: 300 },
+        { gif: 'robot/talk.gif', duration: 2500 },
+        { gif: 'robot/talkend.gif', duration: 600 },
         { gif: 'robot/idle.gif', duration: 2000 }
+    ]
+};
+const RADIO_SPECIAL_SEQUENCE = {
+    id: 'radio_special',
+    sound: 'robot/dialogue/radio.mp3',
+    animations: [
+        { gif: 'robot/speakstart.gif', duration: 250 },
+        { gif: 'robot/talk.gif', duration: 2000 },
+        { gif: 'robot/rage.gif', duration: 3000 },
+        { gif: 'robot/rageend.gif', duration: 600 }
     ]
 };
 
@@ -926,11 +969,14 @@ class RobotController {
             this.robot.src = animation.gif;
             await this.delay(animation.duration);
         }
-
+    
         await audioPromise;
         
-        this.idleSound.currentTime = 0;
-        await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        // Only play idle sound if it's not the special sequence
+        if (sequence.id !== 'special' && sequence.id !== 'radio_special') {
+            this.idleSound.currentTime = 0;
+            await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        }
         
         this.robot.src = 'robot/idle.gif';
     }
@@ -970,6 +1016,22 @@ class RobotController {
             await this.returnToIdle();
         } catch (error) {
             console.error('Special sequence failed:', error);
+        } finally {
+            this.isAnimating = false;
+            this.isInActiveState = false;
+        }
+    }
+    async playRadioSpecialSequence() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+    
+        try {
+            await this.growthSequence();
+            await this.transformAndReturn();
+            await this.playDialogueSequence(RADIO_SPECIAL_SEQUENCE);
+            await this.returnToIdle();
+        } catch (error) {
+            console.error('Radio special sequence failed:', error);
         } finally {
             this.isAnimating = false;
             this.isInActiveState = false;
