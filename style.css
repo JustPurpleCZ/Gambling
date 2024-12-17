@@ -273,10 +273,10 @@ img {
 .options-menu {
     position: fixed;
     bottom: -50vh; /* Start below screen */
-    left: 50%;
+    left: 70%;
     transform: translateX(-50%);
-    width: 80vh;
-    height: 40vh;
+    width: 55vw;
+    height: 15vw;
     z-index: 1000;
     transition: bottom 0.5s ease-out;
 }
@@ -296,21 +296,21 @@ img {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 2vh;
+    
 }
 
 .option-btn {
-    width: 20vh;
-    height: 20vh;
+    width: 15vw;
+    height: 10vw;
     object-fit: contain;
     cursor: pointer;
     transition: transform 0.2s ease;
 }
 
 .option-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .options-menu.active {
-    bottom: 10vh;
+    bottom: 0vh;
 }
