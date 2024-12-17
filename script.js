@@ -782,7 +782,7 @@ const DIALOGUE_SEQUENCES = [
             { gif: 'robot/sing.gif', duration: 4500 },
             { gif: 'robot/singend.gif', duration: 600 }
         ]
-    },
+    }
 ];
 const SPECIAL_SEQUENCE = {
     id: 'special',
@@ -796,12 +796,9 @@ const SPECIAL_SEQUENCE = {
 };
 const RADIO_SPECIAL_SEQUENCE = {
     id: 'radio_special',
-    sound: 'robot/dialogue/radio.mp3',
+    sound: 'robot/dialogue/stop.mp3',
     animations: [
-        { gif: 'robot/speakstart.gif', duration: 250 },
-        { gif: 'robot/talk.gif', duration: 2000 },
-        { gif: 'robot/rage.gif', duration: 3000 },
-        { gif: 'robot/rageend.gif', duration: 600 }
+        { gif: 'robot/idle.gif', duration: 1000 }
     ]
 };
 
@@ -925,8 +922,25 @@ class RobotController {
     }
 
     async playIdleSequence() {
+        let totalIdleTime = 0;
+        let hasPlayedShortSound = false;
+        let hasPlayedLongSound = false;
+    
         while (this.isInActiveState && !this.isAnimating) {
-            await this.delay(3000);
+            await this.delay(1000); // Check every second
+            totalIdleTime += 1;
+    
+            // Play sound at 30 seconds
+            if (totalIdleTime === 30 && !hasPlayedShortSound) {
+                hasPlayedShortSound = true;
+                IDLE_SOUNDS.SHORT.play().catch(err => console.error('Short idle sound failed:', err));
+            }
+    
+            // Play sound at 120 seconds
+            if (totalIdleTime === 120 && !hasPlayedLongSound) {
+                hasPlayedLongSound = true;
+                IDLE_SOUNDS.LONG.play().catch(err => console.error('Long idle sound failed:', err));
+            }
         }
     }
 

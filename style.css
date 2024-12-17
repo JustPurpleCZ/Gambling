@@ -245,7 +245,7 @@ img {
 }
 .vlad {
     position: absolute;
-    width: auto;
+    width: 50vh;
     height: 22.8vh; /* Scaled from 12vh */
     top: 57vh;      /* Scaled from 30vh */
     left: 0;
