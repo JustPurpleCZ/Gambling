@@ -753,11 +753,12 @@ const DIALOGUE_SEQUENCES = [
 ];
 const SPECIAL_SEQUENCE = {
     id: 'special',
-    sound: 'robot/dialogue/special.mp3',
+    sound: 'robot/dialogue/do not the glass.mp3',
     animations: [
         { gif: 'robot/speakstart.gif', duration: 250 },
-        { gif: 'robot/talk.gif', duration: 2000 },
-        { gif: 'robot/talkend.gif', duration: 600 }
+        { gif: 'robot/talk.gif', duration: 4000 },
+        { gif: 'robot/talkend.gif', duration: 300 },
+        { gif: 'robot/idle.gif', duration: 2000 }
     ]
 };
 
