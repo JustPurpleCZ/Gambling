@@ -270,3 +270,47 @@ img {
     height: auto;
     bottom: 0;
 }
+.options-menu {
+    position: fixed;
+    bottom: -50vh; /* Start below screen */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vh;
+    height: 40vh;
+    z-index: 1000;
+    transition: bottom 0.5s ease-out;
+}
+
+.menu-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.option-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 2vh;
+}
+
+.option-btn {
+    width: 20vh;
+    height: 20vh;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.option-btn:hover {
+    transform: scale(1.1);
+}
+
+.options-menu.active {
+    bottom: 10vh;
+}
