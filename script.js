@@ -777,8 +777,23 @@ class RobotController {
         // Initialize robot
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
+        this.optionsMenu = document.querySelector('.options-menu');
+        this.setupOptionListeners();
     }
-
+    setupOptionListeners() {
+        const optionButtons = document.querySelectorAll('.option-btn');
+        optionButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const option = e.target.dataset.option;
+                if (option === 'close') {
+                    this.closeOptionsAndReturn();
+                } else {
+                    // Handle other options here
+                    console.log(`Option ${option} clicked`);
+                }
+            });
+        });
+    }
     setupEventListeners() {
         this.container.addEventListener('click', () => this.handleClick());
     }
@@ -799,28 +814,32 @@ class RobotController {
         this.isAnimating = true;
 
         try {
-            if (!this.isInActiveState) {
-                // Initial activation sequence
-                await this.growthSequence();
-                await this.transformAndReturn();
-                const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
-                await this.playDialogueSequence(sequence);
-                
-                // Instead of returning to idle, stay and start idle animation
-                this.isInActiveState = true;
-                await this.playIdleSequence();
-            } else {
-                // If already active, return to initial state
-                await this.returnToIdle();
-                this.isInActiveState = false;
-            }
+            // Initial activation sequence
+            await this.growthSequence();
+            await this.transformAndReturn();
+            const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
+            await this.playDialogueSequence(sequence);
+            
+            // Show options menu instead of going to idle
+            this.showOptions();
+            this.isInActiveState = true;
+            
         } catch (error) {
             console.error('Animation sequence failed:', error);
         } finally {
             this.isAnimating = false;
         }
     }
+showOptions() {
+        this.optionsMenu.classList.add('active');
+    }
 
+    async closeOptionsAndReturn() {
+        this.optionsMenu.classList.remove('active');
+        await this.returnToIdle();
+        this.isInActiveState = false;
+    }
+}
     async growthSequence() {
         const startTime = Date.now();
         const duration = 4200;
