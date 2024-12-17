@@ -839,7 +839,6 @@ showOptions() {
         await this.returnToIdle();
         this.isInActiveState = false;
     }
-}
     async growthSequence() {
         const startTime = Date.now();
         const duration = 4200;
