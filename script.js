@@ -771,15 +771,25 @@ class RobotController {
         this.isInActiveState = false;
         this.dialogueAudio = new Audio();
         this.squeakSound = new Audio('sound/slab.mp3');
-        this.idleSound = new Audio('robot/dialogue/anyways.mp3');  // Add new sound
+        this.idleSound = new Audio('robot/dialogue/anyways.mp3');
         this.squeakSound.volume = 0.15;
+        
+        this.optionsMenu = document.querySelector('.options-menu');
         
         // Initialize robot
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
-        this.optionsMenu = document.querySelector('.options-menu');
         this.setupOptionListeners();
     }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    setupEventListeners() {
+        this.container.addEventListener('click', () => this.handleClick());
+    }
+
     setupOptionListeners() {
         const optionButtons = document.querySelectorAll('.option-btn');
         optionButtons.forEach(btn => {
@@ -788,14 +798,10 @@ class RobotController {
                 if (option === 'close') {
                     this.closeOptionsAndReturn();
                 } else {
-                    // Handle other options here
                     console.log(`Option ${option} clicked`);
                 }
             });
         });
-    }
-    setupEventListeners() {
-        this.container.addEventListener('click', () => this.handleClick());
     }
 
     updateRobotState(state, transition = true) {
@@ -809,28 +815,7 @@ class RobotController {
         }
     }
 
-    async handleClick() {
-        if (this.isAnimating) return;
-        this.isAnimating = true;
-
-        try {
-            // Initial activation sequence
-            await this.growthSequence();
-            await this.transformAndReturn();
-            const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
-            await this.playDialogueSequence(sequence);
-            
-            // Show options menu instead of going to idle
-            this.showOptions();
-            this.isInActiveState = true;
-            
-        } catch (error) {
-            console.error('Animation sequence failed:', error);
-        } finally {
-            this.isAnimating = false;
-        }
-    }
-showOptions() {
+    showOptions() {
         this.optionsMenu.classList.add('active');
     }
 
@@ -839,6 +824,26 @@ showOptions() {
         await this.returnToIdle();
         this.isInActiveState = false;
     }
+
+    async handleClick() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+
+        try {
+            await this.growthSequence();
+            await this.transformAndReturn();
+            const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
+            await this.playDialogueSequence(sequence);
+            
+            this.showOptions();
+            this.isInActiveState = true;
+        } catch (error) {
+            console.error('Animation sequence failed:', error);
+        } finally {
+            this.isAnimating = false;
+        }
+    }
+
     async growthSequence() {
         const startTime = Date.now();
         const duration = 4200;
@@ -878,7 +883,6 @@ showOptions() {
 
     async playIdleSequence() {
         while (this.isInActiveState && !this.isAnimating) {
-            // No need to switch the animation here, we're already in idle
             await this.delay(3000);
         }
     }
@@ -925,55 +929,44 @@ showOptions() {
 
         await audioPromise;
         
-        // Play idle transition sound
         this.idleSound.currentTime = 0;
         await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
         
-        // Switch to idle animation
         this.robot.src = 'robot/idle.gif';
     }
 
     async returnToIdle() {
-        // First move off screen at current size
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = '-80vh';
         
-        // Remove blur from slot machine
         const slotMachine = document.querySelector('.slot-machine-container');
         slotMachine.style.transition = 'filter 0.5s ease-out';
         slotMachine.style.filter = 'blur(0px)';
         
         await this.delay(500);
     
-        // Now that robot is off screen, disable transitions and set final state
         this.container.style.transition = 'none';
         this.container.style.width = ROBOT_STATES.IDLE.size;
         this.container.style.top = ROBOT_STATES.IDLE.top;
         this.robot.style.filter = `blur(${ROBOT_STATES.IDLE.blur}) brightness(${ROBOT_STATES.IDLE.brightness})`;
         this.robot.src = ROBOT_STATES.IDLE.gif;
         
-        // Force a reflow
         this.container.offsetHeight;
         
-        // Slide back in with new size
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = ROBOT_STATES.IDLE.position;
     
         await this.delay(500);
     }
+
     async playSpecialSequence() {
         if (this.isAnimating) return;
         this.isAnimating = true;
 
         try {
-            // Growth and transform
             await this.growthSequence();
             await this.transformAndReturn();
-            
-            // Play the special sequence
             await this.playDialogueSequence(SPECIAL_SEQUENCE);
-            
-            // Return to idle immediately without staying in active state
             await this.returnToIdle();
         } catch (error) {
             console.error('Special sequence failed:', error);
@@ -981,10 +974,6 @@ showOptions() {
             this.isAnimating = false;
             this.isInActiveState = false;
         }
-    }
-
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 function updateWalletPosition(hasNotes = false) {
