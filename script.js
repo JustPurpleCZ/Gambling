@@ -756,7 +756,7 @@ const SPECIAL_SEQUENCE = {
     sound: 'robot/dialogue/do not the glass.mp3',
     animations: [
         { gif: 'robot/speakstart.gif', duration: 250 },
-        { gif: 'robot/talk.gif', duration: 4000 },
+        { gif: 'robot/talk.gif', duration: 3500 },
         { gif: 'robot/talkend.gif', duration: 300 },
         { gif: 'robot/idle.gif', duration: 2000 }
     ]
