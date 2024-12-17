@@ -1021,7 +1021,13 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-
+fetch('data.json')
+  .then(response => response.json())
+  .then(data => {
+    console.log(data);
+    // Work with your data here
+  })
+  .catch(error => console.error('Error:', error));
 
 
 
