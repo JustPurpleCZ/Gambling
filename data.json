@@ -1,0 +1,8 @@
+{
+  "property1": "value1",
+  "property2": "value2",
+  "array": [
+    "item1",
+    "item2"
+  ]
+}
