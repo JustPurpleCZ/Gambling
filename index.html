@@ -3,7 +3,11 @@
 <head>
     <link rel="stylesheet" href="style.css">
     <title>Vlad's Gambling Paradise</title>
-  <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
+    <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body>
     <div>
@@ -41,15 +45,33 @@
         
     </div>
     <div class="wallet">
-        <img src="money/wallet2.png" class="bottom">
-        <img src="money/wallet3.png" class="top" alt="">
+        <div class="wallet-bills">
+            <img src="money/100.png" class="bill bill-100" data-value="100">
+            <img src="money/50.png" class="bill bill-50" data-value="50">
+            <img src="money/20.png" class="bill bill-20" data-value="20">
+            <img src="money/10.png" class="bill bill-10" data-value="10">
+            <img src="money/5.png" class="bill bill-5" data-value="5">
+            <img src="money/1.png" class="bill bill-1" data-value="1">
+        </div>
+        <img src="money/walletD.png" class="bottom">
+        <img src="money/walletU.png" class="top" alt="">
     </div>
     <div class="options-menu">
-    <img src="main/menu/textbar1.png" alt="Menu Background" class="menu-bg">
-    <div class="option-buttons">
-        <img src="main/menu/optionbox1.png" class="option-btn" data-option="1">
-        <img src="main/menu/optionbox1.png" class="option-btn" data-option="2">
-        <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
+        <img src="main/menu/textbar1.png" alt="Menu Background" class="menu-bg">
+        <div class="option-buttons">
+            <div class="option-button-container">
+                <img src="main/menu/optionbox1.png" class="option-btn" data-option="1">
+                <div class="option-text">My Chances</div>
+            </div>
+            <div class="option-button-container">
+                <img src="main/menu/optionbox1.png" class="option-btn" data-option="2">
+                <div class="option-text">My Stats</div>
+            </div>
+            <div class="option-button-container">
+                <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
+                <div class="option-text">Get Out</div>
+            </div>
+        </div>
     </div>
 </div>
     <script src="script.js"></script>

@@ -226,22 +226,33 @@ img {
 
 .wallet {
     position: absolute;
-    width: 57vh;    /* Scaled from 30vh */
-    height: 22.8vh; /* Scaled from 12vh */
-    bottom: -28.5vh;/* Scaled from -15vh */
-    right: 1.9vh;   /* Scaled from 1vh */
+    width: 60vh;
+    height: 25vh;
+    bottom: -23vh;
+    right: 1.9vh;
+    transition: bottom 0.5s ease-out;
 }
-.wallet img{
-    position: absolute;
-    width: 100%;
-    height: auto;
-    bottom: 0;
+.wallet:hover {
+    bottom: -2vh;
+}
+.wallet.has-notes {
+    bottom: -2vh;
 }
 .top{
     z-index: 50;
+    width: 100%;
+    position: absolute;
+    height: auto;
+    bottom: 0;
+    pointer-events: none;
 }
 .bottom{
     z-index: 40;
+    width: 100%;
+    position: absolute;
+
+    height: auto;
+    bottom: 0;
 }
 .vlad {
     position: absolute;
@@ -299,15 +310,33 @@ img {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    
+}
+
+.option-button-container {
+    position: relative;
+    width: 15vw;
+    height: 10vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .option-btn {
-    width: 15vw;
-    height: 10vw;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     cursor: pointer;
     transition: transform 0.2s ease;
+}
+
+.option-text {
+    position: absolute;
+    color: black;
+    font-size: 2.5em;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1001;
 }
 
 .option-btn:hover {
@@ -316,4 +345,85 @@ img {
 
 .options-menu.active {
     bottom: 0vh;
+}
+.wallet-bills {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    bottom: 10vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 45;
+    pointer-events: none;
+}
+
+.bill {
+    position: absolute;
+    width: 65%;
+    height: auto;
+    transition: opacity 0.3s ease, transform 0.2s ease, bottom 0.5s ease-out;
+    pointer-events: auto;
+    cursor: pointer;
+    bottom: -1vh; /* Default position at bottom */
+}
+
+.bill:hover {
+    transform: translateY(-1vh);
+}
+
+/* Bill positions only apply when wallet is raised */
+.wallet.has-notes .bill.transferrable.bill-100 {
+    bottom: 21vh;
+    z-index: 41;
+}
+
+.wallet.has-notes .bill.transferrable.bill-50 {
+    bottom: 18vh;
+    z-index: 42;
+}
+
+.wallet.has-notes .bill.transferrable.bill-20 {
+    bottom: 15vh;
+    z-index: 43;
+}
+
+.wallet.has-notes .bill.transferrable.bill-10 {
+    bottom: 12vh;
+    z-index: 44;
+}
+
+.wallet.has-notes .bill.transferrable.bill-5 {
+    bottom: 9vh;
+    z-index: 45;
+}
+
+.wallet.has-notes .bill.transferrable.bill-1 {
+    bottom: 6vh;
+    z-index: 46;
+}
+
+.bill.unavailable {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.bill.transferrable {
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from {
+        filter: brightness(1);
+        transform: scale(1);
+    }
+    to {
+        filter: brightness(1.2);
+        transform: scale(1.05);
+    }
+}
+
+.bill.transferrable:hover {
+    animation: none;
+    transform: translateY(-1vh) scale(1.1);
 }

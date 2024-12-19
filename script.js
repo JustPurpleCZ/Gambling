@@ -81,7 +81,8 @@ const NOTE_SPRITES = [
     'main/radio/notes/note3.png',
     'main/radio/notes/note4.png'
 ];
-let playerCredit = 1000; // Starting credit
+let walletBalance = 1000; // Starting wallet balance
+let playerCredit = 0; // Starting credit
 let betAmount = 5;
 
 function updateCreditDisplay() {
@@ -120,16 +121,19 @@ function updateCreditDisplay() {
         });
     }
 }
-function openDoor() {
+async function openDoor() {
+    doorStack.style.transition = 'transform 1s ease-out';
+    doorStack.style.transform = 'translateY(-100%)';
+    
+    // Move wallet up as door opens
+    updateWalletPosition(true);
+    
     return new Promise(resolve => {
-        doorStack.style.transition = 'transform 1s ease-out';
-        doorStack.style.transform = 'translateY(-100%)';
-        
         setTimeout(() => {
             doorStack.style.visibility = 'hidden';
             doorStack.style.transform = 'translateY(0)';
             doorStack.style.transition = 'none';
-            doorStack.style.bottom = '5vh'; // Set and maintain this position
+            doorStack.style.bottom = '5vh';
             resolve();
         }, 1000);
     });
@@ -143,6 +147,13 @@ function closeDoor() {
     
     // Move wallet back down after door closes
     updateWalletPosition(false);
+    
+    // Clean up any remaining notes in the door
+
+    
+    // Reset states
+    enableWalletNoteTransfer(false);
+    isProcessingCashout = false;
     
     setTimeout(() => {
         cashoutButton.style.pointerEvents = 'auto';
@@ -384,10 +395,14 @@ async function toggleMusic() {
             isMusicPlaying = true;
             
             // Start spawning notes
-            noteInterval = setInterval(() => {
-                const note = new MusicNote(noteContainer);
-                musicNotes.push(note);
-            }, 300);
+            if (!noteInterval) {
+                noteInterval = setInterval(() => {
+                    if (isMusicPlaying) {
+                        const note = new MusicNote(noteContainer);
+                        musicNotes.push(note);
+                    }
+                }, 300);
+            }
             
             // Start animation loop if not already running
             if (!window.musicAnimationFrame) {
@@ -611,6 +626,11 @@ function pickupNote(note) {
         console.log('Sound play failed:', error);
     });
     
+    // Get the value of the note and add it to wallet balance
+    const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
+    walletBalance += noteValue;
+    updateAvailableBills();
+    
     // Get the current position and size of the note
     const noteRect = note.getBoundingClientRect();
     const walletRect = wallet.getBoundingClientRect();
@@ -624,7 +644,7 @@ function pickupNote(note) {
     flyingNote.style.left = noteRect.left + 'px';
     flyingNote.style.top = noteRect.top + 'px';
     flyingNote.style.zIndex = '49';
-    flyingNote.style.transform = 'translate(0, 0)'; // Set initial position
+    flyingNote.style.transform = 'translate(0, 0)';
     
     // Remove the original note
     note.remove();
@@ -634,21 +654,18 @@ function pickupNote(note) {
     
     // Calculate positions
     const targetX = walletRect.left - noteRect.left + (walletRect.width / 5);
-    const aboveWalletY = walletRect.top - noteRect.top - 300; // Position above wallet
-    const finalY = walletRect.top - noteRect.top * 1.01; // Final wallet position
+    const aboveWalletY = walletRect.top - noteRect.top - 300;
+    const finalY = walletRect.top - noteRect.top * 1.01;
     
-    // Force a reflow to ensure initial position is set
     flyingNote.offsetHeight;
     
     requestAnimationFrame(() => {
-        // First animation: Move above wallet
         flyingNote.style.transition = 'transform 0.3s ease-out';
         flyingNote.style.transform = `translate(${targetX}px, ${aboveWalletY}px)`;
         
         flyingNote.addEventListener('transitionend', function dropDown() {
             flyingNote.removeEventListener('transitionend', dropDown);
             
-            // Second animation: Drop into wallet
             flyingNote.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out';
             flyingNote.style.transform = `translate(${targetX}px, ${finalY}px)`;
             flyingNote.style.opacity = '0.6';
@@ -670,28 +687,70 @@ const buttonImage = document.querySelector('.button img')
 
 let isDoorOpen = false;
 let isProcessingCashout = false;
+let isOutputting = false;
 
 async function cashout() {
-    if (playerCredit <= 0 || isSpinning || notesAwaitingPickup > 0 || isProcessingCashout) return;
-    
+    if (isSpinning || isProcessingCashout || isOutputting) return;
     isProcessingCashout = true;
+
     buttonImage.src = BUTTON_PRESSED;
     clickSound.play().catch(error => {
         console.log('Sound play failed:', error);
     });
     await new Promise(resolve => setTimeout(resolve, 200));
-    
     buttonImage.src = BUTTON_NORMAL;
+
+    // Check if door is open (we're in deposit mode)
+    if (isDoorOpen) {
+        isProcessingCashout = true;
+        isOutputting = true;
+        // Get all notes in the door and save their values before closing
+        const notes = Array.from(door.querySelectorAll('.banknote'));
+        const noteValues = notes.map(note => parseInt(note.src.match(/\/(\d+)\.png/)[1]));
+        
+        // Close the door first
+
+        closeDoor();
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for door close animation
+        // Now process the saved note values - isProcessingCashout still true during this
+        if (noteValues.length > 0) {
+            for (const value of noteValues) {
+                // Play collection sound
+                const pickupSound = new Audio('sound/cashout.mp3');
+                pickupSound.play().catch(error => {
+                    console.log('Sound play failed:', error);
+                });
+                // Add to credit
+                playerCredit += value;
+                updateCreditDisplay();
+                console.log(isProcessingCashout);
+                // Wait before next note
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+        
+        enableWalletNoteTransfer(false);
+        // Only set isProcessingCashout to false after all notes are processed
+        notes.forEach(note => note.remove());
+        isProcessingCashout = false;
+        isOutputting = false;
+        return;
+    }
+    else if (playerCredit === 0) {
+        await openDoor();
+        isDoorOpen = true;
+        enableWalletNoteTransfer(true);
+        isProcessingCashout = false;
+        return;
+    }
+    else if(playerCredit > 0 && !isDoorOpen && !isOutputting){
+    // Normal cashout process remains the same
     const notesToDispense = calculateNotes(playerCredit);
-    
-    cashoutButton.style.pointerEvents = 'none';
-    
     playerCredit = 0;
     updateCreditDisplay();
     
-    // Move wallet up before spawning notes
     updateWalletPosition(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for wallet to move
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     notesAwaitingPickup = notesToDispense.length;
     for (let i = 0; i < notesToDispense.length; i++) {
@@ -701,7 +760,97 @@ async function cashout() {
     
     await openDoor();
     isDoorOpen = true;
-    isProcessingCashout = false;
+    }
+}
+async function collectNote(note) {
+    return new Promise(resolve => {
+        const value = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
+        
+        // Play collection sound
+        const pickupSound = new Audio('sound/cashout.mp3');
+        pickupSound.volume = 0.6;
+        pickupSound.play().catch(error => {
+            console.log('Sound play failed:', error);
+        });
+        
+        // Add to credit
+        playerCredit += value;
+        updateCreditDisplay();
+        
+        // Remove the note
+        note.remove();
+        
+        setTimeout(resolve, 300); // Delay before next note
+    });
+}
+function enableWalletNoteTransfer(enable) {
+    const bills = document.querySelectorAll('.bill');
+    bills.forEach(bill => {
+        if (!bill.classList.contains('unavailable')) {
+            bill.classList.toggle('transferrable', enable);
+        }
+    });
+}
+async function transferNoteFromWallet(bill) {
+    if (!isDoorOpen) return;
+    
+    const value = parseInt(bill.dataset.value);
+    if (value > walletBalance) return;
+    
+    // Get positions for animation
+    const billRect = bill.getBoundingClientRect();
+    const doorRect = door.getBoundingClientRect();
+    
+    // Create flying bill element
+    const flyingBill = document.createElement('img');
+    flyingBill.src = `money/${value}.png`;
+    flyingBill.style.position = 'fixed';
+    flyingBill.style.width = bill.offsetWidth + 'px';
+    flyingBill.style.height = bill.offsetHeight + 'px';
+    flyingBill.style.left = `${billRect.left}px`;
+    flyingBill.style.top = `${billRect.top}px`;
+    flyingBill.style.zIndex = '100';
+    flyingBill.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+    
+    // Add to body for the animation
+    document.body.appendChild(flyingBill);
+    
+    // Calculate target position
+    const targetX = doorRect.left + (doorRect.width * 0.15); // 17.5% from left to match door position
+    const targetY = doorRect.top + (doorRect.height * 0.21); // 10% from top
+    
+    // Force reflow
+    flyingBill.offsetHeight;
+    
+    // Start animation to door position
+    flyingBill.style.transform = `translate(${targetX - billRect.left}px, ${targetY - billRect.top}px)`;
+    
+    // Deduct from wallet
+    walletBalance -= value;
+    updateAvailableBills();
+    
+    // Wait for animation to complete then create the final note in the door
+    await new Promise(resolve => {
+        flyingBill.addEventListener('transitionend', () => {
+            // Remove the flying bill
+            flyingBill.remove();
+            
+            // Create the final note in the door
+            const note = document.createElement('img');
+            note.src = `money/${value}.png`;
+            note.className = 'banknote';
+            note.style.position = 'absolute';
+            note.style.width = '65%';
+            note.style.left = '15%';
+            note.style.bottom = '2vh';
+            note.style.zIndex = '1';
+            
+            door.appendChild(note);
+            
+            notesAwaitingPickup++;
+            resolve();
+        }, { once: true });
+    });
 }
 function calculateWinAmount() {
     // Get the current win display image src
@@ -813,6 +962,12 @@ class RobotController {
         this.squeakSound = new Audio('sound/slab.mp3');
         this.idleSound = new Audio('robot/dialogue/anyways.mp3');
         this.squeakSound.volume = 0.15;
+        this.shortIdleSound = new Audio('robot/dialogue/doporuceni.mp3');
+        this.longIdleSound = new Audio('robot/dialogue/HATE.mp3');
+        this.idleCheckInterval = null;
+        this.idleTimer = 0;
+        this.hasPlayedShortSound = false;
+        this.hasPlayedLongSound = false;
         
         this.optionsMenu = document.querySelector('.options-menu');
         
@@ -857,18 +1012,22 @@ class RobotController {
 
     showOptions() {
         this.optionsMenu.classList.add('active');
+        this.startIdleTimer();
     }
 
     async closeOptionsAndReturn() {
         this.optionsMenu.classList.remove('active');
+        this.stopIdleTimer();
         await this.returnToIdle();
         this.isInActiveState = false;
     }
 
     async handleClick() {
-        if (this.isAnimating) return;
+        // Don't handle clicks if animating or if menu is open
+        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
+    
         this.isAnimating = true;
-
+    
         try {
             await this.growthSequence();
             await this.transformAndReturn();
@@ -882,6 +1041,42 @@ class RobotController {
         } finally {
             this.isAnimating = false;
         }
+    }
+    startIdleTimer() {
+        this.idleTimer = 0;
+        this.hasPlayedShortSound = false;
+        this.hasPlayedLongSound = false;
+        
+        // Clear any existing interval
+        if (this.idleCheckInterval) {
+            clearInterval(this.idleCheckInterval);
+        }
+        
+        // Start new interval
+        this.idleCheckInterval = setInterval(() => {
+            this.idleTimer++;
+            
+            // Check for 30 seconds
+            if (this.idleTimer === 30 && !this.hasPlayedShortSound) {
+                this.shortIdleSound.play().catch(err => console.error('Short idle sound failed:', err));
+                this.hasPlayedShortSound = true;
+            }
+            
+            // Check for 120 seconds
+            if (this.idleTimer === 120 && !this.hasPlayedLongSound) {
+                this.longIdleSound.play().catch(err => console.error('Long idle sound failed:', err));
+                this.hasPlayedLongSound = true;
+            }
+        }, 1000); // Check every second
+    }
+    stopIdleTimer() {
+        if (this.idleCheckInterval) {
+            clearInterval(this.idleCheckInterval);
+            this.idleCheckInterval = null;
+        }
+        this.idleTimer = 0;
+        this.hasPlayedShortSound = false;
+        this.hasPlayedLongSound = false;
     }
 
     async growthSequence() {
@@ -1054,9 +1249,46 @@ class RobotController {
 }
 function updateWalletPosition(hasNotes = false) {
     const walletElement = document.querySelector('.wallet');
-    walletElement.style.transition = 'bottom 0.5s ease-out';
-    walletElement.style.bottom = hasNotes ? '-4vh' : '-30vh';
+    // Add the has-notes class if there are notes OR we're in deposit mode
+    if (hasNotes || isDoorOpen) {
+        walletElement.classList.add('has-notes');
+    } else {
+        walletElement.classList.remove('has-notes');
+    }
 }
+function updateAvailableBills() {
+    const bills = document.querySelectorAll('.bill');
+    bills.forEach(bill => {
+        const value = parseInt(bill.dataset.value);
+        if (value <= walletBalance) {
+            bill.classList.remove('unavailable');
+        } else {
+            bill.classList.add('unavailable');
+        }
+    });
+}
+document.querySelectorAll('.bill').forEach(bill => {
+    bill.addEventListener('click', () => {
+        const value = parseInt(bill.dataset.value);
+        
+        // Only allow transfer if bill is available and we're in deposit mode (door open)
+        if (bill.classList.contains('transferrable') && value <= walletBalance && isDoorOpen) {
+            transferNoteFromWallet(bill);
+            
+            // Play money sound
+            const pickupSound = new Audio('sound/note.mp3');
+            pickupSound.play().catch(error => {
+                console.log('Sound play failed:', error);
+            });
+        } else if (!isDoorOpen) {
+            // If door is closed, play wrong sound to indicate invalid action
+            wrong.currentTime = 0;
+            wrong.play().catch(error => {
+                console.log('Sound play failed:', error);
+            });
+        }
+    });
+});
 
 // Initialize the robot controller
 const robotController = new RobotController();
@@ -1119,6 +1351,7 @@ cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
     updateWalletPosition(false);
     updateCreditDisplay();
+    updateAvailableBills();
 });
 lever.src = LEVER_STATIC;
 reels.forEach(initializeReel);
