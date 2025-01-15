@@ -10,9 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="orientation-overlay">
+        <img src="side.gif" alt="Please rotate your device">
+        <div class="overlay-text">Please rotate your device</div>
+    </div>
     <div>
         <div class="exit">
-            <img src="icon/exit2.png" alt="">
+            <a href="menu.html">
+            <img src="icon/exit.png" alt="">
+            </a>
         </div>
         <div class="vlad">
             <img src="robot/idlefull.gif" alt="">
@@ -23,7 +29,7 @@
             </div>
             <div class="screen">
                 <img src="main/screen/screen.png" alt="">
-                <img id="text" src="" alt="">
+                <div class="credit-display">digger</div>
             </div>
             
             <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
@@ -55,15 +61,26 @@
         </div>
         <img src="money/walletD.png" class="bottom">
         <img src="money/walletU.png" class="top" alt="">
+        <img src="money/screen.png" class="wscreen" alt="">
+        <div class="wallet-display">Wallet:$1000</div>
     </div>
     <div class="options-menu">
         <img src="main/menu/textbar1.png" alt="Menu Background" class="menu-bg">
+        <div class="menu-text-content" data-content="invest">
+            The chances are in your favor! You have a 6.4% to get your money back,
+             a 2.4% to multiply your bet amount tenfold 
+            and a generous probabilty of 0.068% to win the main jackpot of 10K dollars!
+        </div>
+        <div class="menu-text-content" data-content="rules">
+            Match three symbols to win! Different symbols have different payouts.
+            Get all reels matching for a massive bonus!
+        </div>
         <div class="option-buttons">
-            <div class="option-button-container">
+            <div class="option-button-container hideable">
                 <img src="main/menu/optionbox1.png" class="option-btn" data-option="1">
                 <div class="option-text">My Chances</div>
             </div>
-            <div class="option-button-container">
+            <div class="option-button-container hideable">
                 <img src="main/menu/optionbox1.png" class="option-btn" data-option="2">
                 <div class="option-text">My Stats</div>
             </div>

@@ -148,16 +148,26 @@ img {
     height: auto;
     animation: slowflicker 3s infinite alternate;
 }
-#text {
-    left: 1.05vh;  /* Scaled from 0.55vh */
+.credit-display {
+    position: absolute;
+    left: 2%;
+    top: 4.5vh;
+    transform: translateY(-50%);
+    color: #00ff00;
+    font-size: 8.1vh;
+    font-family: "Tiny5", sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     animation: flicker 0.2s infinite alternate;
 }
+
 @keyframes flicker {
     0% {
-        filter: brightness(90%) drop-shadow(0 0 0.4vh rgba(255, 255, 255, 0.4));
+        opacity: 0.8;
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
     }
     100% {
-        filter: brightness(120%) drop-shadow(0 0 0.7vh rgba(255, 255, 255, 0.7));
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     }
 }
 @keyframes slowflicker {
@@ -254,6 +264,14 @@ img {
     height: auto;
     bottom: 0;
 }
+.wscreen{
+    z-index: 51;
+    width: 100%;
+    position: absolute;
+    animation: slowflicker 3s infinite alternate;
+    height: auto;
+    bottom: 0;
+}
 .vlad {
     position: absolute;
     width: 50vh;
@@ -274,9 +292,13 @@ img {
     position: absolute;
     width: 30vh;
     height: 10vh;
-    top: 2vh;
-    left: 4vh;
+    top: 4vh;
+    right: 4vh;
     z-index: 501;
+    transition: 0.2s;
+}
+.exit:hover{
+    transform: scale(1.02);
 }
 .exit img{
     position: absolute;
@@ -286,7 +308,7 @@ img {
 }
 .options-menu {
     position: fixed;
-    bottom: -50vh; /* Start below screen */
+    bottom: -50vh;
     left: 70%;
     transform: translateX(-50%);
     width: 55vw;
@@ -301,6 +323,36 @@ img {
     object-fit: contain;
 }
 
+.option-button-container {
+    position: relative;
+    width: 15vw;
+    height: 10vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+/* Added for text content mode */
+.menu-text-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    color: black;
+    font-size: 1.2vw;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
+}
+
+.menu-text-content.active {
+    opacity: 1;
+}
+
 .option-buttons {
     position: absolute;
     top: 0;
@@ -312,13 +364,14 @@ img {
     align-items: center;
 }
 
-.option-button-container {
-    position: relative;
-    width: 15vw;
-    height: 10vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* Add class for option buttons that can be hidden */
+.option-button-container.hideable {
+    transition: opacity 0.3s ease;
+}
+
+.option-button-container.hideable.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .option-btn {
@@ -426,4 +479,50 @@ img {
 .bill.transferrable:hover {
     animation: none;
     transform: translateY(-1vh) scale(1.1);
+}
+.orientation-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(0, 0, 0);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.orientation-overlay img {
+    width: 100vw;
+    height: auto;
+    margin-bottom: 20px;
+
+}
+
+.overlay-text {
+    color: white;
+    font-size: 4em;
+    text-align: center;
+    font-family: "Tiny5", sans-serif;
+}
+
+@media screen and (orientation: portrait) {
+    .orientation-overlay {
+        display: flex;
+    }
+}
+.wallet-display {
+    position: absolute;
+    left: 15%;
+    top: 4.5vh;
+    width: 15vh;
+    transform: translateY(-50%);
+    color: #00ff00;
+    font-size: 4vh;
+    font-family: "Tiny5", sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    animation: flicker 0.2s infinite alternate;
+    z-index: 52;
 }

@@ -1,13 +1,13 @@
 const symbolImages = [
     'icon/1.png',
-    'icon/2.png',
+    'icon/raiden.png',
     'icon/3.png',
     'icon/4.png',
     'icon/1.png'
 ];
 const symbolWinAmounts = {
     'icon/1.png': 'main/screen/low.png',
-    'icon/2.png': 'main/screen/mid.png',
+    'icon/raiden.png': 'main/screen/mid.png',
     'icon/3.png': 'main/screen/mid.png',
     'icon/4.png': 'main/screen/big.png'
 };
@@ -84,41 +84,11 @@ const NOTE_SPRITES = [
 let walletBalance = 1000; // Starting wallet balance
 let playerCredit = 0; // Starting credit
 let betAmount = 5;
+const displayDiv = document.querySelector('.credit-display');
 
 function updateCreditDisplay() {
-    // Check if there's no win being displayed
-    if (!winText.src.includes('low.png') && 
-        !winText.src.includes('mid.png') && 
-        !winText.src.includes('big.png') && 
-        !winText.src.includes('giant.png')) {
-        
-        // Set the credit text image
-        winText.src = 'main/screen/credit.png';
-        
-        // Get the digits without padding, but ensure at least one digit (0)
-        const digits = String(Math.max(0, playerCredit)).split('');
-        
-        // Clear any existing digits first
-        clearCreditDisplay();
-        
-        // Calculate base position - this should be where the credit text ends
-        const baseRight = 32; // Position where credit text ends
-        const digitWidth = 11; // Width of each digit in percentage
-        
-        // Create and position each digit
-        digits.forEach((digit, index) => {
-            const digitImg = document.createElement('img');
-            digitImg.src = `main/screen/${digit}.png`;
-            digitImg.className = 'credit-digit';
-            digitImg.style.position = 'absolute';
-            digitImg.style.height = '5vh';
-            digitImg.style.width = 'auto';
-            // Position from left to right, starting at baseRight
-            digitImg.style.right = `${baseRight - (index * digitWidth)}%`;
-            digitImg.style.top = '2vh';
-            digitImg.style.animation = 'flicker 0.2s infinite alternate';
-            document.querySelector('.screen').appendChild(digitImg);
-        });
+    if (!displayDiv.classList.contains('showing-win')) {
+        displayDiv.textContent = `Credit:$${playerCredit}`;
     }
 }
 async function openDoor() {
@@ -173,9 +143,11 @@ function calculateNotes(amount) {
     return notes;
 }
 function clearCreditDisplay() {
-    // Remove all credit digits
-    const digits = document.querySelectorAll('.credit-digit');
-    digits.forEach(digit => digit.remove());
+    // Remove any existing credit display
+    const existingDisplay = document.querySelector('.credit-display');
+    if (existingDisplay) {
+        existingDisplay.remove();
+    }
 }
 
 class MusicNote {
@@ -437,9 +409,6 @@ async function toggleMusic() {
     }
 }
 function checkWin() {
-    clearCreditDisplay();
-    winText.src = '';
-    
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
         const winningSymbol = middleRow[0].split('/').pop();
@@ -448,22 +417,40 @@ function checkWin() {
         const topRow = getSymbolsAtPosition(0);
         const bottomRow = getSymbolsAtPosition(2);
         
+        let winAmount;
+        
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
-            winText.src = 'main/screen/giant.png';
+            winAmount = 9999;
+            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
             playWinSound('giant');
-            return true;
+        } else {
+            if (baseSymbol === 'icon/4.png') {
+                winAmount = 250;
+                displayDiv.textContent = `BIG WIN: $${winAmount}!`;
+                playWinSound('big');
+            } else if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') {
+                winAmount = 50;
+                displayDiv.textContent = `WIN: $${winAmount}!`;
+                playWinSound('mid');
+            } else {
+                winAmount = 5;
+                displayDiv.textContent = `WIN: $${winAmount}!`;
+                playWinSound('low');
+            }
         }
         
-        winText.src = symbolWinAmounts[baseSymbol];
-        let winType = 'low';
-        if (baseSymbol === 'icon/4.png') {
-            winType = 'big';
-        } else if (baseSymbol === 'icon/2.png' || baseSymbol === 'icon/3.png') {
-            winType = 'mid';
-        }
+        displayDiv.classList.add('showing-win');
         
-        playWinSound(winType);
+        // Add to credit
+        playerCredit += winAmount;
+        
+        // Reset display after 5 seconds
+        setTimeout(() => {
+            displayDiv.classList.remove('showing-win');
+            updateCreditDisplay();
+        }, 5000);
+        
         return true;
     }
     updateCreditDisplay();
@@ -852,16 +839,6 @@ async function transferNoteFromWallet(bill) {
         }, { once: true });
     });
 }
-function calculateWinAmount() {
-    // Get the current win display image src
-    const currentWin = winText.src;
-    
-    if (currentWin.includes('giant.png')) return 2700;
-    if (currentWin.includes('big.png')) return 250;
-    if (currentWin.includes('mid.png')) return 50;
-    if (currentWin.includes('low.png')) return 5;
-    return 0;
-}
 
 // Define the robot's states and animations
 const ROBOT_STATES = {
@@ -893,7 +870,7 @@ const ROBOT_STATES = {
 // Define dialogue sequences with their corresponding animations
 const DIALOGUE_SEQUENCES = [
     {
-        id: 'sequence1',
+        id: 'motivation',
         sound: 'robot/dialogue/motivace.mp3',
         animations: [
             { gif: 'robot/speakstart.gif', duration: 250 },
@@ -904,25 +881,7 @@ const DIALOGUE_SEQUENCES = [
         ]
     },
     {
-        id: 'sequence2',
-        sound: 'robot/dialogue/investice.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 2000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
-    {
-        id: 'sequence3',
-        sound: 'robot/dialogue/99.wav',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 4000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
-    {
-        id: 'sequence4',
+        id: 'wise',
         sound: 'robot/dialogue/moudro.mp3',
         animations: [
             { gif: 'robot/speakstart.gif', duration: 250 },
@@ -931,24 +890,72 @@ const DIALOGUE_SEQUENCES = [
             { gif: 'robot/sing.gif', duration: 4500 },
             { gif: 'robot/singend.gif', duration: 600 }
         ]
+    },
+    {
+        id: 'ninety_nine',
+        sound: 'robot/dialogue/99.wav',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 4000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
+        ]
+    },
+    {
+        id: 'investment',
+        sound: 'robot/dialogue/investice.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 2000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
+        ]
     }
 ];
-const SPECIAL_SEQUENCE = {
-    id: 'special',
-    sound: 'robot/dialogue/do not the glass.mp3',
-    animations: [
-        { gif: 'robot/speakstart.gif', duration: 250 },
-        { gif: 'robot/talk.gif', duration: 2500 },
-        { gif: 'robot/talkend.gif', duration: 600 },
-        { gif: 'robot/idle.gif', duration: 2000 }
-    ]
-};
-const RADIO_SPECIAL_SEQUENCE = {
-    id: 'radio_special',
-    sound: 'robot/dialogue/stop.mp3',
-    animations: [
-        { gif: 'robot/idle.gif', duration: 1000 }
-    ]
+
+// Sequences that are triggered by specific actions
+const MANUAL_SEQUENCES = {
+    chances: {
+        id: 'chances_info',
+        sound: 'robot/dialogue/chances.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 1500 },
+            { gif: 'robot/idle.gif', duration: 1100 },
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 3500 },
+            { gif: 'robot/talkswitch.gif', duration: 300 },
+            { gif: 'robot/talk2.gif', duration: 3000 },
+            { gif: 'robot/speakstart.gif', duration: 300 },
+            { gif: 'robot/talk.gif', duration: 1600 },
+            { gif: 'robot/talkend.gif', duration: 300 },
+            { gif: 'robot/idle.gif', duration: 3000 }
+        ]
+    },
+    stats: {
+        id: 'stats_info',
+        sound: 'robot/dialogue/stats_info.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 3000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
+        ]
+    },
+    screen_special: {
+        id: 'special',
+        sound: 'robot/dialogue/do not the glass.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 2500 },
+            { gif: 'robot/talkend.gif', duration: 600 },
+            { gif: 'robot/idle.gif', duration: 2000 }
+        ]
+    },
+    radio_special: {
+        id: 'radio_special',
+        sound: 'robot/dialogue/stop.mp3',
+        animations: [
+            { gif: 'robot/idle.gif', duration: 1000 }
+        ]
+    }
 };
 
 class RobotController {
@@ -975,6 +982,7 @@ class RobotController {
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
         this.setupOptionListeners();
+        
     }
 
     delay(ms) {
@@ -988,12 +996,20 @@ class RobotController {
     setupOptionListeners() {
         const optionButtons = document.querySelectorAll('.option-btn');
         optionButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent event bubbling
                 const option = e.target.dataset.option;
+                
                 if (option === 'close') {
-                    this.closeOptionsAndReturn();
-                } else {
-                    console.log(`Option ${option} clicked`);
+                    await this.closeOptionsAndReturn();
+                    return;
+                }
+                
+                // Handle first two buttons
+                if (option === '1') {
+                    await this.handleOptionSequence('invest');
+                } else if (option === '2') {
+                    await this.handleOptionSequence('rules');
                 }
             });
         });
@@ -1014,23 +1030,57 @@ class RobotController {
         this.optionsMenu.classList.add('active');
         this.startIdleTimer();
     }
-
+    
+    async handleOptionSequence(option) {
+        const menu = this.optionsMenu;
+        const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
+        const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
+        
+        // Hide menu first
+        menu.style.bottom = '-50vh';
+        await this.delay(500);
+        
+        // Hide only the first two buttons
+        hideableButtons.forEach(button => button.classList.add('hidden'));
+        textContent.classList.add('active');
+        
+        // Show menu again
+        menu.style.bottom = '0vh';
+        
+        // Play appropriate robot sequence
+        const sequence = option === 'invest' ? 
+            MANUAL_SEQUENCES.chances : 
+            MANUAL_SEQUENCES.stats;
+        
+        await this.playDialogueSequence(sequence);
+    }
     async closeOptionsAndReturn() {
-        this.optionsMenu.classList.remove('active');
         this.stopIdleTimer();
+        
+        // Reset menu to original state
+        const menu = this.optionsMenu;
+        const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
+        const textContents = menu.querySelectorAll('.menu-text-content');
+        
+        menu.classList.remove('active');
+        hideableButtons.forEach(button => button.classList.remove('hidden'));
+        textContents.forEach(content => content.classList.remove('active'));
+        
         await this.returnToIdle();
         this.isInActiveState = false;
+    
+        // Make sure the menu is visually hidden
+        menu.style.bottom = '-50vh';
     }
 
     async handleClick() {
-        // Don't handle clicks if animating or if menu is open
         if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
-    
         this.isAnimating = true;
     
         try {
             await this.growthSequence();
             await this.transformAndReturn();
+            // Get random sequence from DIALOGUE_SEQUENCES
             const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
             await this.playDialogueSequence(sequence);
             
@@ -1181,8 +1231,9 @@ class RobotController {
     
         await audioPromise;
         
-        // Only play idle sound if it's not the special sequence
-        if (sequence.id !== 'special' && sequence.id !== 'radio_special') {
+        // Only play idle sound if it's a random dialogue sequence
+        const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
+        if (isRandomDialogue) {
             this.idleSound.currentTime = 0;
             await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
         }
@@ -1217,11 +1268,11 @@ class RobotController {
     async playSpecialSequence() {
         if (this.isAnimating) return;
         this.isAnimating = true;
-
+    
         try {
             await this.growthSequence();
             await this.transformAndReturn();
-            await this.playDialogueSequence(SPECIAL_SEQUENCE);
+            await this.playDialogueSequence(MANUAL_SEQUENCES.screen_special);
             await this.returnToIdle();
         } catch (error) {
             console.error('Special sequence failed:', error);
@@ -1237,7 +1288,7 @@ class RobotController {
         try {
             await this.growthSequence();
             await this.transformAndReturn();
-            await this.playDialogueSequence(RADIO_SPECIAL_SEQUENCE);
+            await this.playDialogueSequence(MANUAL_SEQUENCES.radio_special);
             await this.returnToIdle();
         } catch (error) {
             console.error('Radio special sequence failed:', error);
@@ -1258,6 +1309,11 @@ function updateWalletPosition(hasNotes = false) {
 }
 function updateAvailableBills() {
     const bills = document.querySelectorAll('.bill');
+    const walletDisplay = document.querySelector('.wallet-display');
+    
+    // Update wallet display
+    walletDisplay.textContent = `Wallet:$${walletBalance}`;
+    
     bills.forEach(bill => {
         const value = parseInt(bill.dataset.value);
         if (value <= walletBalance) {
