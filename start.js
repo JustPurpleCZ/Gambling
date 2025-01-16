@@ -7,11 +7,12 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.firebaseio.com", // Add this line
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.firebasestorage.app",
+    storageBucket: "https://justpurplecz.github.io/Gambling/", // Fix this line
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
-  };
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
