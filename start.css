@@ -1,3 +1,18 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-image: url(main/automat/bg-purple.png);
+    background-size: cover;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    font-family: "Tiny5", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
 .orientation-overlay {
     display: none;
     position: fixed;
@@ -16,7 +31,6 @@
     width: 100vw;
     height: auto;
     margin-bottom: 20px;
-
 }
 
 .overlay-text {
@@ -48,44 +62,90 @@
     background-color: #fff;
     margin: 15% auto;
     padding: 20px;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 5px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
 }
 
 .form-group input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    width: 94%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    border-color: #007bff;
+    outline: none;
 }
 
 .error {
-    color: red;
+    color: #dc3545;
     margin: 10px 0;
+    font-size: 14px;
+    text-align: center;
 }
 
 .close-button {
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: 15px;
+    top: 15px;
     font-size: 24px;
     cursor: pointer;
     background: none;
     border: none;
+    color: #666;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     margin: 5px;
     cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#submitButton {
+    background-color: #007bff;
+    color: white;
+    width: 100%;
+    margin: 10px 0;
+}
+
+#submitButton:hover {
+    background-color: #0056b3;
+}
+
+#toggleAuth {
+    background-color: transparent;
+    color: #007bff;
+    text-decoration: underline;
+    padding: 5px;
+}
+
+#toggleAuth:hover {
+    color: #0056b3;
+}
+.form-group input:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:valid {
+    border-color: #28a745;
 }

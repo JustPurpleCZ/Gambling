@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+    <script type="module" src="automat.js"></script>
 </head>
 <body>
     <div class="orientation-overlay">
@@ -15,10 +16,8 @@
         <div class="overlay-text">Please rotate your device</div>
     </div>
     <div>
-        <div class="exit">
-            <button onclick="logout()">
+        <div class="exit" id="logoutButton">
             <img src="icon/exit.png" alt="">
-            </button>
         </div>
         <div class="vlad">
             <img src="robot/idlefull.gif" alt="">
@@ -29,7 +28,7 @@
             </div>
             <div class="screen">
                 <img src="main/screen/screen.png" alt="">
-                <div class="credit-display">digger</div>
+                <div class="credit-display">Loading...</div>
             </div>
             
             <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
@@ -91,6 +90,5 @@
         </div>
     </div>
 </div>
-    <script src="automat.js"></script>
 </body>
 </html>

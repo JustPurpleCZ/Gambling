@@ -1,11 +1,39 @@
-function checkAuth() {
+// Add to top of automat.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.appspot.com",
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getDatabase();
+async function checkAuth() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
         window.location.href = 'index.html';
         return;
     }
     
-    return JSON.parse(localStorage.getItem(currentUser));
+    const userRef = ref(db, 'users/' + currentUser);
+    const snapshot = await get(userRef);
+    
+    if (snapshot.exists()) {
+        return snapshot.val();
+    } else {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    }
 }
 
 // Get user data
@@ -13,8 +41,24 @@ const userData = checkAuth();
 
 // Logout function
 function logout() {
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+        // Update user's online status to false before logging out
+        const userRef = ref(db, 'users/' + currentUser + '/online');
+        set(userRef, false)
+            .then(() => {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            })
+            .catch(error => {
+                console.error('Error updating online status:', error);
+                // Still logout even if updating online status fails
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            });
+    } else {
+        window.location.href = 'index.html';
+    }
 }
 const symbolImages = [
     'icon/1.png',
@@ -99,10 +143,27 @@ const NOTE_SPRITES = [
     'main/radio/notes/note3.png',
     'main/radio/notes/note4.png'
 ];
-let walletBalance = 1000; // Starting wallet balance
-let playerCredit = 0; // Starting credit
+let walletBalance = 0;
+let playerCredit = 0;
 let betAmount = 5;
 const displayDiv = document.querySelector('.credit-display');
+
+async function initializeWallet() {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const userRef = ref(db, 'users/' + currentUser);
+    const snapshot = await get(userRef);
+    
+    if (snapshot.exists()) {
+        const userData = snapshot.val();
+        walletBalance = userData.credits;
+        updateAvailableBills();
+    }
+}
 
 function updateCreditDisplay() {
     if (!displayDiv.classList.contains('showing-win')) {
@@ -426,6 +487,19 @@ async function toggleMusic() {
         isMusicPlaying = false;
     }
 }
+async function updateStatistics(wonAmount = 0) {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
+
+    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
+    const snapshot = await get(statsRef);
+    const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
+
+    await set(statsRef, {
+        spins: currentStats.spins + 1,
+        moneywon: currentStats.moneywon + wonAmount
+    });
+}
 function checkWin() {
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
@@ -462,7 +536,7 @@ function checkWin() {
         
         // Add to credit
         playerCredit += winAmount;
-        
+        updateStatistics(winAmount);
         // Reset display after 5 seconds
         setTimeout(() => {
             displayDiv.classList.remove('showing-win');
@@ -471,6 +545,7 @@ function checkWin() {
         
         return true;
     }
+    updateStatistics(0);
     updateCreditDisplay();
     return false;
 }
@@ -621,7 +696,7 @@ async function spawnNote(noteValue) {
         }, 100);
     });
 }
-function pickupNote(note) {
+async function pickupNote(note) {
     if (note.dataset.isAnimating) return;
     note.dataset.isAnimating = 'true';
     
@@ -634,6 +709,11 @@ function pickupNote(note) {
     // Get the value of the note and add it to wallet balance
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
     walletBalance += noteValue;
+    
+    // Update database
+    const currentUser = localStorage.getItem('currentUser');
+    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
+    
     updateAvailableBills();
     
     // Get the current position and size of the note
@@ -802,7 +882,13 @@ async function transferNoteFromWallet(bill) {
     const value = parseInt(bill.dataset.value);
     if (value > walletBalance) return;
     
-    // Get positions for animation
+    // Deduct from wallet and update database
+    walletBalance -= value;
+    const currentUser = localStorage.getItem('currentUser');
+    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
+    updateAvailableBills();
+    
+    // Rest of your existing animation code
     const billRect = bill.getBoundingClientRect();
     const doorRect = door.getBoundingClientRect();
     
@@ -829,10 +915,7 @@ async function transferNoteFromWallet(bill) {
     
     // Start animation to door position
     flyingBill.style.transform = `translate(${targetX - billRect.left}px, ${targetY - billRect.top}px)`;
-    
-    // Deduct from wallet
-    walletBalance -= value;
-    updateAvailableBills();
+
     
     // Wait for animation to complete then create the final note in the door
     await new Promise(resolve => {
@@ -1411,18 +1494,12 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-fetch('data.json')
-  .then(response => response.json())
-  .then(data => {
-    console.log(data);
-    // Work with your data here
-  })
-  .catch(error => console.error('Error:', error));
 
 
 
 cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
+    initializeWallet();
     updateWalletPosition(false);
     updateCreditDisplay();
     updateAvailableBills();
@@ -1433,3 +1510,4 @@ reels.forEach(initializeReel);
 // Event listeners
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
+document.getElementById('logoutButton').addEventListener('click', logout);
