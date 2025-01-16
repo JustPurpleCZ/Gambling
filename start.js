@@ -5,8 +5,13 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 
 // Your Firebase configuration
 const firebaseConfig = {
-    // Your config here from Firebase console
-};
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.firebasestorage.app",
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+  };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
