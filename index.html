@@ -1,96 +1,48 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <link rel="stylesheet" href="style.css">
-    <title>Vlad's Gambling Paradise</title>
-    <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-</head>
+    <head>
+        <link rel="stylesheet" href="start.css">
+        <title>Vlad's Gambling Paradise</title>
+        <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+        
+        <script type="module" src="start.js"></script>
+    </head>
 <body>
     <div class="orientation-overlay">
         <img src="side.gif" alt="Please rotate your device">
         <div class="overlay-text">Please rotate your device</div>
     </div>
+    <div class="vlad">
+        <img src="robot/idlefull.gif" alt="">
+    </div>
     <div>
-        <div class="exit">
-            <a href="menu.html">
-            <img src="icon/exit.png" alt="">
-            </a>
-        </div>
-        <div class="vlad">
-            <img src="robot/idlefull.gif" alt="">
-        </div>
-        <div class="slot-machine-container">
-            <div class="button">
-                <img src="main/automat/cash.png" alt="">
-            </div>
-            <div class="screen">
-                <img src="main/screen/screen.png" alt="">
-                <div class="credit-display">digger</div>
-            </div>
-            
-            <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
-            <div class="reels-container">
-                <div class="reel"></div>
-                <div class="reel"></div>
-                <div class="reel"></div>
-            </div>
-            <div class="lever-container">
-                <img src="main/automat/paka.gif" alt="Lever" class="lever-image">
-            </div>
-            <div class="door">
-                <img src="main/automat/door.png" class="doorPart" alt="">
-            </div>
-            <div class="music-container">
-                <img src="main/radio/radio.png" alt="Music Toggle" class="music-toggle">
-            </div>
-        </div>
-        
+        <img src="icon/raiden.png" alt="logo">
     </div>
-    <div class="wallet">
-        <div class="wallet-bills">
-            <img src="money/100.png" class="bill bill-100" data-value="100">
-            <img src="money/50.png" class="bill bill-50" data-value="50">
-            <img src="money/20.png" class="bill bill-20" data-value="20">
-            <img src="money/10.png" class="bill bill-10" data-value="10">
-            <img src="money/5.png" class="bill bill-5" data-value="5">
-            <img src="money/1.png" class="bill bill-1" data-value="1">
-        </div>
-        <img src="money/walletD.png" class="bottom">
-        <img src="money/walletU.png" class="top" alt="">
-        <img src="money/screen.png" class="wscreen" alt="">
-        <div class="wallet-display">Wallet:$1000</div>
-    </div>
-    <div class="options-menu">
-        <img src="main/menu/textbar1.png" alt="Menu Background" class="menu-bg">
-        <div class="menu-text-content" data-content="invest">
-            The chances are in your favor! You have a 6.4% to get your money back,
-             a 2.4% to multiply your bet amount tenfold 
-            and a generous probabilty of 0.068% to win the main jackpot of 10K dollars!
-        </div>
-        <div class="menu-text-content" data-content="rules">
-            Match three symbols to win! Different symbols have different payouts.
-            Get all reels matching for a massive bonus!
-        </div>
-        <div class="option-buttons">
-            <div class="option-button-container hideable">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="1">
-                <div class="option-text">My Chances</div>
-            </div>
-            <div class="option-button-container hideable">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="2">
-                <div class="option-text">My Stats</div>
-            </div>
-            <div class="option-button-container">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
-                <div class="option-text">Get Out</div>
-            </div>
+    <button id="playButton">Play</button>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Login</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <p id="errorMessage" class="error"></p>
+                <button type="submit" id="submitButton">Login</button>
+            </form>
+            <button id="toggleAuth">Need an account? Sign up</button>
+            <button id="closeModal" class="close-button">&times;</button>
         </div>
     </div>
-</div>
-    <script src="script.js"></script>
 </body>
+<script src="start.js"></script>
 </html>
