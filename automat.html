@@ -10,6 +10,7 @@
     media-src 'self';
     connect-src 'self' data: https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com;
     frame-src 'self' https://*.firebaseapp.com;
+    worker-src 'self' blob: data:;
     object-src 'none';">
     <link rel="stylesheet" href="automat.css">
     <title>Vlad's Gambling Paradise</title>
