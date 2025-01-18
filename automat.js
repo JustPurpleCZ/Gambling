@@ -1,3 +1,13 @@
+await new Promise(resolve => {
+    const checkFirebase = () => {
+        if (window.firebase) {
+            resolve();
+        } else {
+            setTimeout(checkFirebase, 100);
+        }
+    };
+    checkFirebase();
+});
 // Add to top of automat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
