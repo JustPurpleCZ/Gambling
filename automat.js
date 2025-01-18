@@ -1,7 +1,3 @@
-const auth = firebase.auth();
-const db = firebase.database();
-
-// Initialize Firebase
 firebase.initializeApp({
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
@@ -12,8 +8,9 @@ firebase.initializeApp({
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Then get auth and database
+const auth = firebase.auth();
+const db = firebase.database();
 async function checkAuth() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
@@ -21,7 +18,7 @@ async function checkAuth() {
         return;
     }
     
-    const userRef = ref(db, 'users/' + currentUser);
+    const userRef = firebase.database().ref(db, 'users/' + currentUser);
     const snapshot = await get(userRef);
     
     if (snapshot.exists()) {
@@ -40,7 +37,7 @@ function logout() {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
         // Update user's online status to false before logging out
-        const userRef = ref(db, 'users/' + currentUser + '/online');
+        const userRef = firebase.database().ref(db, 'users/' + currentUser + '/online');
         set(userRef, false)
             .then(() => {
                 localStorage.removeItem('currentUser');
@@ -153,7 +150,7 @@ async function initializeWallet() {
         return;
     }
 
-    const userRef = ref(db, 'users/' + currentUser);
+    const userRef = firebase.database().ref(db, 'users/' + currentUser);
     const snapshot = await get(userRef);
     
     if (snapshot.exists()) {
@@ -489,7 +486,7 @@ async function updateStatistics(wonAmount = 0) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return;
 
-    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
+    const statsRef = firebase.database().ref(db, `users/${currentUser}/statistics/slotMachine`);
     const snapshot = await get(statsRef);
     const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
 
@@ -716,7 +713,7 @@ async function pickupNote(note) {
     
     // Update database
     const currentUser = localStorage.getItem('currentUser');
-    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
+    await set(firebase.database().ref(db, 'users/' + currentUser + '/credits'), walletBalance);
     
     updateAvailableBills();
     
@@ -778,7 +775,7 @@ let isDoorOpen = false;
 let isProcessingCashout = false;
 let isOutputting = false;
 async function recordTransaction(userId, type, amount, timestamp = Date.now()) {
-    const transactionRef = ref(db, `transactions/${userId}/${timestamp}`);
+    const transactionRef = firebase.database().ref(db, `transactions/${userId}/${timestamp}`);
     await set(transactionRef, {
         type, // 'cashout', 'deposit', 'win'
         amount,
@@ -786,13 +783,29 @@ async function recordTransaction(userId, type, amount, timestamp = Date.now()) {
         verified: false
     });
 }
-
+function calculateWinAmount() {
+    const middleRow = getSymbolsAtPosition(1);
+    const winningSymbol = middleRow[0].split('/').pop();
+    const baseSymbol = `icon/${winningSymbol}`;
+    
+    const topRow = getSymbolsAtPosition(0);
+    const bottomRow = getSymbolsAtPosition(2);
+    
+    if (topRow.every(symbol => symbol === topRow[0]) && 
+        bottomRow.every(symbol => symbol === bottomRow[0])) {
+        return 9999;
+    }
+    
+    if (baseSymbol === 'icon/4.png') return 250;
+    if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') return 50;
+    return 5;
+}
 // 2. Server-side validation function for note collection
 async function validateAndCollectNote(noteValue) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return false;
     
-    const userRef = ref(db, `users/${currentUser}`);
+    const userRef = firebase.database().ref(db, `users/${currentUser}`);
     const snapshot = await get(userRef);
     
     if (!snapshot.exists()) return false;
@@ -812,7 +825,7 @@ async function validateAndCollectNote(noteValue) {
     await recordTransaction(currentUser, 'deposit', noteValue);
     
     // Update the user's balance
-    await set(ref(db, `users/${currentUser}/credits`), currentBalance + noteValue);
+    await set(firebase.database().ref(db, `users/${currentUser}/credits`), currentBalance + noteValue);
     
     return true;
 }
@@ -822,7 +835,7 @@ async function validateSpin(betAmount) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return false;
     
-    const userRef = ref(db, `users/${currentUser}`);
+    const userRef = firebase.database().ref(db, `users/${currentUser}`);
     const snapshot = await get(userRef);
     
     if (!snapshot.exists()) return false;
@@ -839,7 +852,7 @@ async function validateSpin(betAmount) {
     await recordTransaction(currentUser, 'bet', -betAmount);
     
     // Update user's credit
-    await set(ref(db, `users/${currentUser}/credits`), currentCredit - betAmount);
+    await set(firebase.database().ref(db, `users/${currentUser}/credits`), currentCredit - betAmount);
     
     return true;
 }
@@ -860,12 +873,12 @@ async function validateAndProcessWin(winAmount) {
     await recordTransaction(currentUser, 'win', winAmount);
     
     // Update user's balance
-    const userRef = ref(db, `users/${currentUser}`);
+    const userRef = firebase.database().ref(db, `users/${currentUser}`);
     const snapshot = await get(userRef);
     if (!snapshot.exists()) return false;
     
     const currentBalance = snapshot.val().credits || 0;
-    await set(ref(db, `users/${currentUser}/credits`), currentBalance + winAmount);
+    await set(firebase.database().ref(db, `users/${currentUser}/credits`), currentBalance + winAmount);
     
     return true;
 }
@@ -875,7 +888,7 @@ async function secureCashout(amount) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return false;
     
-    const userRef = ref(db, `users/${currentUser}`);
+    const userRef = firebase.database().ref(db, `users/${currentUser}`);
     const snapshot = await get(userRef);
     
     if (!snapshot.exists()) return false;
@@ -892,7 +905,7 @@ async function secureCashout(amount) {
     await recordTransaction(currentUser, 'cashout', -amount);
     
     // Update user's credit
-    await set(ref(db, `users/${currentUser}/credits`), currentCredit - amount);
+    await set(firebase.database().ref(db, `users/${currentUser}/credits`), currentCredit - amount);
     
     return true;
 }
@@ -988,8 +1001,8 @@ async function verifyTransactionIntegrity() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return;
     
-    const transactionsRef = ref(db, `transactions/${currentUser}`);
-    const snapshot = await get(transactionsRef);
+    const transactionsRef = firebase.database().ref(`transactions/${currentUser}`);
+    const snapshot = await transactionsRef.get();
     
     if (!snapshot.exists()) return;
     
@@ -1004,13 +1017,13 @@ async function verifyTransactionIntegrity() {
     });
     
     // Verify against current balance
-    const userRef = ref(db, `users/${currentUser}`);
+    const userRef = firebase.database().ref(db, `users/${currentUser}`);
     const userSnapshot = await get(userRef);
     const currentBalance = userSnapshot.val().credits || 0;
     
     if (currentBalance !== expectedBalance) {
         // Balance mismatch detected, reset to verified state
-        await set(ref(db, `users/${currentUser}/credits`), expectedBalance);
+        await set(firebase.database().ref(db, `users/${currentUser}/credits`), expectedBalance);
     }
 }
 async function collectNote(note) {
@@ -1588,7 +1601,7 @@ class RobotController {
         
         // Get current stats
         const currentUser = localStorage.getItem('currentUser');
-        const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
+        const statsRef = firebase.database().ref(db, `users/${currentUser}/statistics/slotMachine`);
         const snapshot = await get(statsRef);
         const stats = snapshot.val() || { spins: 0, moneywon: 0 };
         
