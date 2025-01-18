@@ -46,16 +46,16 @@ body::before{
     display: flex;
     gap: 3.8vh;    /* Scaled from 2vh */
     top: 52.25vh;  /* Scaled from 27.5vh */
-    left: 88.54vh; /* Scaled from 46.6vh */
+    left: 87.5vh; /* Scaled from 46.6vh */
     transform: translate(-55%, -50%);
     z-index: 2;
     background-color: aliceblue;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
 }
 
 .reel {
-    width: 15vh;    /* Scaled from 7.9vh */
+    width: 14.7vh;    /* Scaled from 7.9vh */
     height: 32.3vh; /* Scaled from 17vh */
     overflow: hidden;
     position: relative;
@@ -337,9 +337,9 @@ img {
 .menu-text-content {
     position: absolute;
     top: 50%;
-    left: 50%;
+    left: 35%;
     transform: translate(-50%, -50%);
-    width: 80%;
+    width: 65%;
     color: black;
     font-size: 1.2vw;
     text-align: center;

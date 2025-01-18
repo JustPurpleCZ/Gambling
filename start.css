@@ -149,3 +149,10 @@ button {
 .form-group input:valid {
     border-color: #28a745;
 }
+
+.logo{
+    width: 70vw;
+}
+.logo img{
+    width: 100%;
+}
