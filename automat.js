@@ -1,20 +1,8 @@
-await new Promise(resolve => {
-    const checkFirebase = () => {
-        if (window.firebase) {
-            resolve();
-        } else {
-            setTimeout(checkFirebase, 100);
-        }
-    };
-    checkFirebase();
-});
-// Add to top of automat.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+const auth = firebase.auth();
+const db = firebase.database();
 
-// Firebase configuration
-const firebaseConfig = {
+// Initialize Firebase
+firebase.initializeApp({
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
     databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
@@ -22,12 +10,10 @@ const firebaseConfig = {
     storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
-};
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getDatabase();
 async function checkAuth() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
