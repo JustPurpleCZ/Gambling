@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://www.gstatic.com;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' data: blob:;
-    media-src 'self';
-    connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com;
-    frame-src 'self' https://*.firebaseapp.com;
-    object-src 'none';">
         <link rel="stylesheet" href="start.css">
         <title>Vlad's Gambling Paradise</title>
         <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
@@ -21,15 +11,6 @@
         <script type="module" src="start.js"></script>
     </head>
 <body>
-    <script>
-        (function(){
-          var redirect = sessionStorage.redirect;
-          delete sessionStorage.redirect;
-          if (redirect && redirect != location.href) {
-            history.replaceState(null, null, redirect);
-          }
-        })();
-      </script>
     <div class="orientation-overlay">
         <img src="side.gif" alt="Please rotate your device">
         <div class="overlay-text">Please rotate your device</div>
@@ -37,8 +18,8 @@
     <div class="vlad">
         <img src="robot/idlefull.gif" alt="">
     </div>
-    <div class="logo">
-        <img src="icon/logo.png" alt="logo">
+    <div>
+        <img src="icon/raiden.png" alt="logo">
     </div>
     <button id="playButton">Play</button>
 

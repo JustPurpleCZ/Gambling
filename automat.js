@@ -1,4 +1,10 @@
-firebase.initializeApp({
+// Add to top of automat.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// Firebase configuration
+const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
     databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
@@ -6,11 +12,12 @@ firebase.initializeApp({
     storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
-});
+};
 
-// Then get auth and database
-const auth = firebase.auth();
-const db = firebase.database();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getDatabase();
 async function checkAuth() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
@@ -18,8 +25,8 @@ async function checkAuth() {
         return;
     }
     
-    const userRef = firebase.database().ref('users/' + currentUser);
-    const snapshot = await userRef.get();
+    const userRef = ref(db, 'users/' + currentUser);
+    const snapshot = await get(userRef);
     
     if (snapshot.exists()) {
         return snapshot.val();
@@ -37,8 +44,8 @@ function logout() {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
         // Update user's online status to false before logging out
-        const userRef = firebase.database().ref('users/' + currentUser + '/online');
-        userRef.set(false)
+        const userRef = ref(db, 'users/' + currentUser + '/online');
+        set(userRef, false)
             .then(() => {
                 localStorage.removeItem('currentUser');
                 window.location.href = 'index.html';
@@ -84,9 +91,6 @@ let mouseX = 0;
 let mouseY = 0;
 let screenClickCount = 0;
 let lastScreenClickTime = 0;
-let isDoorOpen = false;
-let isProcessingCashout = false;
-let isOutputting = false;
 const SCREEN_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
 const SCREEN_CLICK_TARGET = 10;
 const screenClickSound = new Audio('sound/screentap.mp3');
@@ -96,24 +100,22 @@ document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 });
-document.addEventListener('click', async (e) => {
-    if (!isDoorOpen) return;
+document.addEventListener('click', () => {
+    if (!isDoorOpen) return; // Only allow note pickup when door is open
     
     const notes = Array.from(document.querySelectorAll('.banknote'));
     if (notes.length === 0) return;
     
+    // Find notes under cursor
     const hoveredNotes = notes.filter(note => {
         const rect = note.getBoundingClientRect();
         return mouseX >= rect.left && mouseX <= rect.right &&
                mouseY >= rect.top && mouseY <= rect.bottom;
     });
     
+    // If any notes are hovered, pick up the last one (topmost in DOM)
     if (hoveredNotes.length > 0) {
-        const note = hoveredNotes[hoveredNotes.length - 1];
-        const success = await securePickupNote(note);
-        if (success) {
-            pickupNote(note);
-        }
+        pickupNote(hoveredNotes[hoveredNotes.length - 1]);
     }
 });
 
@@ -153,8 +155,8 @@ async function initializeWallet() {
         return;
     }
 
-    const userRef = firebase.database().ref('users/' + currentUser);
-    const snapshot = await userRef.get();
+    const userRef = ref(db, 'users/' + currentUser);
+    const snapshot = await get(userRef);
     
     if (snapshot.exists()) {
         const userData = snapshot.val();
@@ -489,7 +491,7 @@ async function updateStatistics(wonAmount = 0) {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) return;
 
-    const statsRef = firebase.database().ref(`users/${currentUser}/statistics/slotMachine`);
+    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
     const snapshot = await get(statsRef);
     const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
 
@@ -512,12 +514,12 @@ function checkWin() {
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
             winAmount = 9999;
-            displayDiv.textContent = `WIN:$${winAmount}!!!`;
+            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
             playWinSound('giant');
         } else {
             if (baseSymbol === 'icon/4.png') {
                 winAmount = 250;
-                displayDiv.textContent = `WIN: $${winAmount}!`;
+                displayDiv.textContent = `BIG WIN: $${winAmount}!`;
                 playWinSound('big');
             } else if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') {
                 winAmount = 50;
@@ -623,7 +625,7 @@ function animateReel(reel, speed, duration) {
 }
 
 async function spin() {
-    if (isSpinning || !checkRateLimit()) {
+    if (isSpinning) {
         shakeLever();
         shakeSound();
         return;
@@ -636,16 +638,12 @@ async function spin() {
         return;
     }
     
-    // Validate spin with server before proceeding
-    const spinValidated = await validateSpin(betAmount);
-    if (!spinValidated) {
-        shakeLever();
-        shakeSound();
-        noSound();
-        return;
-    }
-    
     isSpinning = true;
+    
+    // Update credit immediately when bet is placed
+    playerCredit -= betAmount;
+    updateCreditDisplay();
+    
     playLeverSound();
     playLeverAnimation();
 
@@ -661,17 +659,15 @@ async function spin() {
     const hasWon = checkWin();
     
     if (hasWon) {
-        // Validate win on server before adding to credit
         const winAmount = calculateWinAmount();
-        const winValidated = await validateAndProcessWin(winAmount);
-        if (winValidated) {
-            playerCredit += winAmount;
-            setTimeout(() => {
-                clearCreditDisplay();
-                winText.src = '';
-                updateCreditDisplay();
-            }, 5000);
-        }
+        playerCredit += winAmount;
+        
+        // After win display, update credit
+        setTimeout(() => {
+            clearCreditDisplay();
+            winText.src = '';
+            updateCreditDisplay();
+        }, 5000);
     }
 }
 async function spawnNote(noteValue) {
@@ -716,7 +712,7 @@ async function pickupNote(note) {
     
     // Update database
     const currentUser = localStorage.getItem('currentUser');
-    await set(firebase.database().ref('users/' + currentUser + '/credits'), walletBalance);
+    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
     
     updateAvailableBills();
     
@@ -774,257 +770,81 @@ const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
 const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
 const buttonImage = document.querySelector('.button img')
 
+let isDoorOpen = false;
+let isProcessingCashout = false;
+let isOutputting = false;
 
-async function recordTransaction(userId, type, amount, timestamp = Date.now()) {
-    const transactionRef = firebase.database().ref(`transactions/${userId}/${timestamp}`);
-    await set(transactionRef, {
-        type, // 'cashout', 'deposit', 'win'
-        amount,
-        timestamp,
-        verified: false
-    });
-}
-function calculateWinAmount() {
-    const middleRow = getSymbolsAtPosition(1);
-    const winningSymbol = middleRow[0].split('/').pop();
-    const baseSymbol = `icon/${winningSymbol}`;
-    
-    const topRow = getSymbolsAtPosition(0);
-    const bottomRow = getSymbolsAtPosition(2);
-    
-    if (topRow.every(symbol => symbol === topRow[0]) && 
-        bottomRow.every(symbol => symbol === bottomRow[0])) {
-        return 9999;
-    }
-    
-    if (baseSymbol === 'icon/4.png') return 250;
-    if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') return 50;
-    return 5;
-}
-// 2. Server-side validation function for note collection
-async function validateAndCollectNote(noteValue) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return false;
-    
-    const userRef = firebase.database().ref(`users/${currentUser}`);
-    const snapshot = await userRef.get();
-    
-    if (!snapshot.exists()) return false;
-    
-    // Get user's current balance
-    const userData = snapshot.val();
-    const currentBalance = userData.credits || 0;
-    
-    // Validate the note value is one of the allowed denominations
-    const validDenominations = [1, 5, 10, 20, 50, 100];
-    if (!validDenominations.includes(noteValue)) {
-        console.error('Invalid note denomination');
-        return false;
-    }
-    
-    // Record the transaction
-    await recordTransaction(currentUser, 'deposit', noteValue);
-    
-    // Update the user's balance
-    await set(firebase.database().ref(`users/${currentUser}/credits`), currentBalance + noteValue);
-    
-    return true;
-}
-
-// 3. Secure spin validation
-async function validateSpin(betAmount) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return false;
-    
-    const userRef = firebase.database().ref(`users/${currentUser}`);
-    const snapshot = await userRef.get();
-    
-    if (!snapshot.exists()) return false;
-    
-    const userData = snapshot.val();
-    const currentCredit = userData.credits || 0;
-    
-    // Validate bet amount
-    if (betAmount > currentCredit || betAmount <= 0) {
-        return false;
-    }
-    
-    // Record the bet
-    await recordTransaction(currentUser, 'bet', -betAmount);
-    
-    // Update user's credit
-    await set(firebase.database().ref(`users/${currentUser}/credits`), currentCredit - betAmount);
-    
-    return true;
-}
-
-// 4. Secure win validation and payout
-async function validateAndProcessWin(winAmount) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return false;
-    
-    // Validate win amount against maximum possible win
-    const maxPossibleWin = 10000; // Adjust based on your game's rules
-    if (winAmount > maxPossibleWin) {
-        console.error('Invalid win amount detected');
-        return false;
-    }
-    
-    // Record the win
-    await recordTransaction(currentUser, 'win', winAmount);
-    
-    // Update user's balance
-    const userRef = firebase.database().ref(`users/${currentUser}`);
-    const snapshot = await userRef.get();
-    if (!snapshot.exists()) return false;
-    
-    const currentBalance = snapshot.val().credits || 0;
-    await set(firebase.database().ref(`users/${currentUser}/credits`), currentBalance + winAmount);
-    
-    return true;
-}
-
-// 5. Modified cashout function with server validation
-async function secureCashout(amount) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return false;
-    
-    const userRef = firebase.database().ref('users/' + currentUser);
-    const snapshot = await userRef.get();
-    
-    if (!snapshot.exists()) return false;
-    
-    const userData = snapshot.val();
-    const currentCredit = userData.credits || 0;
-    
-    // Validate cashout amount
-    if (amount > currentCredit || amount <= 0) {
-        return false;
-    }
-    
-    // Record the cashout
-    await recordTransaction(currentUser, 'cashout', -amount);
-    
-    // Update user's credit
-    await set(firebase.database().ref(`users/${currentUser}/credits`), currentCredit - amount);
-    
-    return true;
-}
-
-// 6. Rate limiting function to prevent rapid transactions
-const transactionRateLimit = {
-    lastTransaction: 0,
-    minDelay: 500 // Minimum time (ms) between transactions
-};
-
-function checkRateLimit() {
-    const now = Date.now();
-    if (now - transactionRateLimit.lastTransaction < transactionRateLimit.minDelay) {
-        return false;
-    }
-    transactionRateLimit.lastTransaction = now;
-    return true;
-}
-
-// 7. Modified note pickup function with security checks
-async function securePickupNote(note) {
-    if (!checkRateLimit()) {
-        console.error('Rate limit exceeded');
-        return false;
-    }
-    
-    // Validate note value
-    const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-    if (isNaN(noteValue) || !AVAILABLE_NOTES.includes(noteValue)) {
-        console.error('Invalid note value');
-        return false;
-    }
-    
-    // Process the note collection with server validation
-    const success = await validateAndCollectNote(noteValue);
-    if (!success) {
-        return false;
-    }
-    
-    // Continue with visual note collection if validation passed
-    return true;
-}
 async function cashout() {
     if (isSpinning || isProcessingCashout || isOutputting) return;
-    if (!checkRateLimit()) return;
-    
     isProcessingCashout = true;
-    
-    try {
-        if (isDoorOpen) {
-            // Handle deposit mode
-            const notes = Array.from(door.querySelectorAll('.banknote'));
-            const noteValues = notes.map(note => 
-                parseInt(note.src.match(/\/(\d+)\.png/)[1])
-            );
-            
-            closeDoor();
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            for (const value of noteValues) {
-                const success = await validateAndCollectNote(value);
-                if (success) {
-                    playerCredit += value;
-                    updateCreditDisplay();
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-            }
-        } else if (playerCredit > 0) {
-            const success = await secureCashout(playerCredit);
-            if (success) {
-                const notesToDispense = calculateNotes(playerCredit);
-                playerCredit = 0;
-                updateCreditDisplay();
-                
-                updateWalletPosition(true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                notesAwaitingPickup = notesToDispense.length;
-                for (const noteValue of notesToDispense) {
-                    await spawnNote(noteValue);
-                    await new Promise(resolve => setTimeout(resolve, 540));
-                }
-                
-                await openDoor();
-                isDoorOpen = true;
-            }
-        }
-    } finally {
-        isProcessingCashout = false;
-    }
-}
-async function verifyTransactionIntegrity() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return;
-    
-    const transactionsRef = firebase.database().ref(`transactions/${currentUser}`);
-    const snapshot = await transactionsRef.get();
-    
-    if (!snapshot.exists()) return;
-    
-    const transactions = snapshot.val();
-    let expectedBalance = 0;
-    
-    // Calculate expected balance from transactions
-    Object.values(transactions).forEach(transaction => {
-        if (!transaction.verified) {
-            expectedBalance += transaction.amount;
-        }
+
+    buttonImage.src = BUTTON_PRESSED;
+    clickSound.play().catch(error => {
+        console.log('Sound play failed:', error);
     });
+    await new Promise(resolve => setTimeout(resolve, 200));
+    buttonImage.src = BUTTON_NORMAL;
+
+    // Check if door is open (we're in deposit mode)
+    if (isDoorOpen) {
+        isProcessingCashout = true;
+        isOutputting = true;
+        // Get all notes in the door and save their values before closing
+        const notes = Array.from(door.querySelectorAll('.banknote'));
+        const noteValues = notes.map(note => parseInt(note.src.match(/\/(\d+)\.png/)[1]));
+        
+        // Close the door first
+
+        closeDoor();
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for door close animation
+        // Now process the saved note values - isProcessingCashout still true during this
+        if (noteValues.length > 0) {
+            for (const value of noteValues) {
+                // Play collection sound
+                const pickupSound = new Audio('sound/cashout.mp3');
+                pickupSound.play().catch(error => {
+                    console.log('Sound play failed:', error);
+                });
+                // Add to credit
+                playerCredit += value;
+                updateCreditDisplay();
+                console.log(isProcessingCashout);
+                // Wait before next note
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+        
+        enableWalletNoteTransfer(false);
+        // Only set isProcessingCashout to false after all notes are processed
+        notes.forEach(note => note.remove());
+        isProcessingCashout = false;
+        isOutputting = false;
+        return;
+    }
+    else if (playerCredit === 0) {
+        await openDoor();
+        isDoorOpen = true;
+        enableWalletNoteTransfer(true);
+        isProcessingCashout = false;
+        return;
+    }
+    else if(playerCredit > 0 && !isDoorOpen && !isOutputting){
+    // Normal cashout process remains the same
+    const notesToDispense = calculateNotes(playerCredit);
+    playerCredit = 0;
+    updateCreditDisplay();
     
-    // Verify against current balance
-    const userRef = firebase.database().ref( `users/${currentUser}`);
-    const userSnapshot = await userRef.get();
-    const currentBalance = userSnapshot.val().credits || 0;
+    updateWalletPosition(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    notesAwaitingPickup = notesToDispense.length;
+    for (let i = 0; i < notesToDispense.length; i++) {
+        await spawnNote(notesToDispense[i]);
+        await new Promise(resolve => setTimeout(resolve, 540));
+    }
     
-    if (currentBalance !== expectedBalance) {
-        // Balance mismatch detected, reset to verified state
-        await set(firebase.database().ref( `users/${currentUser}/credits`), expectedBalance);
+    await openDoor();
+    isDoorOpen = true;
     }
 }
 async function collectNote(note) {
@@ -1057,17 +877,16 @@ function enableWalletNoteTransfer(enable) {
     });
 }
 async function transferNoteFromWallet(bill) {
-    if (!isDoorOpen || !checkRateLimit()) return;
+    if (!isDoorOpen) return;
     
     const value = parseInt(bill.dataset.value);
     if (value > walletBalance) return;
     
-    // Validate the transfer first
-    const success = await validateAndCollectNote(-value); // Negative because we're removing from wallet
-    if (!success) {
-        noSound();
-        return;
-    }
+    // Deduct from wallet and update database
+    walletBalance -= value;
+    const currentUser = localStorage.getItem('currentUser');
+    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
+    updateAvailableBills();
     
     // Rest of your existing animation code
     const billRect = bill.getBoundingClientRect();
@@ -1125,7 +944,7 @@ async function transferNoteFromWallet(bill) {
 // Define the robot's states and animations
 const ROBOT_STATES = {
     IDLE: {
-        position: '0',
+        position: '2vh',
         size: '40vh',
         top: '60vh',
         blur: '2px',
@@ -1133,7 +952,7 @@ const ROBOT_STATES = {
         gif: 'robot/idlefull.gif'
     },
     ACTIVE: {
-        position: '0',
+        position: '2vh',
         size: '90vh',
         top: '80vh',
         blur: '0px',
@@ -1214,36 +1033,11 @@ const MANUAL_SEQUENCES = {
     },
     stats: {
         id: 'stats_info',
-        phases: [
-            {
-                sound: 'robot/dialogue/spin.mp3',
-                afterSound: 'spins',
-                animations: [
-                    { gif: 'robot/speakstart.gif', duration: 250 },
-                    { gif: 'robot/talk.gif', duration: 1500 },
-                    { gif: 'robot/talkend.gif', duration: 300 },
-                    { gif: 'robot/idle.gif', duration: 100 }
-                ]
-            },
-            {
-                sound: 'robot/dialogue/timeswon.mp3',
-                afterSound: 'money',
-                animations: [
-                    { gif: 'robot/speakstart.gif', duration: 250 },
-                    { gif: 'robot/talk.gif', duration: 1300 },
-                    { gif: 'robot/talkend.gif', duration: 300 },
-                    { gif: 'robot/idle.gif', duration: 100 }
-                ]
-            },
-            {
-                sound: 'robot/dialogue/dollars.mp3',
-                animations: [
-                    { gif: 'robot/speakstart.gif', duration: 250 },
-                    { gif: 'robot/talk.gif', duration: 700 },
-                    { gif: 'robot/talkend.gif', duration: 300 },
-                    { gif: 'robot/idle.gif', duration: 1000 }
-                ]
-            }
+        sound: 'robot/dialogue/stats_info.mp3',
+        animations: [
+            { gif: 'robot/speakstart.gif', duration: 250 },
+            { gif: 'robot/talk.gif', duration: 3000 },
+            { gif: 'robot/talkend.gif', duration: 600 }
         ]
     },
     screen_special: {
@@ -1282,7 +1076,6 @@ class RobotController {
         this.idleTimer = 0;
         this.hasPlayedShortSound = false;
         this.hasPlayedLongSound = false;
-        this.shouldCancelSequence = false;
         
         this.optionsMenu = document.querySelector('.options-menu');
         
@@ -1290,6 +1083,7 @@ class RobotController {
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
         this.setupOptionListeners();
+        
     }
 
     delay(ms) {
@@ -1344,49 +1138,25 @@ class RobotController {
         const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
         
         // Hide menu first
-        this.optionsMenu.classList.remove('active');
+        menu.style.bottom = '-50vh';
         await this.delay(500);
-        this.optionsMenu.classList.add('active');
+        
         // Hide only the first two buttons
         hideableButtons.forEach(button => button.classList.add('hidden'));
         textContent.classList.add('active');
         
+        // Show menu again
+        menu.style.bottom = '0vh';
         
         // Play appropriate robot sequence
         const sequence = option === 'invest' ? 
             MANUAL_SEQUENCES.chances : 
             MANUAL_SEQUENCES.stats;
-            
-        if (option === 'rules') {
-            await this.playStatsSequence(sequence);
-        } else {
-            await this.playDialogueSequence(sequence);
-        }
+        
+        await this.playDialogueSequence(sequence);
     }
-
     async closeOptionsAndReturn() {
         this.stopIdleTimer();
-        
-        // Cancel any ongoing dialogue sequence
-        this.shouldCancelSequence = true;
-        
-        // Stop any playing dialogue audio
-        if (this.dialogueAudio) {
-            this.dialogueAudio.pause();
-            this.dialogueAudio.currentTime = 0;
-        }
-        if (this.idleSound) {
-            this.idleSound.pause();
-            this.idleSound.currentTime = 0;
-        }
-        if (this.shortIdleSound) {
-            this.shortIdleSound.pause();
-            this.shortIdleSound.currentTime = 0;
-        }
-        if (this.longIdleSound) {
-            this.longIdleSound.pause();
-            this.longIdleSound.currentTime = 0;
-        }
         
         // Reset menu to original state
         const menu = this.optionsMenu;
@@ -1399,7 +1169,9 @@ class RobotController {
         
         await this.returnToIdle();
         this.isInActiveState = false;
-        this.isAnimating = false;  // Reset animation state
+    
+        // Make sure the menu is visually hidden
+        menu.style.bottom = '-50vh';
     }
 
     async handleClick() {
@@ -1421,7 +1193,6 @@ class RobotController {
             this.isAnimating = false;
         }
     }
-
     startIdleTimer() {
         this.idleTimer = 0;
         this.hasPlayedShortSound = false;
@@ -1437,19 +1208,18 @@ class RobotController {
             this.idleTimer++;
             
             // Check for 30 seconds
-            if (this.idleTimer === 60 && !this.hasPlayedShortSound) {
+            if (this.idleTimer === 30 && !this.hasPlayedShortSound) {
                 this.shortIdleSound.play().catch(err => console.error('Short idle sound failed:', err));
                 this.hasPlayedShortSound = true;
             }
             
             // Check for 120 seconds
-            if (this.idleTimer === 300 && !this.hasPlayedLongSound) {
+            if (this.idleTimer === 120 && !this.hasPlayedLongSound) {
                 this.longIdleSound.play().catch(err => console.error('Long idle sound failed:', err));
                 this.hasPlayedLongSound = true;
             }
         }, 1000); // Check every second
     }
-
     stopIdleTimer() {
         if (this.idleCheckInterval) {
             clearInterval(this.idleCheckInterval);
@@ -1497,37 +1267,27 @@ class RobotController {
         });
     }
 
-    async playDialogueSequence(sequence) {
-        this.shouldCancelSequence = false;
-        this.dialogueAudio.src = sequence.sound;
-        this.robot.src = sequence.animations[0].gif;
-        await this.delay(200);
-        
-        const audioPromise = this.dialogueAudio.play()
-            .catch(err => console.error('Audio playback failed:', err));
-        
-        for (const animation of sequence.animations) {
-            if (this.shouldCancelSequence) {
-                this.dialogueAudio.pause();
-                this.dialogueAudio.currentTime = 0;
-                return;
-            }
-            this.robot.src = animation.gif;
-            await this.delay(animation.duration);
-        }
+    async playIdleSequence() {
+        let totalIdleTime = 0;
+        let hasPlayedShortSound = false;
+        let hasPlayedLongSound = false;
     
-        if (!this.shouldCancelSequence) {
-            await audioPromise;
-            
-            // Only play idle sound if it's a random dialogue sequence
-            const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
-            if (isRandomDialogue) {
-                this.idleSound.currentTime = 0;
-                await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        while (this.isInActiveState && !this.isAnimating) {
+            await this.delay(1000); // Check every second
+            totalIdleTime += 1;
+    
+            // Play sound at 30 seconds
+            if (totalIdleTime === 30 && !hasPlayedShortSound) {
+                hasPlayedShortSound = true;
+                IDLE_SOUNDS.SHORT.play().catch(err => console.error('Short idle sound failed:', err));
+            }
+    
+            // Play sound at 120 seconds
+            if (totalIdleTime === 120 && !hasPlayedLongSound) {
+                hasPlayedLongSound = true;
+                IDLE_SOUNDS.LONG.play().catch(err => console.error('Long idle sound failed:', err));
             }
         }
-        
-        this.robot.src = 'robot/idle.gif';
     }
 
     async transformAndReturn() {
@@ -1557,6 +1317,31 @@ class RobotController {
         await this.delay(500);
     }
 
+    async playDialogueSequence(sequence) {
+        this.dialogueAudio.src = sequence.sound;
+        this.robot.src = sequence.animations[0].gif;
+        await this.delay(200);
+        
+        const audioPromise = this.dialogueAudio.play()
+            .catch(err => console.error('Audio playback failed:', err));
+        
+        for (const animation of sequence.animations) {
+            this.robot.src = animation.gif;
+            await this.delay(animation.duration);
+        }
+    
+        await audioPromise;
+        
+        // Only play idle sound if it's a random dialogue sequence
+        const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
+        if (isRandomDialogue) {
+            this.idleSound.currentTime = 0;
+            await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        }
+        
+        this.robot.src = 'robot/idle.gif';
+    }
+
     async returnToIdle() {
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = '-80vh';
@@ -1582,7 +1367,7 @@ class RobotController {
     }
 
     async playSpecialSequence() {
-        if (this.isAnimating || this.isInActiveState) return;
+        if (this.isAnimating) return;
         this.isAnimating = true;
     
         try {
@@ -1597,71 +1382,8 @@ class RobotController {
             this.isInActiveState = false;
         }
     }
-    async playStatsSequence(sequence) {
-        this.shouldCancelSequence = false;
-        
-        // Get current stats
-        const currentUser = localStorage.getItem('currentUser');
-        const statsRef = firebase.database().ref(`users/${currentUser}/statistics/slotMachine`);
-        const snapshot = await get(statsRef);
-        const stats = snapshot.val() || { spins: 0, moneywon: 0 };
-        
-        for (const phase of sequence.phases) {
-            if (this.shouldCancelSequence) {
-                return;
-            }
-            
-            // Play the audio for this phase
-            this.dialogueAudio.src = phase.sound;
-            const audioPromise = this.dialogueAudio.play()
-                .catch(err => console.error('Audio playback failed:', err));
-            
-            // Play animations while audio is playing
-            for (const animation of phase.animations) {
-                if (this.shouldCancelSequence) {
-                    this.dialogueAudio.pause();
-                    this.dialogueAudio.currentTime = 0;
-                    return;
-                }
-                this.robot.src = animation.gif;
-                await this.delay(animation.duration);
-            }
-            
-            await audioPromise;
-            
-            // Handle after-sound actions
-            if (phase.afterSound === 'spins') {
-                const spinsStr = stats.spins.toString();
-                for (const digit of spinsStr) {
-                    if (this.shouldCancelSequence) return;
-                    
-                    // Play the digit sound
-                    this.dialogueAudio.src = `robot/dialogue/numbers/${digit}.mp3`;
-                    const digitAudioPromise = this.dialogueAudio.play()
-                        .catch(err => console.error('Digit audio failed:', err));
-                    await digitAudioPromise;
-                    await this.delay(1000); // Small pause between digits
-                }
-            } else if (phase.afterSound === 'money') {
-                const moneyStr = stats.moneywon.toString();
-                for (const digit of moneyStr) {
-                    if (this.shouldCancelSequence) return;
-                    
-                    // Play the digit sound
-                    this.dialogueAudio.src = `robot/dialogue/numbers/${digit}.mp3`;
-                    const digitAudioPromise = this.dialogueAudio.play()
-                        .catch(err => console.error('Digit audio failed:', err));
-                    
-                    await digitAudioPromise;
-                    await this.delay(1000); // Small pause between digits
-                }
-            }
-        }
-        
-        this.robot.src = 'robot/idle.gif';
-    }
     async playRadioSpecialSequence() {
-        if (this.isAnimating || this.isInActiveState) return;
+        if (this.isAnimating) return;
         this.isAnimating = true;
     
         try {
