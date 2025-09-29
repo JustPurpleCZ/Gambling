@@ -514,12 +514,12 @@ function checkWin() {
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
             winAmount = 9999;
-            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
+            displayDiv.textContent = `WIN:$${winAmount}!`;
             playWinSound('giant');
         } else {
             if (baseSymbol === 'icon/4.png') {
                 winAmount = 250;
-                displayDiv.textContent = `BIG WIN: $${winAmount}!`;
+                displayDiv.textContent = `WIN: $${winAmount}!`;
                 playWinSound('big');
             } else if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') {
                 winAmount = 50;
@@ -1511,3 +1511,4 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
+
