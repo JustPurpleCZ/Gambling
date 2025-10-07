@@ -78,7 +78,6 @@ toggleAuth.addEventListener('click', () => {
 });
 
 // Handle form submission
-// Handle form submission
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('username').value;
@@ -91,6 +90,7 @@ authForm.addEventListener('submit', async (e) => {
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 localStorage.setItem('currentUser', userCredential.user.uid);
+                localStorage.setItem('userToken', userCredential.user.accessToken);
                 window.location.href = 'automat.html';
             } catch (error) {
                 console.error('Login error:', error.code);

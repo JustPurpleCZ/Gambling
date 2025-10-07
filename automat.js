@@ -25,19 +25,44 @@ async function checkAuth() {
         return;
     }
     
-    const userRef = ref(db, 'users/' + currentUser);
-    const snapshot = await get(userRef);
+    //DEBUG - TOKEN SHENANIGANS
+    const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    localBalance = await res.json();
+    console.log("Fetched balance:", localBalance);
     
-    if (snapshot.exists()) {
-        return snapshot.val();
-    } else {
+    if (!localBalance) {
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('userToken');
         window.location.href = 'index.html';
+        return;
     }
+
+    //DEBUG - END OF MY CODE
 }
 
 // Get user data
+let localBalance;
+const token = localStorage.getItem('userToken');
 const userData = checkAuth();
+
+//Update online status every 1 minute
+setInterval(() => {
+    console.log("Updating last online")
+    fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+}, 60000);
 
 // Logout function
 function logout() {
@@ -48,12 +73,14 @@ function logout() {
         set(userRef, false)
             .then(() => {
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('userToken');
                 window.location.href = 'index.html';
             })
             .catch(error => {
                 console.error('Error updating online status:', error);
                 // Still logout even if updating online status fails
                 localStorage.removeItem('currentUser');
+                localStorage.removeItem('userToken');
                 window.location.href = 'index.html';
             });
     } else {
@@ -102,6 +129,7 @@ document.addEventListener('mousemove', (e) => {
 });
 document.addEventListener('click', () => {
     if (!isDoorOpen) return; // Only allow note pickup when door is open
+    //CLOUDFUNCTIONHERE
     
     const notes = Array.from(document.querySelectorAll('.banknote'));
     if (notes.length === 0) return;
@@ -148,6 +176,7 @@ let playerCredit = 0;
 let betAmount = 5;
 const displayDiv = document.querySelector('.credit-display');
 
+
 async function initializeWallet() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
@@ -155,14 +184,23 @@ async function initializeWallet() {
         return;
     }
 
-    const userRef = ref(db, 'users/' + currentUser);
-    const snapshot = await get(userRef);
-    
-    if (snapshot.exists()) {
-        const userData = snapshot.val();
-        walletBalance = userData.credits;
-        updateAvailableBills();
+    if (!localBalance) {
+        console.log("NO LOCAL BALANCE, LOGGING OUT")
+        await localBalance;
+        console.log(localBalance)
+        setTimeout(() => {
+localStorage.removeItem('currentUser');
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
+        return;
+        }, 10000);
+        
     }
+    walletBalance = localBalance.walletBalance;
+    playerCredit = localBalance.creditBalance;
+    updateAvailableBills();
+    updateCreditDisplay();
+
 }
 
 function updateCreditDisplay() {
@@ -208,6 +246,7 @@ function closeDoor() {
         cashoutButton.style.pointerEvents = 'auto';
     }, 500);
 }
+
 function calculateNotes(amount) {
     const notes = [];
     let remaining = amount;
@@ -311,6 +350,8 @@ function checkSymbolPosition(top) {
     const centerPosition = SYMBOL_HEIGHT;
     return Math.abs(top - centerPosition) < 0.5;
 }
+
+//DEBUG - GETSYMBOLSATPOSITION HAS TO BE A CLOUDFUNCTION, RETURNS THE WINNING SYMBOLS (OR NULL), NEEDS: reels, 
 
 function getSymbolsAtPosition(position) {
     return Array.from(reels).map(reel => {
@@ -500,6 +541,8 @@ async function updateStatistics(wonAmount = 0) {
         moneywon: currentStats.moneywon + wonAmount
     });
 }
+
+//DEBUG - CHECKS THE ROWS AND CHECKS FOR WINS, CLOUD FUNCTION (partially, NEEDS DECONSTRUCTION for = [playing sounds, changing slot machine display number, showing win])
 function checkWin() {
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
@@ -514,12 +557,12 @@ function checkWin() {
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
             winAmount = 9999;
-            displayDiv.textContent = `WIN:$${winAmount}!`;
+            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
             playWinSound('giant');
         } else {
             if (baseSymbol === 'icon/4.png') {
                 winAmount = 250;
-                displayDiv.textContent = `WIN: $${winAmount}!`;
+                displayDiv.textContent = `BIG WIN: $${winAmount}!`;
                 playWinSound('big');
             } else if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') {
                 winAmount = 50;
@@ -624,7 +667,10 @@ function animateReel(reel, speed, duration) {
     });
 }
 
+let canSpin, spinPositions, newCredit;
+
 async function spin() {
+    console.log('Spin lever pulled');
     if (isSpinning) {
         shakeLever();
         shakeSound();
@@ -639,36 +685,33 @@ async function spin() {
     }
     
     isSpinning = true;
-    
-    // Update credit immediately when bet is placed
     playerCredit -= betAmount;
     updateCreditDisplay();
-    
     playLeverSound();
     playLeverAnimation();
-
-    const spinPromises = Array.from(reels).map((reel, index) => {
-        const duration = 2000 + (index * 1000);
-        const speed = 4;
-        return animateReel(reel, speed, duration);
+    
+    //DEBUG - Send cloud spin request
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        },
     });
 
-    await Promise.all(spinPromises);
+    const data = await res.json();
+    console.log("Spin result:", data)
+
+    if (!data.valid) {
+        return;
+    }
+
+    //DEBUG - Play spinning animation
+
+    playerCredit += data.winAmount;
+    updateCreditDisplay();
     
     isSpinning = false;
-    const hasWon = checkWin();
-    
-    if (hasWon) {
-        const winAmount = calculateWinAmount();
-        playerCredit += winAmount;
-        
-        // After win display, update credit
-        setTimeout(() => {
-            clearCreditDisplay();
-            winText.src = '';
-            updateCreditDisplay();
-        }, 5000);
-    }
 }
 async function spawnNote(noteValue) {
     return new Promise(resolve => {
@@ -708,12 +751,25 @@ async function pickupNote(note) {
     
     // Get the value of the note and add it to wallet balance
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-    walletBalance += noteValue;
-    
-    // Update database
-    const currentUser = localStorage.getItem('currentUser');
-    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
-    
+
+    //DEBUG - CASH OUT
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ Amount: noteValue })
+    });
+                
+    const data = await res.json();
+
+    if (!data.valid) {
+        console.log("CASH OUT FAILED");
+    } else {
+        console.log("CASHOUT ADDING NOTES");
+        walletBalance += noteValue;
+    }
     updateAvailableBills();
     
     // Get the current position and size of the note
@@ -806,9 +862,25 @@ async function cashout() {
                     console.log('Sound play failed:', error);
                 });
                 // Add to credit
-                playerCredit += value;
-                updateCreditDisplay();
-                console.log(isProcessingCashout);
+                //DEBUG - SEND CASH IN CLOUD REQUEST
+                const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ amount: value })
+                });
+                
+                const data = await res.json();
+                console.log("CASH IN RESPONSE: ", data);
+                if (!data.valid) {
+                    console.log("CASH IN FAILED");
+                } else {
+                    playerCredit += value;
+                    updateCreditDisplay();
+                    console.log(isProcessingCashout);
+                }
                 // Wait before next note
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
@@ -884,8 +956,6 @@ async function transferNoteFromWallet(bill) {
     
     // Deduct from wallet and update database
     walletBalance -= value;
-    const currentUser = localStorage.getItem('currentUser');
-    await set(ref(db, 'users/' + currentUser + '/credits'), walletBalance);
     updateAvailableBills();
     
     // Rest of your existing animation code
@@ -1511,4 +1581,3 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
-
