@@ -159,7 +159,8 @@ authForm.addEventListener('submit', async (e) => {
                     statistics: {
                         slotMachine: {
                         spins: 0,
-                        moneywon: 0
+                        moneywon: 0,
+                        jackpots: 0
                         }
                     },
                     achievements: []
@@ -209,4 +210,5 @@ function trackOnlinePlayers() {
 }
 
 // Start tracking online players
+
 trackOnlinePlayers();
