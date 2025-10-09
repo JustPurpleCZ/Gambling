@@ -724,7 +724,7 @@ async function spin() {
     if (!data.valid) {
         return;
     }
-
+    /*
     let finalSymbols = [];
     let finalNumbers = Object.values(data.winSlots);
 
@@ -759,7 +759,8 @@ async function spin() {
     });
 
     await Promise.all(spinPromises);
-
+    */
+        
     playerCredit += data.winAmount;
     updateCreditDisplay();
     
@@ -1682,5 +1683,6 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 
 document.getElementById('logoutButton').addEventListener('click', logout);
+
 
 
