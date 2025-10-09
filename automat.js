@@ -17,7 +17,7 @@ async function checkAuth() {
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
 
-    if (localBalance.error = 401) {
+    if (localBalance.error == 401) {
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -1533,3 +1533,4 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 
 document.getElementById('logoutButton').addEventListener('click', logout);
+
