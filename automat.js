@@ -1,4 +1,5 @@
 const token = localStorage.getItem('userToken');
+console.log("New version :3");
 async function checkAuth() {
     if (!token) {
         window.location.href = 'index.html';
@@ -1528,6 +1529,7 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 
 document.getElementById('logoutButton').addEventListener('click', logout);
+
 
 
 
