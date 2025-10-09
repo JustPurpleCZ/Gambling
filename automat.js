@@ -155,15 +155,10 @@ async function initializeWallet() {
         return;
     }
 
-    if (!localBalance) {
-        console.log("NO LOCAL BALANCE, LOGGING OUT")
-        await localBalance;
-        console.log(localBalance)
-        setTimeout(() => {
+    if (!localBalance || !localBalance.walletBalance || !localBalance.creditBalance) {
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
-        }, 10000);
         
     }
     walletBalance = localBalance.walletBalance;
@@ -1533,6 +1528,7 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 
 document.getElementById('logoutButton').addEventListener('click', logout);
+
 
 
 
