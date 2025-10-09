@@ -1,26 +1,6 @@
-// Add to top of automat.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
-    authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com",
-    messagingSenderId: "159900206701",
-    appId: "1:159900206701:web:01223c4665df6f7377a164"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getDatabase();
+const token = localStorage.getItem('userToken');
 async function checkAuth() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
+    if (!token) {
         window.location.href = 'index.html';
         return;
     }
@@ -36,9 +16,10 @@ async function checkAuth() {
 
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
+
+    if (localBalance.error = "") {}
     
     if (!localBalance) {
-        localStorage.removeItem('currentUser');
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -49,8 +30,7 @@ async function checkAuth() {
 
 // Get user data
 let localBalance;
-const token = localStorage.getItem('userToken');
-const userData = checkAuth();
+let userData;
 
 //Update online status every 1 minute
 setInterval(() => {
@@ -66,23 +46,9 @@ setInterval(() => {
 
 // Logout function
 function logout() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-        // Update user's online status to false before logging out
-        const userRef = ref(db, 'users/' + currentUser + '/online');
-        set(userRef, false)
-            .then(() => {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userToken');
-                window.location.href = 'index.html';
-            })
-            .catch(error => {
-                console.error('Error updating online status:', error);
-                // Still logout even if updating online status fails
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userToken');
-                window.location.href = 'index.html';
-            });
+    if (token) {
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
     } else {
         window.location.href = 'index.html';
     }
@@ -178,8 +144,9 @@ const displayDiv = document.querySelector('.credit-display');
 
 
 async function initializeWallet() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
+    await checkAuth();
+
+    if (!token) {
         window.location.href = 'index.html';
         return;
     }
@@ -189,7 +156,6 @@ async function initializeWallet() {
         await localBalance;
         console.log(localBalance)
         setTimeout(() => {
-localStorage.removeItem('currentUser');
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -528,19 +494,6 @@ async function toggleMusic() {
         isMusicPlaying = false;
     }
 }
-async function updateStatistics(wonAmount = 0) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return;
-
-    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
-    const snapshot = await get(statsRef);
-    const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
-
-    await set(statsRef, {
-        spins: currentStats.spins + 1,
-        moneywon: currentStats.moneywon + wonAmount
-    });
-}
 
 //DEBUG - CHECKS THE ROWS AND CHECKS FOR WINS, CLOUD FUNCTION (partially, NEEDS DECONSTRUCTION for = [playing sounds, changing slot machine display number, showing win])
 function checkWin() {
@@ -579,7 +532,6 @@ function checkWin() {
         
         // Add to credit
         playerCredit += winAmount;
-        updateStatistics(winAmount);
         // Reset display after 5 seconds
         setTimeout(() => {
             displayDiv.classList.remove('showing-win');
@@ -588,7 +540,6 @@ function checkWin() {
         
         return true;
     }
-    updateStatistics(0);
     updateCreditDisplay();
     return false;
 }
@@ -670,7 +621,6 @@ function animateReel(reel, speed, duration) {
 let canSpin, spinPositions, newCredit;
 
 async function spin() {
-    console.log('Spin lever pulled');
     if (isSpinning) {
         shakeLever();
         shakeSound();
@@ -767,7 +717,6 @@ async function pickupNote(note) {
     if (!data.valid) {
         console.log("CASH OUT FAILED");
     } else {
-        console.log("CASHOUT ADDING NOTES");
         walletBalance += noteValue;
     }
     updateAvailableBills();
@@ -873,13 +822,11 @@ async function cashout() {
                 });
                 
                 const data = await res.json();
-                console.log("CASH IN RESPONSE: ", data);
                 if (!data.valid) {
                     console.log("CASH IN FAILED");
                 } else {
                     playerCredit += value;
                     updateCreditDisplay();
-                    console.log(isProcessingCashout);
                 }
                 // Wait before next note
                 await new Promise(resolve => setTimeout(resolve, 300));

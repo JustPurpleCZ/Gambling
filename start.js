@@ -1,7 +1,6 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // Your Firebase configuration
 const firebaseConfig = {
@@ -17,10 +16,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
-const db = getDatabase();
 
 // Check if user is already logged in
-if (localStorage.getItem('currentUser')) {
+if (localStorage.getItem('userToken')) {
     window.location.href = 'automat.html';
 }
 
@@ -89,11 +87,21 @@ authForm.addEventListener('submit', async (e) => {
             // Login with Firebase
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                localStorage.setItem('currentUser', userCredential.user.uid);
-                localStorage.setItem('userToken', userCredential.user.accessToken);
+                const token = await userCredential.user.accessToken;
+                localStorage.setItem('userToken', token);
+
+                const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                });
+
+                const data = await res.json();
                 window.location.href = 'automat.html';
             } catch (error) {
-                console.error('Login error:', error.code);
+                console.error('Login error:', error);
                 switch (error.code) {
                     case 'auth/invalid-credential':
                         errorMessage.textContent = 'Incorrect email or password';
@@ -128,46 +136,40 @@ authForm.addEventListener('submit', async (e) => {
                 return;
             }
 
-            // Check if username is already taken
-            if (displayName) {
-                const usernameRef = ref(db, 'usernames/' + displayName.toLowerCase());
-                const usernameSnapshot = await get(usernameRef);
-                
-                if (usernameSnapshot.exists()) {
-                    errorMessage.textContent = 'This username is already taken';
-                    return;
-                }
+            const res1 = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/username_check", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username: displayName || email })
+                });
+
+            const res1Data = await res1.json();
+
+            if (res1Data.Response != 0) {
+                errorMessage.textContent = res1Data.message || 'Username is already taken';
+                return;
             }
 
             try {
                 // Sign up with Firebase
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const uid = userCredential.user.uid;
-                
-                // Reserve the username if provided
-                if (displayName) {
-                    await set(ref(db, 'usernames/' + displayName.toLowerCase()), uid);
-                }
-                
-                // Create user profile in database
-                await set(ref(db, 'users/' + uid), {
-                    email,
-                    displayName: displayName || email.split('@')[0], // Use username if provided, otherwise use email prefix
-                    credits: 1000,
-                    online: true,
-                    lastSeen: Date.now(),
-                    statistics: {
-                        slotMachine: {
-                        spins: 0,
-                        moneywon: 0,
-                        jackpots: 0
-                        }
+                const token = await userCredential.user.accessToken;
+
+                const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
                     },
-                    achievements: []
+                    body: JSON.stringify({ username: displayName || email })
                 });
+
+                const data = await res.json();
                 
-                localStorage.setItem('currentUser', uid);
+                localStorage.setItem('userToken', userCredential.user.accessToken);
                 window.location.href = 'automat.html';
+
             } catch (error) {
                 console.error('Signup error:', error.code);
                 switch (error.code) {
@@ -196,19 +198,3 @@ function resetForm() {
     authForm.reset();
     errorMessage.textContent = '';
 }
-
-// Track online players
-function trackOnlinePlayers() {
-    const onlineRef = ref(db, 'users');
-    onValue(onlineRef, (snapshot) => {
-        const users = snapshot.val();
-        if (users) {
-            const onlineUsers = Object.values(users).filter(user => user.online);
-            console.log(`Online players: ${onlineUsers.length}`);
-        }
-    });
-}
-
-// Start tracking online players
-
-trackOnlinePlayers();
