@@ -1,5 +1,5 @@
+const localMode = false; // Local testing mode
 const token = localStorage.getItem('userToken');
-console.log("New version :3");
 async function checkAuth() {
     if (!token) {
         window.location.href = 'index.html';
@@ -18,7 +18,7 @@ async function checkAuth() {
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
 
-    if (localBalance.error) {
+    if (localBalance.error == 401) {
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -29,8 +29,6 @@ async function checkAuth() {
         window.location.href = 'index.html';
         return;
     }
-
-    //DEBUG - END OF MY CODE
 }
 
 // Get user data
@@ -38,16 +36,20 @@ let localBalance;
 let userData;
 
 //Update online status every 1 minute
-setInterval(() => {
-    console.log("Updating last online")
-    fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-}, 60000);
+if (!localMode) {
+    setInterval(() => {
+        console.log("Updating last online")
+        fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+            method: "GET",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+    }, 60000);
+} else {
+    console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
+}
 
 // Logout function
 function logout() {
@@ -149,6 +151,7 @@ const displayDiv = document.querySelector('.credit-display');
 
 
 async function initializeWallet() {
+    if (!localMode) {
     await checkAuth();
 
     if (!token) {
@@ -156,17 +159,28 @@ async function initializeWallet() {
         return;
     }
 
-    if (!localBalance || !localBalance.walletBalance || !localBalance.creditBalance) {
+    if (!localBalance) {
+        console.log("NO LOCAL BALANCE, LOGGING OUT")
+        await localBalance;
+        console.log(localBalance)
+        setTimeout(() => {
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
+        }, 10000);
         
     }
     walletBalance = localBalance.walletBalance;
     playerCredit = localBalance.creditBalance;
     updateAvailableBills();
     updateCreditDisplay();
-
+    } else {
+        console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
+        walletBalance = 500;
+        playerCredit = 100;
+        updateAvailableBills();
+        updateCreditDisplay();
+    }
 }
 
 function updateCreditDisplay() {
@@ -495,7 +509,7 @@ async function toggleMusic() {
     }
 }
 
-//DEBUG - CHECKS THE ROWS AND CHECKS FOR WINS, CLOUD FUNCTION (partially, NEEDS DECONSTRUCTION for = [playing sounds, changing slot machine display number, showing win])
+//DEBUG - NOW ONLY VISUAL, WIN CHECKING IS A CLOUDFUNCTION
 function checkWin() {
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
@@ -530,8 +544,6 @@ function checkWin() {
         
         displayDiv.classList.add('showing-win');
         
-        // Add to credit
-        playerCredit += winAmount;
         // Reset display after 5 seconds
         setTimeout(() => {
             displayDiv.classList.remove('showing-win');
@@ -544,17 +556,17 @@ function checkWin() {
     return false;
 }
 
-function animateReel(reel, speed, duration) {
+function animateReel(reel, speed, duration, index, finalSymbols) {
+
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
         let startTime = null;
         let isSlowingDown = false;
         let currentSpeed = speed;
-        let lastTickPosition = null;
 
         function update(timestamp) {
             if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
+            let elapsed = timestamp - startTime;
             
             if (elapsed > duration * 0.7 && !isSlowingDown) {
                 isSlowingDown = true;
@@ -579,6 +591,52 @@ function animateReel(reel, speed, duration) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
                     img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                    
+                    switch (index) {
+                        case 0:
+                            //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
+                            switch (Math.round(currentSpeed * 10) / 10) {
+                                case 2.4:
+                                    img.src = finalSymbols[0];
+                                    break;
+                                case 1.9:
+                                    img.src = finalSymbols[3];
+                                    break;
+                                case 1.5:
+                                    img.src = finalSymbols[6];
+                                    break;
+                            }
+                            break;
+                        case 1:
+                            //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
+                            switch (Math.round(currentSpeed * 10) / 10) {
+                                case 1.9:
+                                    img.src = finalSymbols[1];
+                                    break;
+                                case 1.5:
+                                    img.src = finalSymbols[4];
+                                    break;
+                                case 1.1:
+                                    img.src = finalSymbols[7];
+                                    break;
+                            }
+                            break;
+                        case 2:
+                            //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
+                            switch (Math.round(currentSpeed * 10) / 10) {
+                                case 1.5:
+                                    img.src = finalSymbols[2];
+                                    break;
+                                case 1.1:
+                                    img.src = finalSymbols[5];
+                                    break;
+                                case 0.6:
+                                    img.src = finalSymbols[8];
+                                    break;
+                            }
+                            break;
+                        
+                    }
                 }
 
                 symbol.style.top = `${top}vh`;
@@ -641,6 +699,7 @@ async function spin() {
     playLeverAnimation();
     
     //DEBUG - Send cloud spin request
+    if (!localMode) {
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
         method: "POST",
         headers: {
@@ -656,12 +715,72 @@ async function spin() {
         return;
     }
 
-    //DEBUG - Play spinning animation
+    let finalSymbols = [];
+    let finalNumbers = data.winSlots;
 
+        finalNumbers.forEach(number => {
+            switch (number) {
+                case 1:
+                    finalSymbols.push('icon/3.png');
+                    break;
+                case 2:
+                    finalSymbols.push('icon/raiden.png');
+                    break;
+                case 3:
+                    finalSymbols.push('icon/4.png');
+                    break;
+                case 4:
+                    finalSymbols.push('icon/1.png');
+                    break;
+            }
+        });
+
+    const spinPromises = Array.from(reels).map((reel, index) => {
+        const duration = 2000 + (index * 1000);
+        const speed = 4;
+        return animateReel(reel, speed, duration, index, finalSymbols);
+    });
+
+    await Promise.all(spinPromises);
+    checkWin();
     playerCredit += data.winAmount;
     updateCreditDisplay();
     
     isSpinning = false;
+    } else {
+        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
+        console.log("Spin result: none")
+
+        let finalSymbols = [];
+        let finalNumbers = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+        finalNumbers.forEach(number => {
+            switch (number) {
+                case 1:
+                    finalSymbols.push('icon/3.png');
+                    break;
+                case 2:
+                    finalSymbols.push('icon/raiden.png');
+                    break;
+                case 3:
+                    finalSymbols.push('icon/4.png');
+                    break;
+                case 4:
+                    finalSymbols.push('icon/1.png');
+                    break;
+            }
+        });
+
+        const spinPromises = Array.from(reels).map((reel, index) => {
+            const duration = 2000 + (index * 1000);
+            const speed = 4;
+            return animateReel(reel, speed, duration, index, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+        checkWin();
+        isSpinning = false;
+    }
 }
 async function spawnNote(noteValue) {
     return new Promise(resolve => {
@@ -703,23 +822,29 @@ async function pickupNote(note) {
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
 
     //DEBUG - CASH OUT
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
-        method: "POST",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ Amount: noteValue })
-    });
-                
-    const data = await res.json();
+    if (!localMode) {
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ Amount: noteValue })
+        });
+                    
+        const data = await res.json();
 
-    if (!data.valid) {
-        console.log("CASH OUT FAILED");
+        if (!data.valid) {
+            console.log("CASH OUT FAILED");
+        } else {
+            walletBalance += noteValue;
+        }
+        updateAvailableBills();
     } else {
+        console.log("LOCAL MODE, SIMULATING CASH OUT")
         walletBalance += noteValue;
+        updateAvailableBills();
     }
-    updateAvailableBills();
     
     // Get the current position and size of the note
     const noteRect = note.getBoundingClientRect();
@@ -812,19 +937,25 @@ async function cashout() {
                 });
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
-                const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": token,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ amount: value })
-                });
-                
-                const data = await res.json();
-                if (!data.valid) {
-                    console.log("CASH IN FAILED");
+                if (!localMode) {
+                    const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": token,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ amount: value })
+                    });
+                    
+                    const data = await res.json();
+                    if (!data.valid) {
+                        console.log("CASH IN FAILED");
+                    } else {
+                        playerCredit += value;
+                        updateCreditDisplay();
+                    }
                 } else {
+                    console.log("LOCAL MODE, SIMULATING CASH IN")
                     playerCredit += value;
                     updateCreditDisplay();
                 }
@@ -1527,11 +1658,4 @@ reels.forEach(initializeReel);
 // Event listeners
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
-
 document.getElementById('logoutButton').addEventListener('click', logout);
-
-
-
-
-
-
