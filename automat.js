@@ -716,7 +716,7 @@ async function spin() {
     }
 
     let finalSymbols = [];
-    let finalNumbers = data.winSlots;
+    let finalNumbers = await data.winSlots;
 
         finalNumbers.forEach(number => {
             switch (number) {
