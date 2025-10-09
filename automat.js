@@ -1,4 +1,4 @@
-const localMode = true; // Local testing mode
+const localMode = false; // Local testing mode
 const token = localStorage.getItem('userToken');
 async function checkAuth() {
     if (!token) {
@@ -1680,4 +1680,5 @@ reels.forEach(initializeReel);
 // Event listeners
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
+
 document.getElementById('logoutButton').addEventListener('click', logout);
