@@ -726,7 +726,7 @@ async function spin() {
     }
 
     let finalSymbols = [];
-    let finalNumbers = data.winSlots;
+    finalNumbers = Object.values(data.winSlots);
 
     console.log("raw funal numbers data", data.winSlots)
     console.log("Final numbers", finalNumbers)
@@ -1682,3 +1682,4 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 
 document.getElementById('logoutButton').addEventListener('click', logout);
+
