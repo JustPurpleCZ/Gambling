@@ -1,4 +1,4 @@
-const localMode = false; // Local testing mode
+const localMode = true; // Local testing mode
 const token = localStorage.getItem('userToken');
 async function checkAuth() {
     if (!token) {
@@ -590,52 +590,59 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
-                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                     
                     switch (index) {
                         case 0:
-                            //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
-                            switch (Math.round(currentSpeed * 10) / 10) {
-                                case 2.4:
-                                    img.src = finalSymbols[0];
-                                    break;
-                                case 1.9:
-                                    img.src = finalSymbols[3];
-                                    break;
-                                case 1.5:
-                                    img.src = finalSymbols[6];
-                                    break;
+                            if (Math.round(currentSpeed * 10) / 10 <= 2.5) {
+                                //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
+                                switch (reel1stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[0];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[3];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[6];
+                                        break;
+                                }
+                                reel1stopIndex++;
                             }
                             break;
                         case 1:
-                            //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
-                            switch (Math.round(currentSpeed * 10) / 10) {
-                                case 1.9:
-                                    img.src = finalSymbols[1];
-                                    break;
-                                case 1.5:
-                                    img.src = finalSymbols[4];
-                                    break;
-                                case 1.1:
-                                    img.src = finalSymbols[7];
-                                    break;
+                            if (Math.round(currentSpeed * 10) / 10 <= 2) {
+                                //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
+                                switch (reel2stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[0];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[3];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[6];
+                                        break;
+                                }
+                                reel2stopIndex++;
                             }
                             break;
                         case 2:
-                            //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
-                            switch (Math.round(currentSpeed * 10) / 10) {
-                                case 1.5:
-                                    img.src = finalSymbols[2];
-                                    break;
-                                case 1.1:
-                                    img.src = finalSymbols[5];
-                                    break;
-                                case 0.6:
-                                    img.src = finalSymbols[8];
-                                    break;
+                            if (Math.round(currentSpeed * 10) / 10 <= 1.5) {
+                                //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
+                                switch (reel3stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[0];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[3];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[6];
+                                        break;
+                                }
+                                reel3stopIndex++;
                             }
                             break;
-                        
                     }
                 }
 
@@ -677,6 +684,9 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
 }
 
 let canSpin, spinPositions, newCredit;
+let reel1stopIndex = 0;
+let reel2stopIndex = 0;
+let reel3stopIndex = 0;
 
 async function spin() {
     if (isSpinning) {
@@ -716,7 +726,10 @@ async function spin() {
     }
 
     let finalSymbols = [];
-    let finalNumbers = await data.winSlots;
+    let finalNumbers = data.winSlots;
+
+    console.log("raw funal numbers data", data.winSlots)
+    console.log("Final numbers", finalNumbers)
 
         finalNumbers.forEach(number => {
             switch (number) {
@@ -735,6 +748,10 @@ async function spin() {
             }
         });
 
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
     const spinPromises = Array.from(reels).map((reel, index) => {
         const duration = 2000 + (index * 1000);
         const speed = 4;
@@ -742,7 +759,7 @@ async function spin() {
     });
 
     await Promise.all(spinPromises);
-    checkWin();
+
     playerCredit += data.winAmount;
     updateCreditDisplay();
     
@@ -771,6 +788,10 @@ async function spin() {
             }
         });
 
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
         const spinPromises = Array.from(reels).map((reel, index) => {
             const duration = 2000 + (index * 1000);
             const speed = 4;
@@ -779,6 +800,7 @@ async function spin() {
 
         await Promise.all(spinPromises);
         checkWin();
+
         isSpinning = false;
     }
 }
