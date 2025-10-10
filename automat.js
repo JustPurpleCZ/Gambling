@@ -7,7 +7,6 @@ async function checkAuth() {
     }
     
     //DEBUG - TOKEN SHENANIGANS
-    try {
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -18,11 +17,6 @@ async function checkAuth() {
 
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
-    } catch (e) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-        return;
-    }
 
     console.log(localBalance.status);
     
