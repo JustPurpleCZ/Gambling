@@ -593,10 +593,11 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                     
                     switch (index) {
                         case 0:
-                            if (Math.round(currentSpeed * 10) / 10 <= 2.5) {
+                            if (Math.round(currentSpeed * 10) / 10 <= 2.4) {
                                 //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
                                 switch (reel1stopIndex) {
                                     case 0:
+                                        currentSpeed = 2.4
                                         img.src = finalSymbols[0];
                                         break;
                                     case 1:
@@ -607,13 +608,16 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                 }
                                 reel1stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                             }
                             break;
                         case 1:
-                            if (Math.round(currentSpeed * 10) / 10 <= 2) {
+                            if (Math.round(currentSpeed * 10) / 10 <= 1.9) {
                                 //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
                                 switch (reel2stopIndex) {
                                     case 0:
+                                        currentSpeed = 1.9
                                         img.src = finalSymbols[0];
                                         break;
                                     case 1:
@@ -624,13 +628,17 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                 }
                                 reel2stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                             }
                             break;
                         case 2:
-                            if (Math.round(currentSpeed * 10) / 10 <= 1.5) {
+                            if (Math.round(currentSpeed * 10) / 10 <= 1.6) {
                                 //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
+                                console.log(index, "reel doing shi at speed", currentSpeed)
                                 switch (reel3stopIndex) {
                                     case 0:
+                                        currentSpeed = 1.5
                                         img.src = finalSymbols[0];
                                         break;
                                     case 1:
@@ -641,6 +649,8 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                 }
                                 reel3stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                             }
                             break;
                     }
@@ -724,7 +734,7 @@ async function spin() {
     if (!data.valid) {
         return;
     }
-    /*
+
     let finalSymbols = [];
     let finalNumbers = Object.values(data.winSlots);
 
@@ -759,8 +769,7 @@ async function spin() {
     });
 
     await Promise.all(spinPromises);
-    */
-        
+
     playerCredit += data.winAmount;
     updateCreditDisplay();
     
@@ -770,7 +779,7 @@ async function spin() {
         console.log("Spin result: none")
 
         let finalSymbols = [];
-        let finalNumbers = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+        let finalNumbers = [1, 1, 1, 3, 3, 3, 1, 1, 1];
 
         finalNumbers.forEach(number => {
             switch (number) {
@@ -1681,8 +1690,4 @@ reels.forEach(initializeReel);
 // Event listeners
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
-
 document.getElementById('logoutButton').addEventListener('click', logout);
-
-
-
