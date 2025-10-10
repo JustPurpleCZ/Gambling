@@ -618,13 +618,13 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                 switch (reel2stopIndex) {
                                     case 0:
                                         currentSpeed = 1.9
-                                        img.src = finalSymbols[0];
+                                        img.src = finalSymbols[1];
                                         break;
                                     case 1:
-                                        img.src = finalSymbols[3];
+                                        img.src = finalSymbols[4];
                                         break;
                                     case 2:
-                                        img.src = finalSymbols[6];
+                                        img.src = finalSymbols[7];
                                         break;
                                 }
                                 reel2stopIndex++;
@@ -635,17 +635,16 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                         case 2:
                             if (Math.round(currentSpeed * 10) / 10 <= 1.6) {
                                 //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
-                                console.log(index, "reel doing shi at speed", currentSpeed)
                                 switch (reel3stopIndex) {
                                     case 0:
                                         currentSpeed = 1.5
-                                        img.src = finalSymbols[0];
+                                        img.src = finalSymbols[2];
                                         break;
                                     case 1:
-                                        img.src = finalSymbols[3];
+                                        img.src = finalSymbols[5];
                                         break;
                                     case 2:
-                                        img.src = finalSymbols[6];
+                                        img.src = finalSymbols[8];
                                         break;
                                 }
                                 reel3stopIndex++;
@@ -779,7 +778,7 @@ async function spin() {
         console.log("Spin result: none")
 
         let finalSymbols = [];
-        let finalNumbers = [1, 1, 1, 3, 3, 3, 1, 1, 1];
+        let finalNumbers = [1, 2, 3, 4, 1, 2, 3, 4, 1];
 
         finalNumbers.forEach(number => {
             switch (number) {
