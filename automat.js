@@ -24,11 +24,7 @@ async function checkAuth() {
         return;
     }
 
-    if (localBalance.status != 200) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-        return;
-    }
+    console.log(localBalance.status);
     
     if (!localBalance) {
         localStorage.removeItem('userToken');
@@ -1693,3 +1689,4 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
+
