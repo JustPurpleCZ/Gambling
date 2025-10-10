@@ -737,9 +737,6 @@ async function spin() {
     let finalSymbols = [];
     let finalNumbers = Object.values(data.winSlots);
 
-    console.log("raw funal numbers data", data.winSlots)
-    console.log("Final numbers", finalNumbers)
-
         finalNumbers.forEach(number => {
             switch (number) {
                 case 1:
@@ -768,7 +765,7 @@ async function spin() {
     });
 
     await Promise.all(spinPromises);
-
+    checkWin()
     playerCredit += data.winAmount;
     updateCreditDisplay();
     
