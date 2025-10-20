@@ -96,6 +96,7 @@ authForm.addEventListener('submit', async (e) => {
                         "Authorization": token,
                         "Content-Type": "application/json"
                     },
+                    body: JSON.stringify({ username: displayName || email })
                 });
 
                 const data = await res.json();
@@ -200,3 +201,4 @@ function resetForm() {
     errorMessage.textContent = '';
 
 }
+
