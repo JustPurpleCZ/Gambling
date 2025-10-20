@@ -96,7 +96,7 @@ authForm.addEventListener('submit', async (e) => {
                         "Authorization": token,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ username: displayName || email })
+                    body: JSON.stringify({ username: displayName})
                 });
 
                 const data = await res.json();
@@ -143,7 +143,7 @@ authForm.addEventListener('submit', async (e) => {
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ username: displayName || email })
+                    body: JSON.stringify({ username: displayName})
                 });
 
             const res1Data = await res1.json();
@@ -164,7 +164,7 @@ authForm.addEventListener('submit', async (e) => {
                         "Authorization": token,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ username: displayName || email })
+                    body: JSON.stringify({ username: displayName})
                 });
 
                 const data = await res.json();
@@ -201,4 +201,5 @@ function resetForm() {
     errorMessage.textContent = '';
 
 }
+
 
