@@ -99,7 +99,8 @@ authForm.addEventListener('submit', async (e) => {
                 });
 
                 const data = await res.json();
-                window.location.href = 'automat.html';
+                console.log(data);
+                //window.location.href = 'automat.html';
             } catch (error) {
                 console.error('Login error:', error);
                 switch (error.code) {
@@ -197,4 +198,5 @@ authForm.addEventListener('submit', async (e) => {
 function resetForm() {
     authForm.reset();
     errorMessage.textContent = '';
+
 }
