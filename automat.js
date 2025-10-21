@@ -1,12 +1,33 @@
-const localMode = false; // Local testing mode
 const token = localStorage.getItem('userToken');
+
+//Check for local mode (testing purporses)
+let localMode = false;
+if (token && token == 1) {
+    localMode = true;
+}
 async function checkAuth() {
     if (!token) {
         window.location.href = 'index.html';
         return;
     }
     
+    //O - validate token
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    const tokenValid = await res;
+    if (!tokenValid.tokenValid) {
+        localStorage.clear;
+        window.location.href = "index.html";
+    }
+
     //DEBUG - TOKEN SHENANIGANS
+    try {
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -17,8 +38,17 @@ async function checkAuth() {
 
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
+    } catch (e) {
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
+        return;
+    }
 
-    console.log(localBalance.status);
+    if (localBalance.status != 200) {
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
+        return;
+    }
     
     if (!localBalance) {
         localStorage.removeItem('userToken');
@@ -47,14 +77,9 @@ if (!localMode) {
     console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
 }
 
-// Logout function
+// Exit function (formerly logout)
 function logout() {
-    if (token) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-    } else {
-        window.location.href = 'index.html';
-    }
+    window.location.href = "navigation.html";
 }
 const symbolImages = [
     'icon/1.png',
@@ -552,6 +577,49 @@ function checkWin() {
     return false;
 }
 
+function spinAnimation(reel, speed = 4, duration, index, finalSymbols) {
+    return new Promise(resolve =>{
+        let passed = 0;
+        let stopNow = false;
+        let currentSpeed = speed;
+        let slowingDown = false;
+        const symbols = Array.from(reel.children);
+
+
+        function move() {
+            if (passed >= duration && !slowingDown) {
+                slowingDown = true;
+            }
+
+            if (slowingDown) {
+                currentSpeed -= 0.25;
+            }
+
+            symbols.forEach(symbol => {
+                //Move the symbol
+                let top = parseFloat(symbol.style.top);
+                const previousTop = top;
+                top += currentSpeed;
+
+                //Check if symbol passed the center
+                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) || (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                    playTickSound();
+                }
+
+                //Check if symbol should snap back to the top
+                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                    const img = symbol.querySelector('img');
+                    passed ++;
+                    if (slowingDown) {
+                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25);
+                    }
+                }
+            })
+        }
+    });
+}
+
 function animateReel(reel, speed, duration, index, finalSymbols) {
 
     return new Promise(resolve => {
@@ -559,17 +627,16 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
         let startTime = null;
         let isSlowingDown = false;
         let currentSpeed = speed;
+        let passed = 0;
+        let stopNow = false;
+        let stopperCounter = 0;
 
         function update(timestamp) {
             if (!startTime) startTime = timestamp;
             let elapsed = timestamp - startTime;
             
-            if (elapsed > duration * 0.7 && !isSlowingDown) {
+            if (passed > duration && !isSlowingDown) {
                 isSlowingDown = true;
-            }
-
-            if (isSlowingDown) {
-                currentSpeed = Math.max(0.05, currentSpeed * 0.97);
             }
 
             symbols.forEach(symbol => {
@@ -581,19 +648,22 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                 if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
                     (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
                     playTickSound();
+
+                    if (isSlowingDown) {
+                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25)
+                    }
                 }
 
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
-                    
+                    passed++;
                     switch (index) {
                         case 0:
-                            if (Math.round(currentSpeed * 10) / 10 <= 2.4) {
+                            if (currentSpeed < 0.3) {
                                 //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
                                 switch (reel1stopIndex) {
                                     case 0:
-                                        currentSpeed = 2.4
                                         img.src = finalSymbols[0];
                                         break;
                                     case 1:
@@ -601,6 +671,7 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                     case 2:
                                         img.src = finalSymbols[6];
+                                        currentSpeed = 0;
                                         break;
                                 }
                                 reel1stopIndex++;
@@ -609,11 +680,10 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                             }
                             break;
                         case 1:
-                            if (Math.round(currentSpeed * 10) / 10 <= 1.9) {
+                            if (currentSpeed < 0.3) {
                                 //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
                                 switch (reel2stopIndex) {
                                     case 0:
-                                        currentSpeed = 1.9
                                         img.src = finalSymbols[1];
                                         break;
                                     case 1:
@@ -621,6 +691,7 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                     case 2:
                                         img.src = finalSymbols[7];
+                                        currentSpeed = 0;
                                         break;
                                 }
                                 reel2stopIndex++;
@@ -629,11 +700,12 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                             }
                             break;
                         case 2:
-                            if (Math.round(currentSpeed * 10) / 10 <= 1.6) {
+                            console.log("skibidi", currentSpeed)
+                            if (currentSpeed < 1) {
                                 //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
+                                console.log("IT HAPPENED")
                                 switch (reel3stopIndex) {
                                     case 0:
-                                        currentSpeed = 1.5
                                         img.src = finalSymbols[2];
                                         break;
                                     case 1:
@@ -641,6 +713,7 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                                         break;
                                     case 2:
                                         img.src = finalSymbols[8];
+                                        currentSpeed = 0;
                                         break;
                                 }
                                 reel3stopIndex++;
@@ -654,10 +727,9 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                 symbol.style.top = `${top}vh`;
             });
 
-            if (elapsed < duration) {
+            if (!stopNow) {
                 requestAnimationFrame(update);
             } else {
-                // Previous stopping logic remains the same...
                 const firstSymbol = symbols[0];
                 const currentOffset = parseFloat(firstSymbol.style.top);
                 const targetOffset = Math.round(currentOffset / SYMBOL_HEIGHT) * SYMBOL_HEIGHT;
@@ -755,7 +827,7 @@ async function spin() {
         reel3stopIndex = 0;
 
     const spinPromises = Array.from(reels).map((reel, index) => {
-        const duration = 2000 + (index * 1000);
+        const duration = 20 + (index * 10);
         const speed = 4;
         return animateReel(reel, speed, duration, index, finalSymbols);
     });
@@ -771,7 +843,7 @@ async function spin() {
         console.log("Spin result: none")
 
         let finalSymbols = [];
-        let finalNumbers = [1, 2, 3, 4, 1, 2, 3, 4, 1];
+        let finalNumbers = [1, 2, 3, 1, 2, 3, 1, 2, 3];
 
         finalNumbers.forEach(number => {
             switch (number) {
@@ -795,7 +867,7 @@ async function spin() {
         reel3stopIndex = 0;
 
         const spinPromises = Array.from(reels).map((reel, index) => {
-            const duration = 2000 + (index * 1000);
+        const duration = 40 + (index * 20);
             const speed = 4;
             return animateReel(reel, speed, duration, index, finalSymbols);
         });
@@ -1683,4 +1755,3 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
-
