@@ -134,6 +134,7 @@ machines.forEach((machine) => {
     const img = machine.querySelector('img');
     if (img) {
         const name = img.getAttribute('src').split("/").pop().replace(/_icon\.png$/, '');
-
     }
 });
+
+//:3
