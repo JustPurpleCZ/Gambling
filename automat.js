@@ -22,7 +22,7 @@ async function checkAuth() {
 
     const tokenValid = await res;
     if (!tokenValid.tokenValid) {
-        localStorage.clear;
+        localStorage.removeItem("userToken");
         window.location.href = "index.html";
     }
 
@@ -77,7 +77,7 @@ if (!localMode) {
     console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
 }
 
-// Exit function (formerly logout)
+// O - Exit function (formerly logout)
 function logout() {
     window.location.href = "navigation.html";
 }

@@ -125,12 +125,13 @@ async function setUnlocks() {
 }
 
 if (!token) {
-    localStorage.clear;
+    localStorage.removeItem("userToken");
     window.location.href = "index.html";
 } else if (token == 1) {
     unlocks = {"slotMachine": true, "wheelOfFortune": false, "dices": false}
     console.log("local mode");
 } else {
+    console.log(token);
     setUnlocks();
 }
 
