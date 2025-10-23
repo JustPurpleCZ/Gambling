@@ -107,7 +107,7 @@ setInitialState();
 });
 
 //O - unlocked places checking
-const machines = document.querySelectorAll(".destination-item");
+const machines = document.querySelectorAll(".unavailable");
 const token = localStorage.getItem("userToken");
 let unlocks = {};
 
@@ -121,20 +121,48 @@ async function setUnlocks() {
     });
 
     const unlocks = await res;
-    console.log(unlocks)
+    console.log(unlocks);
 }
 
-setUnlocks();
 if (!token) {
     localStorage.clear;
     window.location.href = "index.html";
+} else if (token == 1) {
+    unlocks = {"slotMachine": true, "wheelOfFortune": false, "dices": false}
+    console.log("local mode");
+} else {
+    setUnlocks();
 }
 
 machines.forEach((machine) => {
+    let name;
     const img = machine.querySelector('img');
     if (img) {
-        const name = img.getAttribute('src').split("/").pop().replace(/_icon\.png$/, '');
+        name = img.getAttribute('src').split("/").pop().replace(/_icon\.png$/, '');
+        console.log(name)
+    }
+    switch (name) {
+        case "automat":
+            if (unlocks["slotMachine"]) {
+                machine.classList.remove("unavailable");
+                machine.classList.add("destination-item");
+                console.log("Slot machine unlocked");
+                machine.addEventListener("click", () => {
+                    window.location.href = "automat.html";
+                })
+            }
+            break;
+        case "wheel":
+            if (unlocks["wheelOfFortune"]) {
+                machine.classList.remove("unavailable");
+                console.log("Wheel of fortune unlocked");
+            }
+            break;
+        case "dices":
+            if (unlocks["dices"]) {
+                machine.classList.remove("unavailable");
+                console.log("Dices unlocked");
+            }
+            break;
     }
 });
-
-//:3

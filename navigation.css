@@ -98,8 +98,17 @@
         }
 
         /* Class to toggle visibility of the overlay */
-        .unavailable .overlay {
-            opacity: 1;
+        .unavailable {
+            filter: opacity(0.3);
+            position: relative;
+            width: var(--base-icon-size);
+            height: var(--base-icon-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition-speed) ease-out;
+            will-change: transform;
+            transition: filter 0.3s ease;
         }
 
         /* Onboarding hint */
