@@ -128,7 +128,7 @@ if (!token) {
     localStorage.removeItem("userToken");
     window.location.href = "index.html";
 } else if (token == 1) {
-    unlocks = {"slotMachine": true, "wheelOfFortune": false, "dices": false}
+    unlocks = {"slotMachine": true, "wheelOfFortune": true, "dices": false}
     console.log("local mode");
 } else {
     console.log(token);
@@ -140,7 +140,6 @@ machines.forEach((machine) => {
     const img = machine.querySelector('img');
     if (img) {
         name = img.getAttribute('src').split("/").pop().replace(/_icon\.png$/, '');
-        console.log(name)
     }
     switch (name) {
         case "automat":
@@ -156,14 +155,35 @@ machines.forEach((machine) => {
         case "wheel":
             if (unlocks["wheelOfFortune"]) {
                 machine.classList.remove("unavailable");
+                machine.classList.add("destination-item");
                 console.log("Wheel of fortune unlocked");
+                machine.addEventListener("click", () => {
+                    //window.location.href = "wheel.html";
+                    console.log("no wheel page yet");
+                })
             }
             break;
         case "dices":
             if (unlocks["dices"]) {
                 machine.classList.remove("unavailable");
+                machine.classList.add("destination-item");
                 console.log("Dices unlocked");
+                machine.addEventListener("click", () => {
+                    //window.location.href = "dices.html";
+                    console.log("no dices page yet");
+                })
             }
             break;
     }
 });
+
+function logout() {
+    localStorage.removeItem("userToken");
+    window.location.href = "index.html";
+}
+
+window.addEventListener("keydown", (key) => {
+    if (key.key === "l") {
+        logout();
+    }
+})
