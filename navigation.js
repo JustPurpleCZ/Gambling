@@ -113,7 +113,7 @@ let unlocks = {};
 
 async function setUnlocks() {
     const res = await fetch("https://get-unlocks-gtw5ppnvta-ey.a.run.app", {
-        method: "GET",
+        method: "POST",
         headers: {
             "Authorization": token,
             "Content-Type": "application/json"
