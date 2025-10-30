@@ -22,8 +22,11 @@ async function checkAuth() {
 
     const tokenValid = await res;
     if (!tokenValid.tokenValid) {
-        localStorage.removeItem("userToken");
-        window.location.href = "index.html";
+        console.log(tokenValid.tokenValid);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
     }
 
     //DEBUG - TOKEN SHENANIGANS
@@ -39,20 +42,20 @@ async function checkAuth() {
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
     } catch (e) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-        return;
-    }
-
-    if (localBalance.status != 200) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
+        console.log("Error fetching balance:", e);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
         return;
     }
     
     if (!localBalance) {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
+        console.log("NO BALANCE, LOGGING OUT");
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
         return;
     }
 }

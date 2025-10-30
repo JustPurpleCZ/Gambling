@@ -105,8 +105,7 @@ authForm.addEventListener('submit', async (e) => {
                 });
 
                 const data = await res.json();
-                console.log(data);
-                window.location.href = 'automat.html';
+                window.location.href = 'navigation.html';
             } catch (error) {
                 console.error('Login error:', error);
                 switch (error.code) {
@@ -174,8 +173,8 @@ authForm.addEventListener('submit', async (e) => {
 
                 const data = await res.json();
                 
-                localStorage.setItem('userToken', userCredential.user.accessToken);
-                window.location.href = 'automat.html';
+                localStorage.setItem('userToken', token);
+                window.location.href = 'navigation.html';
 
             } catch (error) {
                 console.error('Signup error:', error.code);
