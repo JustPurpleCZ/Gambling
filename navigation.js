@@ -121,7 +121,6 @@ async function setUnlocks() {
     });
 
     const response = await res.json();
-    console.log("Unlocks response:", JSON.parse(JSON.stringify(response)));
     unlocks["slotMachine"] = response.unlocks.slotMachine;
     unlocks["wheelOfFortune"] = response.unlocks.wheelOfFortune;
     unlocks["dices"] = response.unlocks.dices;
@@ -146,7 +145,8 @@ machines.forEach((machine) => {
     }
     switch (name) {
         case "automat":
-            if (unlocks.slotMachine) {
+            console.log(unlocks["slotMachine"]);
+            if (unlocks["slotMachine"]) {
                 machine.classList.remove("unavailable");
                 machine.classList.add("destination-item");
                 console.log("Slot machine unlocked");
@@ -156,7 +156,7 @@ machines.forEach((machine) => {
             }
             break;
         case "wheel":
-            if (unlocks.wheelOfFortune) {
+            if (unlocks["wheelOfFortune"]) {
                 machine.classList.remove("unavailable");
                 machine.classList.add("destination-item");
                 console.log("Wheel of fortune unlocked");
@@ -167,7 +167,7 @@ machines.forEach((machine) => {
             }
             break;
         case "dices":
-            if (unlocks.dices) {
+            if (unlocks["dices"]) {
                 machine.classList.remove("unavailable");
                 machine.classList.add("destination-item");
                 console.log("Dices unlocked");
