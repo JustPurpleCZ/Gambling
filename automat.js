@@ -20,10 +20,10 @@ async function checkAuth() {
         }
     });
 
-    const tokenValid = await res;
+    const tokenValid = await res.json();
     console.log("Token validity response: ", tokenValid);
-    if (tokenValid.status != 200) {
-        console.log("Token valid: ", tokenValid.status);
+    if (!tokenValid.tokenValid) {
+        console.log("Token valid: ", tokenValid.tokenValid);
         setTimeout(() => {
             localStorage.removeItem("userToken");
             window.location.href = "index.html";
@@ -1772,7 +1772,7 @@ async function setUnlocks() {
         }
     });
 
-    const unlocks = await res;
+    const unlocks = await res.json();
     console.log("Unlocks: ", unlocks, unlocks.status);
 }
 
