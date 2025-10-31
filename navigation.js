@@ -131,7 +131,6 @@ if (!token) {
     unlocks = {"slotMachine": true, "wheelOfFortune": true, "dices": false}
     console.log("local mode");
 } else {
-    console.log(token);
     setUnlocks();
 }
 

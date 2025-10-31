@@ -1741,9 +1741,6 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-
-
-
 cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
     initializeWallet();
@@ -1758,3 +1755,22 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
+
+async function setUnlocks() {
+    const res = await fetch("https://get-unlocks-gtw5ppnvta-ey.a.run.app", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    const unlocks = await res;
+    console.log("Unlocks: ", unlocks);
+}
+
+window.addEventListener("keydown", (key) => {
+    if (key.key === "l") {
+        setUnlocks();
+    }
+})
