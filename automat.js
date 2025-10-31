@@ -789,7 +789,7 @@ async function spin() {
     playLeverSound();
     playLeverAnimation();
     
-    //DEBUG - Send cloud spin request
+    //Send cloud spin request
     if (!localMode) {
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
         method: "POST",
@@ -803,6 +803,8 @@ async function spin() {
     console.log("Spin result:", data)
 
     if (!data.valid) {
+        initializeWallet();
+        isSpinning = false;
         return;
     }
 
@@ -830,6 +832,8 @@ async function spin() {
         reel2stopIndex = 0;
         reel3stopIndex = 0;
 
+        //Spin animation temporarily disabled
+        /*
     const spinPromises = Array.from(reels).map((reel, index) => {
         const duration = 20 + (index * 10);
         const speed = 4;
@@ -837,6 +841,8 @@ async function spin() {
     });
 
     await Promise.all(spinPromises);
+    */
+
     checkWin()
     playerCredit += data.winAmount;
     updateCreditDisplay();
