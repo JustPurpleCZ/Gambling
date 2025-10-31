@@ -120,11 +120,11 @@ async function setUnlocks() {
         }
     });
 
-    const response = await res.json().unlocks;
-    console.log("Unlocks response:", response);
-    unlocks["slotMachine"] = response.slotMachine;
-    unlocks["wheelOfFortune"] = response.wheelOfFortune;
-    unlocks["dices"] = response.dices;
+    const response = await res.json();
+    console.log("Unlocks response:", response.unlocks);
+    unlocks["slotMachine"] = response.unlocks.slotMachine;
+    unlocks["wheelOfFortune"] = response.unlocks.wheelOfFortune;
+    unlocks["dices"] = response.unlocks.dices;
     console.log(unlocks);
 }
 
