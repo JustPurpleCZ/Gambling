@@ -21,12 +21,13 @@ async function checkAuth() {
     });
 
     const tokenValid = await res;
+    console.log("Token validity response: ", tokenValid);
     if (!tokenValid.tokenValid) {
-        console.log(tokenValid.tokenValid);
+        console.log("Token valid: ", tokenValid.tokenValid);
         setTimeout(() => {
             localStorage.removeItem("userToken");
             window.location.href = "index.html";
-        }, 5000);
+        }, 20000);
     }
 
     //DEBUG - TOKEN SHENANIGANS
