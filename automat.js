@@ -22,8 +22,8 @@ async function checkAuth() {
 
     const tokenValid = await res;
     console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token valid: ", tokenValid.tokenValid);
+    if (tokenValid.status != 200) {
+        console.log("Token valid: ", tokenValid.status);
         setTimeout(() => {
             localStorage.removeItem("userToken");
             window.location.href = "index.html";
