@@ -145,9 +145,9 @@ machines.forEach((machine) => {
     if (img) {
         name = img.getAttribute('src').split("/").pop().replace(/_icon\.png$/, '');
     }
+    console.log("Checking unlock for: ", name);
     switch (name) {
         case "automat":
-            console.log(unlocks["slotMachine"]);
             if (unlocks["slotMachine"]) {
                 machine.classList.remove("unavailable");
                 machine.classList.add("destination-item");
