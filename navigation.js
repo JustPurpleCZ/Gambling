@@ -121,7 +121,7 @@ async function setUnlocks() {
     });
 
     const response = await res.json();
-    console.log("Unlocks response:", JSON.parse(response));
+    console.log("Unlocks response:", JSON.parse(JSON.stringify(response)));
     unlocks["slotMachine"] = response.unlocks.slotMachine;
     unlocks["wheelOfFortune"] = response.unlocks.wheelOfFortune;
     unlocks["dices"] = response.unlocks.dices;
