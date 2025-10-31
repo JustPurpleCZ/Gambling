@@ -1762,22 +1762,3 @@ reels.forEach(initializeReel);
 document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
-
-async function setUnlocks() {
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocked", {
-        method: "POST",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-
-    const unlocks = await res.json();
-    console.log("Unlocks: ", unlocks, unlocks.status);
-}
-
-window.addEventListener("keydown", (key) => {
-    if (key.key === "l") {
-        setUnlocks();
-    }
-})

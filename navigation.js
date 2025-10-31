@@ -120,7 +120,7 @@ async function setUnlocks() {
         }
     });
 
-    const unlocks = await res.json();
+    unlocks = await res.json();
     console.log(unlocks);
 }
 
