@@ -112,7 +112,7 @@ const token = localStorage.getItem("userToken");
 let unlocks = {};
 
 async function setUnlocks() {
-    const res = await fetch("https://get-unlocks-gtw5ppnvta-ey.a.run.app", {
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocked", {
         method: "POST",
         headers: {
             "Authorization": token,

@@ -1764,7 +1764,7 @@ musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
 
 async function setUnlocks() {
-    const res = await fetch("https://get-unlocks-gtw5ppnvta-ey.a.run.app", {
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocked", {
         method: "POST",
         headers: {
             "Authorization": token,
@@ -1773,7 +1773,7 @@ async function setUnlocks() {
     });
 
     const unlocks = await res;
-    console.log("Unlocks: ", unlocks);
+    console.log("Unlocks: ", unlocks, unlocks.status);
 }
 
 window.addEventListener("keydown", (key) => {
