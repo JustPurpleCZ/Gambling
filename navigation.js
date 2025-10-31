@@ -121,8 +121,7 @@ async function setUnlocks() {
     });
 
     const response = await res.json();
-    unlocks = JSON.parse(JSON.stringify(response)).unlocks;
-    console.log(unlocks);
+    console.log("Unlocks response:", JSON.parse(JSON.stringify(response)));
 }
 
 if (!token) {
