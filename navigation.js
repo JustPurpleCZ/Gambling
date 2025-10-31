@@ -125,6 +125,8 @@ async function setUnlocks() {
     unlocks["wheelOfFortune"] = response.unlocks.wheelOfFortune;
     unlocks["dices"] = response.unlocks.dices;
     console.log(unlocks);
+    console.log(unlocks["slotMachine"]);
+    console.log(unlocks.slotMachine);
 }
 
 if (!token) {
