@@ -581,66 +581,36 @@ function checkWin() {
     return false;
 }
 
-function spinAnimation(reel, speed = 4, duration, index, finalSymbols) {
-    return new Promise(resolve =>{
-        let passed = 0;
-        let stopNow = false;
-        let currentSpeed = speed;
-        let slowingDown = false;
-        const symbols = Array.from(reel.children);
+// Global/shared state for reel stopping
+let reel1stopIndex = 0;
+let reel2stopIndex = 0;
+let reel3stopIndex = 0;
 
-
-        function move() {
-            if (passed >= duration && !slowingDown) {
-                slowingDown = true;
-            }
-
-            if (slowingDown) {
-                currentSpeed -= 0.25;
-            }
-
-            symbols.forEach(symbol => {
-                //Move the symbol
-                let top = parseFloat(symbol.style.top);
-                const previousTop = top;
-                top += currentSpeed;
-
-                //Check if symbol passed the center
-                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) || (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
-                    playTickSound();
-                }
-
-                //Check if symbol should snap back to the top
-                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                    const img = symbol.querySelector('img');
-                    passed ++;
-                    if (slowingDown) {
-                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25);
-                    }
-                }
-            })
-        }
-    });
-}
-
+/**
+ * THIS FUNCTION IS REPLACED
+ * It uses the time-based animation logic from your paste,
+ * but is modified to accept finalSymbols from the server
+ * and "slide them in" as it slows down.
+ */
 function animateReel(reel, speed, duration, index, finalSymbols) {
-
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
         let startTime = null;
         let isSlowingDown = false;
         let currentSpeed = speed;
-        let passed = 0;
-        let stopNow = false;
-        let stopperCounter = 0;
 
         function update(timestamp) {
             if (!startTime) startTime = timestamp;
-            let elapsed = timestamp - startTime;
+            const elapsed = timestamp - startTime;
             
-            if (passed > duration && !isSlowingDown) {
+            // Use time-based logic to start slowing down
+            if (elapsed > duration * 0.7 && !isSlowingDown) {
                 isSlowingDown = true;
+            }
+
+            // Use time-based slowdown logic
+            if (isSlowingDown) {
+                currentSpeed = Math.max(0.05, currentSpeed * 0.97);
             }
 
             symbols.forEach(symbol => {
@@ -652,100 +622,56 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                 if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
                     (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
                     playTickSound();
-
-                    if (isSlowingDown) {
-                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25)
-                    }
                 }
 
+                // When a symbol wraps around
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
-                    passed++;
 
-                    // Prefer explicit finalSymbols param, otherwise use global when available
-                    const finals = finalSymbols || finalSymbolsGlobal;
-
-                    switch (index) {
-                        case 0:
-                            if (currentSpeed < 0.3) {
-                                if (finals && finals.length >= 9) {
-                                    switch (reel1stopIndex) {
-                                        case 0:
-                                            img.src = finals[0];
-                                            break;
-                                        case 1:
-                                            img.src = finals[3];
-                                            break;
-                                        case 2:
-                                            img.src = finals[6];
-                                            currentSpeed = 0;
-                                            break;
-                                    }
-                                } else {
-                                    // final not ready: keep random images until finals arrive
-                                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                                }
+                    // MODIFIED LOGIC:
+                    // If slowing down, use the finalSymbols from the server.
+                    // This makes them "slide in" rather than "pop in" at the end.
+                    if (isSlowingDown && finalSymbols && finalSymbols.length >= 9) {
+                        switch (index) {
+                            case 0: // First reel
+                                // We need to place 3 symbols: top, middle, bottom
+                                // reel1stopIndex tracks which one we're placing
+                                if (reel1stopIndex === 0) img.src = finalSymbols[0]; // Top row
+                                else if (reel1stopIndex === 1) img.src = finalSymbols[3]; // Middle row
+                                else if (reel1stopIndex === 2) img.src = finalSymbols[6]; // Bottom row
+                                else img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)]; // Buffer
                                 reel1stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
-                        case 1:
-                            if (currentSpeed < 0.3) {
-                                if (finals && finals.length >= 9) {
-                                    switch (reel2stopIndex) {
-                                        case 0:
-                                            img.src = finals[1];
-                                            break;
-                                        case 1:
-                                            img.src = finals[4];
-                                            break;
-                                        case 2:
-                                            img.src = finals[7];
-                                            currentSpeed = 0;
-                                            break;
-                                    }
-                                } else {
-                                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                                }
+                                break;
+                            case 1: // Second reel
+                                if (reel2stopIndex === 0) img.src = finalSymbols[1]; // Top row
+                                else if (reel2stopIndex === 1) img.src = finalSymbols[4]; // Middle row
+                                else if (reel2stopIndex === 2) img.src = finalSymbols[7]; // Bottom row
+                                else img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)]; // Buffer
                                 reel2stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
-                        case 2:
-                            if (currentSpeed < 1) {
-                                if (finals && finals.length >= 9) {
-                                    switch (reel3stopIndex) {
-                                        case 0:
-                                            img.src = finals[2];
-                                            break;
-                                        case 1:
-                                            img.src = finals[5];
-                                            break;
-                                        case 2:
-                                            img.src = finals[8];
-                                            currentSpeed = 0;
-                                            break;
-                                    }
-                                } else {
-                                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                                }
+                                break;
+                            case 2: // Third reel
+                                if (reel3stopIndex === 0) img.src = finalSymbols[2]; // Top row
+                                else if (reel3stopIndex === 1) img.src = finalSymbols[5]; // Middle row
+                                else if (reel3stopIndex === 2) img.src = finalSymbols[8]; // Bottom row
+                                else img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)]; // Buffer
                                 reel3stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
+                                break;
+                        }
+                    } else {
+                        // Not slowing down OR no final symbols, use random
+                        img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                     }
                 }
 
                 symbol.style.top = `${top}vh`;
             });
 
-            if (!stopNow) {
+            // Use time-based duration to stop
+            if (elapsed < duration) {
                 requestAnimationFrame(update);
             } else {
+                // Stop logic from your pasted example (snaps to grid)
                 const firstSymbol = symbols[0];
                 const currentOffset = parseFloat(firstSymbol.style.top);
                 const targetOffset = Math.round(currentOffset / SYMBOL_HEIGHT) * SYMBOL_HEIGHT;
@@ -776,11 +702,20 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
     });
 }
 
-let canSpin, spinPositions, newCredit;
-let reel1stopIndex = 0;
-let reel2stopIndex = 0;
-let reel3stopIndex = 0;
 
+let canSpin, spinPositions, newCredit;
+// (These are now reset inside spin())
+// let reel1stopIndex = 0;
+// let reel2stopIndex = 0;
+// let reel3stopIndex = 0;
+let finalSymbolsGlobal = null; // We still use this as a fallback
+
+/**
+ * THIS FUNCTION IS MODIFIED
+ * It now awaits the server fetch *first*,
+ * then starts the animation using your time-based durations,
+ * passing the final symbols to the new animateReel function.
+ */
 async function spin() {
     if (isSpinning) {
         shakeLever();
@@ -801,72 +736,51 @@ async function spin() {
     playLeverSound();
     playLeverAnimation();
 
-    // reset reel stop indexes and globals
+    // reset reel stop indexes
     reel1stopIndex = 0;
     reel2stopIndex = 0;
     reel3stopIndex = 0;
-    finalSymbolsGlobal = null;
-    finalSymbolsReadyResolve = null;
+    
+    let finalSymbols;
+    let serverData;
 
-    // start network request in background (do not await)
-    const fetchPromise = (async () => {
+    // Await the fetch *before* starting the spin animation
+    // This guarantees we have the final symbols
+    try {
         if (!localMode) {
-            try {
-                const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": token,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ bet: betAmount, ts: Date.now() })
-                });
-                const data = await res.json();
-                // Map server numeric slots into icon paths expected by animateReel
-                let finalSymbols = [];
-                const finalNumbers = Object.values(data.winSlots || {});
-                if (finalNumbers.length >= 9) {
-                    finalNumbers.slice(0,9).forEach(number => {
-                        switch (number) {
-                            case 1: finalSymbols.push('icon/3.png'); break;
-                            case 2: finalSymbols.push('icon/raiden.png'); break;
-                            case 3: finalSymbols.push('icon/4.png'); break;
-                            case 4: finalSymbols.push('icon/1.png'); break;
-                            default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                        }
-                    });
-                } else if (finalNumbers.length === 3) {
-                    // expand center values to full 3x3 layout if server returns 3 centers
-                    for (let r = 0; r < 3; r++) {
-                        for (let c = 0; c < 3; c++) {
-                            const number = finalNumbers[c];
-                            switch (number) {
-                                case 1: finalSymbols.push('icon/3.png'); break;
-                                case 2: finalSymbols.push('icon/raiden.png'); break;
-                                case 3: finalSymbols.push('icon/4.png'); break;
-                                case 4: finalSymbols.push('icon/1.png'); break;
-                                default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                            }
-                        }
+            const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
+                method: "POST",
+                headers: {
+                    "Authorization": token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ bet: betAmount, ts: Date.now() })
+            });
+            const data = await res.json();
+            serverData = data;
+            
+            // Map server numeric slots into icon paths
+            finalSymbols = [];
+            const finalNumbers = Object.values(data.winSlots || {});
+            
+            if (finalNumbers.length >= 9) {
+                finalNumbers.slice(0,9).forEach(number => {
+                    switch (number) {
+                        case 1: finalSymbols.push('icon/3.png'); break;
+                        case 2: finalSymbols.push('icon/raiden.png'); break;
+                        case 3: finalSymbols.push('icon/4.png'); break;
+                        case 4: finalSymbols.push('icon/1.png'); break;
+                        default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
                     }
-                } else {
-                    // fallback: random
-                    for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                }
-
-                finalSymbolsGlobal = finalSymbols;
-                return { serverData: data, mapped: finalSymbols };
-            } catch (e) {
-                console.log("Spin fetch failed:", e);
-                // fallback to random final symbols if fetch fails
-                const fallback = [];
-                for (let i = 0; i < 9; i++) fallback.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                finalSymbolsGlobal = fallback;
-                return { serverData: null, mapped: fallback };
+                });
+            } else {
+                // fallback: random
+                for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
             }
         } else {
             // local mode: prepare finalSymbols immediately
             const finalNumbers = [1,2,3,1,2,3,1,2,3];
-            const finalSymbols = [];
+            finalSymbols = [];
             finalNumbers.forEach(number => {
                 switch (number) {
                     case 1: finalSymbols.push('icon/3.png'); break;
@@ -876,43 +790,48 @@ async function spin() {
                     default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
                 }
             });
-            finalSymbolsGlobal = finalSymbols;
-            return { serverData: { valid: true, winAmount: 0, winSlots: {} }, mapped: finalSymbols };
+            serverData = { valid: true, winAmount: 0, winSlots: {} };
         }
-    })();
+    } catch (e) {
+        console.log("Spin fetch failed:", e);
+        // fallback to random final symbols if fetch fails
+        finalSymbols = [];
+        for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
+        serverData = null;
+    }
+    
+    // Set global as a fallback (though animateReel now takes it as a param)
+    finalSymbolsGlobal = finalSymbols; 
 
-    // start visual spin immediately
+    // Now start visual spin, using time-based durations from your paste
     const spinPromises = Array.from(reels).map((reel, index) => {
-        // durations chosen to keep reels spinning while server responds; stagger by index
-        const duration = 40 + (index * 20);
+        // Use time-based durations
+        const duration = 2000 + (index * 1000); 
         const speed = 4;
-        return animateReel(reel, speed, duration, index /* finalSymbols param omitted - animateReel will use global when ready */);
+        // Pass the final symbols to animateReel
+        return animateReel(reel, speed, duration, index, finalSymbols);
     });
 
     // wait for reels to finish visually
     await Promise.all(spinPromises);
 
-    // ensure we have server result (don't block too long)
-    const fetchResult = await Promise.race([fetchPromise, new Promise(resolve => setTimeout(() => resolve(null), 8000))]);
-
-    // if server data provided, apply win / credit changes
-    if (fetchResult && fetchResult.serverData) {
-        const data = fetchResult.serverData;
-        if (!data.valid) {
+    // Apply win / credit changes from the server data we already fetched
+    if (serverData) {
+        if (!serverData.valid) {
             await initializeWallet();
             isSpinning = false;
             return;
         }
-        playerCredit += data.winAmount || 0;
-    } else {
-        // fetch timed out or failed; no additional credit to award
+        playerCredit += serverData.winAmount || 0;
     }
 
     updateCreditDisplay();
-    checkWin();
+    // This function just updates the win display text/sounds
+    checkWin(); 
 
     isSpinning = false;
 }
+
 async function spawnNote(noteValue) {
     return new Promise(resolve => {
         const note = document.createElement('img');
@@ -1788,5 +1707,6 @@ document.querySelector('.lever-container').addEventListener('click', spin);
 musicToggle.addEventListener('click', toggleMusic);
 document.getElementById('logoutButton').addEventListener('click', logout);
 
-let finalSymbolsGlobal = null;
-let finalSymbolsReadyResolve = null;
+// (global variable setup moved to top)
+// let finalSymbolsGlobal = null;
+// let finalSymbolsReadyResolve = null;
