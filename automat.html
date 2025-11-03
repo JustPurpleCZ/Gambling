@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
-    <!-- Make sure automat.js is loaded as a module -->
     <script type="module" src="automat.js"></script>
 </head>
 <body>
@@ -30,46 +29,38 @@
             <div class="screen">
                 <img src="main/screen/screen.png" alt="">
                 <div class="credit-display">Loading...</div>
-                <!-- 
-                  This is the new reel structure.
-                  Replaced .reel-grid with .reel-container.
-                  Instead of 9 individual .reel divs, we have 3 .reel-column divs.
-                  Each column contains a .reel-strip which will be animated.
-                -->
-                <div class="reel-container">
-                    <div class="reel-column">
-                        <div class="reel-strip" id="reel-strip-1">
-                            <!-- Images will be dynamically added by automat.js -->
-                        </div>
-                    </div>
-                    <div class="reel-column">
-                        <div class="reel-strip" id="reel-strip-2">
-                            <!-- Images will be dynamically added by automat.js -->
-                        </div>
-                    </div>
-                    <div class="reel-column">
-                        <div class="reel-strip" id="reel-strip-3">
-                            <!-- Images will be dynamically added by automat.js -->
-                        </div>
-                    </div>
-                </div>
             </div>
             
-            <img src="main/automat/automat.png" class="slot-machine-image" alt="Slot Machine">
-            <div class="lever">
-                <img src="main/automat/arm1.png" class="lever-image" alt="Lever">
+            <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
+            <div class="reels-container">
+                <div class="reel"></div>
+                <div class="reel"></div>
+                <div class="reel"></div>
             </div>
-        </div>
-        <div class="win-screen">
-            <img src="main/screen/winscreen.png" class="wscreen" alt="">
-            <div class="win-amount">$0</div>
+            <div class="lever-container">
+                <img src="main/automat/paka.gif" alt="Lever" class="lever-image">
+            </div>
+            <div class="door">
+                <img src="main/automat/door.png" class="doorPart" alt="">
+            </div>
+            <div class="music-container">
+                <img src="main/radio/radio.png" alt="Music Toggle" class="music-toggle">
+            </div>
         </div>
         
     </div>
-
-    <!-- Wallet and other UI -->
     <div class="wallet">
-        <img src="main/screen/screen.png" class="wscreen" alt="">
+        <div class="wallet-bills">
+            <img src="money/100.png" class="bill bill-100" data-value="100">
+            <img src="money/50.png" class="bill bill-50" data-value="50">
+            <img src="money/20.png" class="bill bill-20" data-value="20">
+            <img src="money/10.png" class="bill bill-10" data-value="10">
+            <img src="money/5.png" class="bill bill-5" data-value="5">
+            <img src="money/1.png" class="bill bill-1" data-value="1">
+        </div>
+        <img src="money/walletD.png" class="bottom">
+        <img src="money/walletU.png" class="top" alt="">
+        <img src="money/screen.png" class="wscreen" alt="">
         <div class="wallet-display">Wallet: $1000</div>
     </div>
     <div class="options-menu">
@@ -93,26 +84,11 @@
                 <div class="option-text">My Stats</div>
             </div>
             <div class="option-button-container">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="3">
-                <div class="option-text">Rules</div>
-            </div>
-            <div class="option-button-container">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="4">
-                <div class="option-text">Invest</div>
+                <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
+                <div class="option-text">Get Out</div>
             </div>
         </div>
     </div>
-
-    <div class="wallet-overlay">
-        <img src="main/screen/wallet.png" class="wallet-bg" alt="">
-        <div class="close-wallet">&times;</div>
-        <div class="bill bill-1" data-value="1"></div>
-        <div class="bill bill-5" data-value="5"></div>
-        <div class="bill bill-10" data-value="10"></div>
-        <div class="bill bill-20" data-value="20"></div>
-        <div class="bill bill-50" data-value="50"></div>
-        <div class="bill bill-100" data-value="100"></div>
-    </div>
-
+</div>
 </body>
 </html>

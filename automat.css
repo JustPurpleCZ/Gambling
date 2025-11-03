@@ -39,360 +39,422 @@ body::before{
     height: 100%;
     object-fit: contain;
     z-index: 5;
-    pointer-events: none;
 }
 
-.lever {
+.reels-container {
     position: absolute;
-    top: 18.5vh;    /* Scaled from 10vh */
-    right: 28vh;   /* Scaled from 15vh */
-    width: 28vh;   /* Scaled from 15vh */
-    height: 28vh;  /* Scaled from 15vh */
+    display: flex;
+    gap: 3.8vh;    /* Scaled from 2vh */
+    top: 52.25vh;  /* Scaled from 27.5vh */
+    left: 87.5vh; /* Scaled from 46.6vh */
+    transform: translate(-55%, -50%);
+    z-index: 2;
+    background-color: aliceblue;
+    align-items: center;
+    justify-content: start;
+}
+
+.reel {
+    width: 14.7vh;    /* Scaled from 7.9vh */
+    height: 32.3vh; /* Scaled from 17vh */
+    overflow: hidden;
+    position: relative;
+}
+
+.symbol {
+    position: absolute;
+    width: 100%;
+    height: 9.5vh;  /* Scaled from 5vh */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: top 0.1s linear;
+}
+
+.symbol img {
+    height: 100%;
+    object-fit: contain;
+}
+
+.lever-container {
+    position: absolute;
+    top: 19vh;     /* Scaled from 10vh */
+    right: 47.8vh; /* Scaled from 25vh */
+    width: 12.6vh;/* Scaled from 33vh */
     cursor: pointer;
     z-index: 6;
 }
+
 
 .lever-image {
     width: 100%;
     height: 100%;
-    object-fit: contain;
-}
-
-.button {
-    position: absolute;
-    top: 60vh;     /* Scaled from 32vh */
-    right: 30vh;   /* Scaled from 16vh */
-    width: 22vh;   /* Scaled from 12vh */
-    height: 18.8vh; /* Scaled from 10vh */
+    transform-origin: center center !important;
+    transition: transform 0.5s;
     z-index: 6;
-    cursor: pointer;
 }
 
-.button img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.music-container {
+    position: absolute;
+    right: -20vh;   /* Scaled from -10.5vh */
+    z-index: 1000;
+    cursor: pointer;
+    bottom: -3.8vh; /* Scaled from -2vh */
+    overflow: visible;
+}
+
+.music-toggle {
+    width: 66.5vh;  /* Scaled from 35vh */
+    height: auto;
+    transition: 0.3s ease;
+    filter: brightness(50%) blur(2px);
+    z-index: 2;
+}
+
+.music-toggle:hover {
+    transform: scale(1.01);
+    filter: brightness(100%) blur(0);
+}
+
+@keyframes shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+.shake {
+    animation: shake 0.2s ease-in-out;
 }
 
 .screen {
     position: absolute;
-    top: 26.5vh;    /* Scaled from 14vh */
-    left: 51.5vh;   /* Scaled from 27.5vh */
-    width: 77.3vh;   /* Scaled from 41.3vh */
-    height: 48.7vh;  /* Scaled from 26vh */
-    z-index: 6;
-    /* overflow: hidden; */
-    pointer-events: all;
-    user-select: none;
+    width: 47.69vh;
+    height: 20vh;  /* Scaled from 25.1vh */
+    top: 22vh;      /* Scaled from 11.6vh */
+    right: 71.16vh; /* Scaled from 37.45vh */
 }
 
 .screen img {
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    z-index: 7;
-    pointer-events: none;
+    height: auto;
+    animation: slowflicker 3s infinite alternate;
 }
-
 .credit-display {
     position: absolute;
-    bottom: 3.5vh;
-    left: 10vh;
-    font-size: 5vh;
-    color: rgb(255, 255, 255);
-    z-index: 8;
-    text-shadow: 0 0 10px rgb(0, 0, 0);
+    left: 2%;
+    top: 4.5vh;
+    transform: translateY(-50%);
+    color: #00ff00;
+    font-size: 8.1vh;
+    font-family: "Tiny5", sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    animation: flicker 0.2s infinite alternate;
 }
 
-/* Removed .reel-grid and .reel styles */
-
-/* NEW: Styles for the reel container and columns */
-.reel-container {
+@keyframes flicker {
+    0% {
+        opacity: 0.8;
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
+    }
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    }
+}
+@keyframes slowflicker {
+    0% {
+        filter: brightness(95%);
+    }
+    90% {
+        filter: brightness(80%);
+    }
+    92% {
+        filter: brightness(100%);
+    }
+    94% {
+        filter: brightness(80%);
+    }
+    96% {
+        filter: brightness(100%);
+    }
+    100% {
+        filter: brightness(100%);
+    }
+}
+.music-note {
     position: absolute;
-    top: 4.8vh; /* Adjust to fit inside the screen */
-    left: 12.3vh; /* Adjust to fit inside the screen */
-    width: 38.1vh; /* 3 * 11.7vh + 2 * 1.5vh gap */
-    height: 38.1vh; /* 3 * 11.7vh + 2 * 1.5vh gap */
-    z-index: 8;
-    display: flex;
-    justify-content: space-between; /* Creates gap between columns */
-    padding: 0.7vh; /* Small padding to align */
-}
-
-.reel-column {
-    width: 11.7vh; /* Same width as old .reel */
-    height: 35.1vh; /* 3 * 11.7vh */
-    overflow: hidden;
-    position: relative;
-    background-color: rgba(0, 0, 0, 0.3); /* Slight bg for testing */
-    border-radius: 1vh;
-}
-
-.reel-strip {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    /* The transition is now set by JavaScript, 
-      but we can define a base for the 'landing'
-    */
-    transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-.reel-strip img {
-    width: 11.7vh;
-    height: 11.7vh;
-    display: block;
+    width: 5.7vh;   /* Scaled from 3vh */
+    height: 5.7vh;  /* Scaled from 3vh */
     object-fit: contain;
+    pointer-events: none;
+    transition: transform 0.05s linear;
+    z-index: -10;
+    bottom: 9.5vh;  /* Scaled from 5vh */
+    right: 9.5vh;   /* Scaled from 5vh */
 }
 
+.button {
+    position: absolute;
+    width: 22.8vh;  /* Scaled from 12vh */
+    height: 22.8vh; /* Scaled from 12vh */
+    z-index: 10;
+    top: 72.2vh;    /* Scaled from 38vh */
+    left: 38vh;     /* Scaled from 20vh */
+}
+.button img{
+    width: 100%;
+    z-index: 10;
+}
 
-.win-screen {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    width: 80vh;
-    height: 60vh;
-    z-index: 100;
-    opacity: 0;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+.door {
+    position: absolute;
+    width: 57vh;    /* Scaled from 30vh */
+    height: 22.8vh; /* Scaled from 12vh */
+    z-index: 1;
+    top: 66.5vh;    /* Scaled from 35vh */
+    left: 57.95vh;  /* Scaled from 30.5vh */
+    background-color: rgb(45, 45, 45);
+    pointer-events: auto;
+}
+
+.doorPart{
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    height: auto;
+    bottom: 0;
+}
+
+.wallet {
+    position: absolute;
+    width: 60vh;
+    height: 25vh;
+    bottom: -23vh;
+    right: 1.9vh;
+    transition: bottom 0.5s ease-out;
+}
+.wallet:hover {
+    bottom: -2vh;
+}
+.wallet.has-notes {
+    bottom: -2vh;
+}
+.top{
+    z-index: 50;
+    width: 100%;
+    position: absolute;
+    height: auto;
+    bottom: 0;
     pointer-events: none;
 }
-
-.win-screen.show {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-}
-
-.win-screen .wscreen {
+.bottom{
+    z-index: 40;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.win-amount {
     position: absolute;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 10vh;
-    color: yellow;
-    text-shadow: 0 0 10px black, 0 0 20px orange;
+
+    height: auto;
+    bottom: 0;
 }
-
-
+.wscreen{
+    z-index: 51;
+    width: 100%;
+    position: absolute;
+    animation: slowflicker 3s infinite alternate;
+    height: auto;
+    bottom: 0;
+}
 .vlad {
     position: absolute;
-    bottom: 0;
-    left: 10vh;
-    width: 60vh;
-    height: 60vh;
-    z-index: 4;
+    width: 50vh;
+    height: 22.8vh; /* Scaled from 12vh */
+    top: 57vh;      /* Scaled from 30vh */
+    left: 0;
+    z-index: 500;
 }
-
-.vlad img {
+.vlad img{
+    position: absolute;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
+    height: auto;
+    bottom: 0;
+    filter: blur(2px) brightness(70%);
+    z-index: 500;
 }
 .exit{
     position: absolute;
-    top: 2vh;
-    right: 2vh;
-    width: 10vh;
+    width: 30vh;
     height: 10vh;
-    z-index: 10;
-    cursor: pointer;
+    top: 4vh;
+    right: 4vh;
+    z-index: 501;
+    transition: 0.2s;
+}
+.exit:hover{
+    transform: scale(1.02);
 }
 .exit img{
+    position: absolute;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
+    height: auto;
+    bottom: 0;
 }
 .options-menu {
-    position: absolute;
-    bottom: 2vh;
-    right: 5vh;
-    width: 60vh;
-    height: 25vh;
-    z-index: 10;
+    position: fixed;
+    bottom: -50vh;
+    left: 70%;
+    transform: translateX(-50%);
+    width: 55vw;
+    height: 15vw;
+    z-index: 1000;
+    transition: bottom 0.5s ease-out;
 }
 
 .menu-bg {
     width: 100%;
     height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 11;
-}
-
-.menu-text-content {
-    position: absolute;
-    top: 4vh;
-    left: 4vh;
-    right: 4vh;
-    bottom: 10vh;
-    font-size: 2.2vh;
-    color: white;
-    z-index: 12;
-    display: none; /* Hidden by default */
-}
-
-.menu-text-content.active {
-    display: block;
-}
-
-
-.option-buttons {
-    position: absolute;
-    bottom: 2vh;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 1vh;
-    z-index: 12;
+    object-fit: contain;
 }
 
 .option-button-container {
     position: relative;
-    width: 12vh;
-    height: 7vh;
-    cursor: pointer;
+    width: 15vw;
+    height: 10vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+/* Added for text content mode */
+.menu-text-content {
+    position: absolute;
+    top: 50%;
+    left: 35%;
+    transform: translate(-50%, -50%);
+    width: 65%;
+    color: black;
+    font-size: 1.2vw;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
+}
+
+.menu-text-content.active {
+    opacity: 1;
+}
+
+.option-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+/* Add class for option buttons that can be hidden */
+.option-button-container.hideable {
+    transition: opacity 0.3s ease;
+}
+
+.option-button-container.hideable.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .option-btn {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s ease;
 }
 
 .option-text {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2vh;
-    color: white;
-    text-shadow: 0 0 5px black;
-    pointer-events: none;
+    color: black;
+    font-size: 2.5em;
     text-align: center;
-}
-.option-button-container.hideable {
-    display: none; /* Hide by default */
-}
-
-/* Wallet and Bills */
-.wallet {
-    position: absolute;
-    bottom: 2vh;
-    left: 2vh;
-    width: 30vh;
-    height: 15vh;
-    z-index: 10;
-}
-
-.wallet .wscreen {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.wallet-display {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3vh;
-    color: white;
-}
-
-.wallet-overlay {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    width: 100vh;
-    height: 80vh;
-    z-index: 50;
-    opacity: 0;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     pointer-events: none;
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1001;
 }
 
-.wallet-overlay.show {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-    pointer-events: all;
+.option-btn:hover {
+    transform: scale(1.05);
 }
 
-.wallet-bg {
+.options-menu.active {
+    bottom: 0vh;
+}
+.wallet-bills {
+    position: absolute;
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.close-wallet {
-    position: absolute;
-    top: 8vh;
-    right: 12vh;
-    font-size: 6vh;
-    color: white;
-    cursor: pointer;
-    z-index: 51;
+    bottom: 10vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 45;
+    pointer-events: none;
 }
 
 .bill {
     position: absolute;
-    width: 20vh;
-    height: 10vh;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
+    width: 65%;
+    height: auto;
+    transition: opacity 0.3s ease, transform 0.2s ease, bottom 0.5s ease-out;
+    pointer-events: auto;
     cursor: pointer;
-    transition: transform 0.2s ease, filter 0.2s ease;
-    right: 15vh;
+    bottom: -1vh; /* Default position at bottom */
 }
 
-.bill-1 { background-image: url('main/bills/1.png'); bottom: 12vh; z-index: 40; }
-.bill-5 { background-image: url('main/bills/5.png'); bottom: 18vh; z-index: 41; }
-.bill-10 { background-image: url('main/bills/10.png'); bottom: 24vh; z-index: 42; }
-.bill-20 { background-image: url('main/bills/20.png'); bottom: 30vh; z-index: 43; }
-.bill-50 { background-image: url('main/bills/50.png'); bottom: 36vh; z-index: 44; }
-.bill-100 { background-image: url('main/bills/100.png'); bottom: 42vh; z-index: 45; }
+.bill:hover {
+    transform: translateY(-1vh);
+}
 
+/* Bill positions only apply when wallet is raised */
 .wallet.has-notes .bill.transferrable.bill-100 {
-    bottom: 30vh;
-    z-index: 40;
-}
-.wallet.has-notes .bill.transferrable.bill-50 {
-    bottom: 27vh;
+    bottom: 21vh;
     z-index: 41;
 }
-.wallet.has-notes .bill.transferrable.bill-20 {
-    bottom: 24vh;
+
+.wallet.has-notes .bill.transferrable.bill-50 {
+    bottom: 18vh;
     z-index: 42;
 }
-.wallet.has-notes .bill.transferrable.bill-10 {
-    bottom: 18vh;
+
+.wallet.has-notes .bill.transferrable.bill-20 {
+    bottom: 15vh;
     z-index: 43;
 }
-.wallet.has-notes .bill.transferrable.bill-5 {
+
+.wallet.has-notes .bill.transferrable.bill-10 {
     bottom: 12vh;
     z-index: 44;
 }
-.wallet.has-notes .bill.transferrable.bill-1 {
-    bottom: 6vh;
+
+.wallet.has-notes .bill.transferrable.bill-5 {
+    bottom: 9vh;
     z-index: 45;
 }
 
+.wallet.has-notes .bill.transferrable.bill-1 {
+    bottom: 6vh;
+    z-index: 46;
+}
 
 .bill.unavailable {
     opacity: 0.3;
@@ -436,26 +498,31 @@ body::before{
     width: 100vw;
     height: auto;
     margin-bottom: 20px;
+
 }
 
 .overlay-text {
     color: white;
-    font-size: 24px;
+    font-size: 4em;
     text-align: center;
+    font-family: "Tiny5", sans-serif;
 }
 
-/* Force landscape */
-@media (orientation: portrait) {
-    body {
-        display: none; /* Hide body content in portrait */
-    }
+@media screen and (orientation: portrait) {
     .orientation-overlay {
         display: flex;
     }
 }
-
-@media (orientation: landscape) {
-    .orientation-overlay {
-        display: none;
-    }
+.wallet-display {
+    position: absolute;
+    left: 15%;
+    top: 4.5vh;
+    width: 15vh;
+    transform: translateY(-50%);
+    color: #00ff00;
+    font-size: 4vh;
+    font-family: "Tiny5", sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    animation: flicker 0.2s infinite alternate;
+    z-index: 52;
 }
