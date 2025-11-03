@@ -792,28 +792,42 @@ async function spin() {
     // start network request in background (or simulate)
     let serverData = null;
     const fetchPromise = (async () => {
+        console.log('spin() starting network fetch — token:', token, ' localMode:', localMode);
         if (!localMode) {
             try {
+                // send a small payload (server may expect some data)
+                const payload = { bet: betAmount, ts: Date.now() };
+                console.log('spin() payload ->', payload);
+
                 const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
                     method: "POST",
                     headers: {
                         "Authorization": token,
                         "Content-Type": "application/json"
                     },
+                    body: JSON.stringify(payload)
                 });
-                const data = await res.json();
+
+                console.log('spin() fetch status:', res.status);
+                const data = await res.json().catch(err => {
+                    console.log('spin() json parse failed:', err);
+                    return null;
+                });
+
                 serverData = data;
+                console.log('spin() serverData ->', serverData);
             } catch (e) {
                 console.log("Spin fetch failed:", e);
-                serverData = { valid: false, winAmount: 0, winSlots: {}}; // fallback
+                serverData = { valid: false, winAmount: 0, winSlots: {} }; // fallback
             }
         } else {
             // local simulation (fast)
             serverData = {
                 valid: true,
                 winAmount: 0,
-                winSlots: { a:1,b:2,c:3 } // structure unused - map below
+                winSlots: { a: 1, b: 2, c: 3 } // structure unused - map below
             };
+            console.log('spin() running in localMode, simulated serverData ->', serverData);
         }
 
         // build finalSymbols array in the same format animateReel expects (0..8)
