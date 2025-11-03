@@ -31,36 +31,50 @@
                 <div class="credit-display">Loading...</div>
             </div>
             
-            <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
-            <div class="reels-container">
-                <div class="reel"></div>
-                <div class="reel"></div>
-                <div class="reel"></div>
+            <img src="main/automat/automat.png" class="slot-machine-image">
+            <div class="lever">
+                <img src="main/automat/lever.png" alt="Lever">
             </div>
-            <div class="lever-container">
-                <img src="main/automat/paka.gif" alt="Lever" class="lever-image">
-            </div>
-            <div class="door">
-                <img src="main/automat/door.png" class="doorPart" alt="">
-            </div>
-            <div class="music-container">
-                <img src="main/radio/radio.png" alt="Music Toggle" class="music-toggle">
+
+            <!-- 
+                Reels structure updated for animation.
+                Each .reel-column is now a container with overflow:hidden.
+                Each .reel-strip inside will be populated by JS and animated.
+            -->
+            <div class="reels">
+                <div class="reel-column">
+                    <div class="reel-strip">
+                        <!-- Symbols will be dynamically added by automat.js -->
+                    </div>
+                </div>
+                <div class="reel-column">
+                    <div class="reel-strip">
+                        <!-- Symbols will be dynamically added by automat.js -->
+                    </div>
+                </div>
+                <div class="reel-column">
+                    <div class="reel-strip">
+                        <!-- Symbols will be dynamically added by automat.js -->
+                    </div>
+                </div>
             </div>
         </div>
         
     </div>
-    <div class="wallet">
-        <div class="wallet-bills">
-            <img src="money/100.png" class="bill bill-100" data-value="100">
-            <img src="money/50.png" class="bill bill-50" data-value="50">
-            <img src="money/20.png" class="bill bill-20" data-value="20">
-            <img src="money/10.png" class="bill bill-10" data-value="10">
-            <img src="money/5.png" class="bill bill-5" data-value="5">
-            <img src="money/1.png" class="bill bill-1" data-value="1">
+    
+    <div class="wallet-container">
+        <img src="main/wallet/wallet.png" class="wallet-image" alt="Wallet">
+        <div class="wallet-overlay-text" id="walletOverlay">WALLET</div>
+        <div class="wallet-notes">
+            <img src="main/wallet/5$.png" alt="5 Dollars" class="bill bill-0" data-amount="5">
+            <img src="main/wallet/10$.png" alt="10 Dollars" class="bill bill-1" data-amount="10">
+            <img src="main/wallet/20$.png" alt="20 Dollars" class="bill bill-2" data-amount="20">
+            <img src="main/wallet/50$.png" alt="50 Dollars" class="bill bill-3" data-amount="50">
+            <img src="main/wallet/100$.png" alt="100 Dollars" class="bill bill-4" data-amount="100">
         </div>
-        <img src="money/walletD.png" class="bottom">
-        <img src="money/walletU.png" class="top" alt="">
-        <img src="money/screen.png" class="wscreen" alt="">
+    </div>
+    <div class="wallet-screen">
+        <img src="main/screen/wscreen.png" class="wscreen" alt="">
         <div class="wallet-display">Wallet: $1000</div>
     </div>
     <div class="options-menu">
@@ -84,11 +98,10 @@
                 <div class="option-text">My Stats</div>
             </div>
             <div class="option-button-container">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
-                <div class="option-text">Get Out</div>
+                <img src="main/menu/optionbox1.png" class="option-btn" data-option="3">
+                <div class="option-text">Rules</div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>
