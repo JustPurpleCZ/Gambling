@@ -741,6 +741,13 @@ function animateReel(reel, speed = 4, index) {
     });
 }
 
+let finalSymbolsGlobal = null;
+let finalSymbolsReadyResolve = null;
+let reelStopRequests = [false, false, false];
+let reel1stopIndex = 0;
+let reel2stopIndex = 0;
+let reel3stopIndex = 0;
+
 async function spin() {
     if (isSpinning) {
         shakeLever();
