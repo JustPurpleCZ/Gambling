@@ -111,6 +111,32 @@ const machines = document.querySelectorAll(".unavailable");
 const token = localStorage.getItem("userToken");
 let unlocks = {};
 
+async function checkAuth() {
+    if (!token) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    //O - validate token
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    const tokenValid = await res.json();
+    console.log("Token validity response: ", tokenValid);
+    if (!tokenValid.tokenValid) {
+        console.log("Token valid: ", tokenValid.tokenValid);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
+    }
+}
+
 async function setUnlocks() {
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocked", {
         method: "POST",
@@ -184,6 +210,7 @@ async function initUnlocks() {
     });
 }
 
+checkAuth();
 initUnlocks();
 
 function logout() {
