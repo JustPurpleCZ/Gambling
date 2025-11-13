@@ -138,8 +138,8 @@ async function checkAuth() {
 }
 
 async function setUnlocks() {
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocked", {
-        method: "POST",
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
+        method: "GET",
         headers: {
             "Authorization": token,
             "Content-Type": "application/json"
