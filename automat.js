@@ -661,21 +661,40 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                     if (isSlowingDown && finalSymbols && finalSymbols.length >= 9) {
                         let symbolToSet = null;
                         
+                        // [FIXED] Moved index increment to be *after* a symbol is set
                         if (index === 0) { // Reel 1
-                            if (reel1stopIndex === 0) symbolToSet = finalSymbols[0]; // Top
-                            else if (reel1stopIndex === 1) symbolToSet = finalSymbols[3]; // Middle
-                            else if (reel1stopIndex === 2) symbolToSet = finalSymbols[6]; // Bottom
-                            reel1stopIndex++;
+                            if (reel1stopIndex === 0) {
+                                symbolToSet = finalSymbols[0]; // Top
+                                reel1stopIndex++;
+                            } else if (reel1stopIndex === 1) {
+                                symbolToSet = finalSymbols[3]; // Middle
+                                reel1stopIndex++;
+                            } else if (reel1stopIndex === 2) {
+                                symbolToSet = finalSymbols[6]; // Bottom
+                                reel1stopIndex++;
+                            }
                         } else if (index === 1) { // Reel 2
-                            if (reel2stopIndex === 0) symbolToSet = finalSymbols[1]; // Top
-                            else if (reel2stopIndex === 1) symbolToSet = finalSymbols[4]; // Middle
-                            else if (reel2stopIndex === 2) symbolToSet = finalSymbols[7]; // Bottom
-                            reel2stopIndex++;
+                            if (reel2stopIndex === 0) {
+                                symbolToSet = finalSymbols[1]; // Top
+                                reel2stopIndex++;
+                            } else if (reel2stopIndex === 1) {
+                                symbolToSet = finalSymbols[4]; // Middle
+                                reel2stopIndex++;
+                            } else if (reel2stopIndex === 2) {
+                                symbolToSet = finalSymbols[7]; // Bottom
+                                reel2stopIndex++;
+                            }
                         } else if (index === 2) { // Reel 3
-                            if (reel3stopIndex === 0) symbolToSet = finalSymbols[2]; // Top
-                            else if (reel3stopIndex === 1) symbolToSet = finalSymbols[5]; // Middle
-                            else if (reel3stopIndex === 2) symbolToSet = finalSymbols[8]; // Bottom
-                            reel3stopIndex++;
+                            if (reel3stopIndex === 0) {
+                                symbolToSet = finalSymbols[2]; // Top
+                                reel3stopIndex++;
+                            } else if (reel3stopIndex === 1) {
+                                symbolToSet = finalSymbols[5]; // Middle
+                                reel3stopIndex++;
+                            } else if (reel3stopIndex === 2) {
+                                symbolToSet = finalSymbols[8]; // Bottom
+                                reel3stopIndex++;
+                            }
                         }
                         
                         if (symbolToSet) {
@@ -697,26 +716,45 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
             if (elapsed < duration) {
                 requestAnimationFrame(update);
             } else {
-                // --- FINAL SNAP LOGIC ---
-                // Time's up. Now we snap the symbols into their final grid positions.
-                
-                // Find the symbol that is currently *closest* to the TOP visible slot (14vh)
-                let minDistance = Infinity;
+                // --- FINAL SNAP LOGIC (REVISED) ---
+                // Time's up. Snap the *middle* symbol into the middle slot.
+
+                // 1. Determine the target image src for the MIDDLE slot of *this* reel
+                let targetMiddleSrc = null;
+                if (finalSymbols && finalSymbols.length >= 9) {
+                    if (index === 0) targetMiddleSrc = finalSymbols[3]; // M1
+                    else if (index === 1) targetMiddleSrc = finalSymbols[4]; // M2
+                    else if (index === 2) targetMiddleSrc = finalSymbols[5]; // M3
+                }
+
                 let symbolToSnap = null;
+                
+                // 2. Find the symbol element that currently holds that middle image
+                if (targetMiddleSrc) {
+                    // We use endsWith because the browser might store the full URL
+                    symbolToSnap = symbols.find(s => s.querySelector('img').src.endsWith(targetMiddleSrc));
+                }
 
-                symbols.forEach(symbol => {
-                    const top = parseFloat(symbol.style.top);
-                    const distance = Math.abs(top - SYMBOL_HEIGHT);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        symbolToSnap = symbol;
-                    }
-                });
+                // 3. Fallback: If we couldn't find it (e.g., animation stopped too early),
+                // snap the symbol closest to the *middle* slot, NOT the top slot.
+                const middlePosition = SYMBOL_HEIGHT * 2; // 28vh
+                if (!symbolToSnap) {
+                    console.log(`Reel ${index}: Could not find middle symbol, using fallback snap.`);
+                    let minDistance = Infinity;
+                    symbols.forEach(symbol => {
+                        const top = parseFloat(symbol.style.top);
+                        const distance = Math.abs(top - middlePosition);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            symbolToSnap = symbol;
+                        }
+                    });
+                }
 
-                // Calculate the offset needed to move this symbol *exactly* to 14vh
-                const snapOffset = SYMBOL_HEIGHT - parseFloat(symbolToSnap.style.top);
+                // 4. Calculate the offset needed to move this symbol *exactly* to 28vh
+                const snapOffset = middlePosition - parseFloat(symbolToSnap.style.top);
 
-                // Apply this offset to all symbols in the reel with a smooth animation
+                // 5. Apply this offset to all symbols in the reel with a smooth animation
                 symbols.forEach(symbol => {
                     const currentTop = parseFloat(symbol.style.top);
                     let finalTop = currentTop + snapOffset;
@@ -800,12 +838,20 @@ async function spin() {
             
             // Map server numeric slots into icon paths
             finalSymbols = [];
-            // Use data.winSlots which is an object { '0': 1, '1': 2, ... }
-            const finalNumbers = Object.values(data.winSlots || {});
             
-            if (finalNumbers.length >= 9) {
+            // [FIXED] Use a loop to guarantee order from the object
+            const finalNumbers = [];
+            if (data.winSlots) {
+                for (let i = 0; i < 9; i++) {
+                    // Push the number (or undefined if missing)
+                    finalNumbers.push(data.winSlots[String(i)]);
+                }
+            }
+            
+            // Check for *length* and also that no values are undefined
+            if (finalNumbers.length >= 9 && finalNumbers.every(n => n !== undefined)) {
                 // Get the first 9 symbols (top, mid, bot for 3 reels)
-                finalNumbers.slice(0,9).forEach(number => {
+                finalNumbers.forEach(number => { // No slice needed
                     switch (number) {
                         case 1: finalSymbols.push('icon/3.png'); break;
                         case 2: finalSymbols.push('icon/raiden.png'); break;
