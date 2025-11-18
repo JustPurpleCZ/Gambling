@@ -773,6 +773,7 @@ async function spin() {
                         default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
                     }
                 });
+                console.log("Final symbols from server:", finalSymbols);
             } else {
                 // fallback: random
                 for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
@@ -1709,4 +1710,5 @@ document.getElementById('logoutButton').addEventListener('click', logout);
 
 // (global variable setup moved to top)
 // let finalSymbolsGlobal = null;
+
 // let finalSymbolsReadyResolve = null;
