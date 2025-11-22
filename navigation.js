@@ -129,7 +129,7 @@ async function checkAuth() {
     const tokenValid = await res.json();
     console.log("Token validity response: ", tokenValid);
     if (!tokenValid.tokenValid) {
-        console.log("Token valid: ", tokenValid.tokenValid);
+        console.log("Token invalid");
         setTimeout(() => {
             localStorage.removeItem("userToken");
             window.location.href = "index.html";
@@ -202,8 +202,7 @@ async function initUnlocks() {
                     machine.classList.add("destination-item");
                     console.log("Dices unlocked");
                     machine.addEventListener("click", () => {
-                        //window.location.href = "dices.html";
-                        console.log("no dices page yet");
+                        window.location.href = "dices-hub.html";
                     })
                 }
                 break;
