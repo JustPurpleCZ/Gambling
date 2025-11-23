@@ -1,31 +1,37 @@
-// Add to top of automat.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+const token = localStorage.getItem('userToken');
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
-    authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com",
-    messagingSenderId: "159900206701",
-    appId: "1:159900206701:web:01223c4665df6f7377a164"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getDatabase();
+//Check for local mode (testing purporses)
+let localMode = false;
+if (token && token == 1) {
+    localMode = true;
+}
 async function checkAuth() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
+    if (!token) {
         window.location.href = 'index.html';
         return;
     }
     
+    //O - validate token
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    const tokenValid = await res.json();
+    console.log("Token validity response: ", tokenValid);
+    if (!tokenValid.tokenValid) {
+        console.log("Token valid: ", tokenValid.tokenValid);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 20000);
+    }
+
     //DEBUG - TOKEN SHENANIGANS
+    try {
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -36,56 +42,48 @@ async function checkAuth() {
 
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
-    
-    if (!localBalance) {
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
+    } catch (e) {
+        console.log("Error fetching balance:", e);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
         return;
     }
-
-    //DEBUG - END OF MY CODE
+    
+    if (!localBalance) {
+        console.log("NO BALANCE, LOGGING OUT");
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 5000);
+        return;
+    }
 }
 
 // Get user data
 let localBalance;
-const token = localStorage.getItem('userToken');
-const userData = checkAuth();
+let userData;
 
 //Update online status every 1 minute
-setInterval(() => {
-    console.log("Updating last online")
-    fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-}, 60000);
+if (!localMode) {
+    setInterval(() => {
+        console.log("Updating last online")
+        fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+            method: "GET",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+    }, 60000);
+} else {
+    console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
+}
 
-// Logout function
+// O - Exit function (formerly logout)
 function logout() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-        // Update user's online status to false before logging out
-        const userRef = ref(db, 'users/' + currentUser + '/online');
-        set(userRef, false)
-            .then(() => {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userToken');
-                window.location.href = 'index.html';
-            })
-            .catch(error => {
-                console.error('Error updating online status:', error);
-                // Still logout even if updating online status fails
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('userToken');
-                window.location.href = 'index.html';
-            });
-    } else {
-        window.location.href = 'index.html';
-    }
+    window.location.href = "navigation.html";
 }
 const symbolImages = [
     'icon/1.png',
@@ -178,8 +176,10 @@ const displayDiv = document.querySelector('.credit-display');
 
 
 async function initializeWallet() {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
+    if (!localMode) {
+    await checkAuth();
+
+    if (!token) {
         window.location.href = 'index.html';
         return;
     }
@@ -189,7 +189,6 @@ async function initializeWallet() {
         await localBalance;
         console.log(localBalance)
         setTimeout(() => {
-localStorage.removeItem('currentUser');
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -200,7 +199,13 @@ localStorage.removeItem('currentUser');
     playerCredit = localBalance.creditBalance;
     updateAvailableBills();
     updateCreditDisplay();
-
+    } else {
+        console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
+        walletBalance = 500;
+        playerCredit = 100;
+        updateAvailableBills();
+        updateCreditDisplay();
+    }
 }
 
 function updateCreditDisplay() {
@@ -528,21 +533,8 @@ async function toggleMusic() {
         isMusicPlaying = false;
     }
 }
-async function updateStatistics(wonAmount = 0) {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return;
 
-    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
-    const snapshot = await get(statsRef);
-    const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
-
-    await set(statsRef, {
-        spins: currentStats.spins + 1,
-        moneywon: currentStats.moneywon + wonAmount
-    });
-}
-
-//DEBUG - CHECKS THE ROWS AND CHECKS FOR WINS, CLOUD FUNCTION (partially, NEEDS DECONSTRUCTION for = [playing sounds, changing slot machine display number, showing win])
+//DEBUG - NOW ONLY VISUAL, WIN CHECKING IS A CLOUDFUNCTION
 function checkWin() {
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
@@ -577,9 +569,6 @@ function checkWin() {
         
         displayDiv.classList.add('showing-win');
         
-        // Add to credit
-        playerCredit += winAmount;
-        updateStatistics(winAmount);
         // Reset display after 5 seconds
         setTimeout(() => {
             displayDiv.classList.remove('showing-win');
@@ -588,29 +577,70 @@ function checkWin() {
         
         return true;
     }
-    updateStatistics(0);
     updateCreditDisplay();
     return false;
 }
 
-function animateReel(reel, speed, duration) {
+function spinAnimation(reel, speed = 4, duration, index, finalSymbols) {
+    return new Promise(resolve =>{
+        let passed = 0;
+        let stopNow = false;
+        let currentSpeed = speed;
+        let slowingDown = false;
+        const symbols = Array.from(reel.children);
+
+
+        function move() {
+            if (passed >= duration && !slowingDown) {
+                slowingDown = true;
+            }
+
+            if (slowingDown) {
+                currentSpeed -= 0.25;
+            }
+
+            symbols.forEach(symbol => {
+                //Move the symbol
+                let top = parseFloat(symbol.style.top);
+                const previousTop = top;
+                top += currentSpeed;
+
+                //Check if symbol passed the center
+                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) || (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                    playTickSound();
+                }
+
+                //Check if symbol should snap back to the top
+                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                    const img = symbol.querySelector('img');
+                    passed ++;
+                    if (slowingDown) {
+                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25);
+                    }
+                }
+            })
+        }
+    });
+}
+
+function animateReel(reel, speed, duration, index, finalSymbols) {
+
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
         let startTime = null;
         let isSlowingDown = false;
         let currentSpeed = speed;
-        let lastTickPosition = null;
+        let passed = 0;
+        let stopNow = false;
+        let stopperCounter = 0;
 
         function update(timestamp) {
             if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
+            let elapsed = timestamp - startTime;
             
-            if (elapsed > duration * 0.7 && !isSlowingDown) {
+            if (passed > duration && !isSlowingDown) {
                 isSlowingDown = true;
-            }
-
-            if (isSlowingDown) {
-                currentSpeed = Math.max(0.05, currentSpeed * 0.97);
             }
 
             symbols.forEach(symbol => {
@@ -622,21 +652,88 @@ function animateReel(reel, speed, duration) {
                 if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
                     (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
                     playTickSound();
+
+                    if (isSlowingDown) {
+                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25)
+                    }
                 }
 
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
-                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                    passed++;
+                    switch (index) {
+                        case 0:
+                            if (currentSpeed < 0.3) {
+                                //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
+                                switch (reel1stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[0];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[3];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[6];
+                                        currentSpeed = 0;
+                                        break;
+                                }
+                                reel1stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                            }
+                            break;
+                        case 1:
+                            if (currentSpeed < 0.3) {
+                                //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
+                                switch (reel2stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[1];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[4];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[7];
+                                        currentSpeed = 0;
+                                        break;
+                                }
+                                reel2stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                            }
+                            break;
+                        case 2:
+                            console.log("skibidi", currentSpeed)
+                            if (currentSpeed < 1) {
+                                //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
+                                console.log("IT HAPPENED")
+                                switch (reel3stopIndex) {
+                                    case 0:
+                                        img.src = finalSymbols[2];
+                                        break;
+                                    case 1:
+                                        img.src = finalSymbols[5];
+                                        break;
+                                    case 2:
+                                        img.src = finalSymbols[8];
+                                        currentSpeed = 0;
+                                        break;
+                                }
+                                reel3stopIndex++;
+                            } else {
+                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                            }
+                            break;
+                    }
                 }
 
                 symbol.style.top = `${top}vh`;
             });
 
-            if (elapsed < duration) {
+            if (!stopNow) {
                 requestAnimationFrame(update);
             } else {
-                // Previous stopping logic remains the same...
                 const firstSymbol = symbols[0];
                 const currentOffset = parseFloat(firstSymbol.style.top);
                 const targetOffset = Math.round(currentOffset / SYMBOL_HEIGHT) * SYMBOL_HEIGHT;
@@ -668,9 +765,11 @@ function animateReel(reel, speed, duration) {
 }
 
 let canSpin, spinPositions, newCredit;
+let reel1stopIndex = 0;
+let reel2stopIndex = 0;
+let reel3stopIndex = 0;
 
 async function spin() {
-    console.log('Spin lever pulled');
     if (isSpinning) {
         shakeLever();
         shakeSound();
@@ -690,208 +789,104 @@ async function spin() {
     playLeverSound();
     playLeverAnimation();
     
-    // 1. Clear any previous win text
-    winText.textContent = "";
-    displayDiv.classList.remove('showing-win');
+    //Send cloud spin request
+    if (!localMode) {
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        },
+    });
 
-    try {
-        // 2. Request the result from the server
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
+    const data = await res.json();
+    console.log("Spin result:", data)
+
+    if (!data.valid) {
+        initializeWallet();
+        isSpinning = false;
+        return;
+    }
+
+    let finalSymbols = [];
+    let finalNumbers = Object.values(data.winSlots);
+
+        finalNumbers.forEach(number => {
+            switch (number) {
+                case 1:
+                    finalSymbols.push('icon/3.png');
+                    break;
+                case 2:
+                    finalSymbols.push('icon/raiden.png');
+                    break;
+                case 3:
+                    finalSymbols.push('icon/4.png');
+                    break;
+                case 4:
+                    finalSymbols.push('icon/1.png');
+                    break;
+            }
         });
 
-        const data = await res.json();
-        console.log("Spin result:", data);
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
 
-        if (!data.valid) {
-            isSpinning = false; 
-            return;
-        }
+        //Spin animation temporarily disabled
+        /*
+    const spinPromises = Array.from(reels).map((reel, index) => {
+        const duration = 20 + (index * 10);
+        const speed = 4;
+        return animateReel(reel, speed, duration, index, finalSymbols);
+    });
 
-        // 3. Start the Deterministic Animation
-        // We assume data.reelSymbols is [[r1s1, r1s2, r1s3], [r2s1...], [r3s1...]]
-        // If your server only returns IDs, you need to map them to 'icon/x.png' here.
-        
+    await Promise.all(spinPromises);
+    */
+
+    checkWin()
+    playerCredit += data.winAmount;
+    updateCreditDisplay();
+    
+    isSpinning = false;
+    } else {
+        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
+        console.log("Spin result: none")
+
+        let finalSymbols = [];
+        let finalNumbers = [1, 2, 3, 1, 2, 3, 1, 2, 3];
+
+        finalNumbers.forEach(number => {
+            switch (number) {
+                case 1:
+                    finalSymbols.push('icon/3.png');
+                    break;
+                case 2:
+                    finalSymbols.push('icon/raiden.png');
+                    break;
+                case 3:
+                    finalSymbols.push('icon/4.png');
+                    break;
+                case 4:
+                    finalSymbols.push('icon/1.png');
+                    break;
+            }
+        });
+
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
         const spinPromises = Array.from(reels).map((reel, index) => {
-            // Add a slight delay for each reel (Waterfall effect)
-            const delay = index * 200; 
-            // Get the specific symbols for this reel from server response
-            const targetSymbols = data.reelSymbols[index]; 
-            
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    animateReelToResult(reel, targetSymbols).then(resolve);
-                }, delay);
-            });
+        const duration = 40 + (index * 20);
+            const speed = 4;
+            return animateReel(reel, speed, duration, index, finalSymbols);
         });
 
-        // 4. Wait for all reels to stop
         await Promise.all(spinPromises);
+        checkWin();
 
-        // 5. Handle Win Logic
-        playerCredit = data.newBalance; // Best to trust server balance
-        // Or use: playerCredit += data.winAmount;
-        
-        updateCreditDisplay();
-        
-        if (data.winAmount > 0) {
-            // Trigger your existing win logic/sounds
-            // You might need to adapt checkWin to just display the result
-            // since the server already decided it.
-            displayWin(data.winAmount, data.winType); 
-        } else {
-            updateStatistics(0);
-        }
-
-    } catch (e) {
-        console.error("Spin error:", e);
-        // Refund bet or show error in UI
-    } finally {
         isSpinning = false;
     }
-}
-function displayWin(amount, type) {
-    // type could be 'low', 'mid', 'big', 'giant' passed from server
-    // or calculate it based on amount
-    
-    let winType = 'low';
-    if (amount >= 9999) winType = 'giant';
-    else if (amount >= 250) winType = 'big';
-    else if (amount >= 50) winType = 'mid';
-
-    displayDiv.textContent = `WIN: $${amount}!`;
-    displayDiv.classList.add('showing-win');
-    playWinSound(winType);
-
-    setTimeout(() => {
-        displayDiv.classList.remove('showing-win');
-        updateCreditDisplay();
-    }, 5000);
-}
-/**
- * Generates a strip of symbols above the current view and slides them down.
- * @param {HTMLElement} reel - The reel container
- * @param {Array} targetSymbols - Array of 3 image paths ['icon/1.png', ...]
- */
-function animateReelToResult(reel, targetSymbols) {
-    return new Promise(resolve => {
-        const SPINS_COUNT = 20; // Number of "random" symbols to scroll past
-        const DURATION = 2000; // Animation duration in ms (2 seconds)
-        
-        // 1. Get current symbols to ensure visual continuity
-        const currentSymbols = Array.from(reel.children);
-        
-        // 2. Create a fragment for new symbols
-        const fragment = document.createDocumentFragment();
-        const allNewSymbols = [];
-
-        // We are animating TOP from negative to 0.
-        // The structure in DOM will be:
-        // [Top: -X] Target Symbol 0
-        // [Top: -Y] Target Symbol 1
-        // ...
-        // [Top: -Z] Random Symbol (Buffer)
-        // ...
-        // [Top: 0] Current Symbol (Old)
-        
-        // A. Generate the Random Buffer (The "20 symbols")
-        // These go immediately above the current visible ones
-        for (let i = 0; i < SPINS_COUNT; i++) {
-            const symbol = document.createElement('div');
-            symbol.className = 'symbol';
-            const img = document.createElement('img');
-            img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-            symbol.appendChild(img);
-            
-            // Position them stacking upwards (negative VH)
-            // Current symbols are at 0, 14, 28.
-            // First random symbol is at -14, second at -28, etc.
-            const position = -(i + 1) * SYMBOL_HEIGHT;
-            symbol.style.top = `${position}vh`;
-            
-            fragment.appendChild(symbol);
-            allNewSymbols.push(symbol);
-        }
-
-        // B. Generate the Target Symbols (The result)
-        // These go above the random buffer
-        targetSymbols.forEach((src, index) => {
-            const symbol = document.createElement('div');
-            symbol.className = 'symbol';
-            const img = document.createElement('img');
-            img.src = src; // Server provided image
-            symbol.appendChild(img);
-            
-            // Position above the random buffer
-            const position = -(SPINS_COUNT + 1 + index) * SYMBOL_HEIGHT;
-            symbol.style.top = `${position}vh`;
-            
-            fragment.appendChild(symbol);
-            allNewSymbols.push(symbol);
-        });
-
-        // 3. Add new symbols to DOM
-        reel.appendChild(fragment);
-
-        // 4. Force Reflow (browser needs to acknowledge the new elements positions)
-        reel.offsetHeight; 
-
-        // 5. Animate
-        // We want the Target Symbols to land at 0, 14, 28.
-        // Currently, Target[0] is at -(SPINS_COUNT + 1) * 14.
-        // To bring Target[0] to 0, we must move EVERYTHING down by (SPINS_COUNT + 1) * 14.
-        
-        const totalDistance = (SPINS_COUNT + 1) * SYMBOL_HEIGHT; // distance to move
-        
-        // Apply transition to ALL symbols (old and new)
-        const allSymbols = Array.from(reel.children);
-        
-        // Play ticking sound loop during animation
-        const tickInterval = setInterval(playTickSound, DURATION / SPINS_COUNT);
-
-        // Enable transition
-        requestAnimationFrame(() => {
-            allSymbols.forEach(sym => {
-                // Use ease-out for a nice snapping effect at the end
-                sym.style.transition = `top ${DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`;
-                
-                const currentTop = parseFloat(sym.style.top);
-                sym.style.top = `${currentTop + totalDistance}vh`;
-            });
-        });
-
-        // 6. Cleanup after animation finishes
-        setTimeout(() => {
-            clearInterval(tickInterval);
-            
-            // Remove the old symbols and the random buffer
-            // Keep only the 3 target symbols
-            reel.innerHTML = ''; 
-            
-            targetSymbols.forEach((src, i) => {
-                const symbol = document.createElement('div');
-                symbol.className = 'symbol';
-                const img = document.createElement('img');
-                img.src = src;
-                symbol.appendChild(img);
-                
-                // Reset position to clean 0, 14, 28 without transition
-                symbol.style.transition = 'none';
-                symbol.style.top = `${i * SYMBOL_HEIGHT}vh`;
-                
-                reel.appendChild(symbol);
-            });
-
-            // Play a "Thud" or "Stop" sound here if you have one
-            // stopSound.play();
-            
-            resolve();
-        }, DURATION);
-    });
 }
 async function spawnNote(noteValue) {
     return new Promise(resolve => {
@@ -933,24 +928,29 @@ async function pickupNote(note) {
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
 
     //DEBUG - CASH OUT
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
-        method: "POST",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ Amount: noteValue })
-    });
-                
-    const data = await res.json();
+    if (!localMode) {
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ Amount: noteValue })
+        });
+                    
+        const data = await res.json();
 
-    if (!data.valid) {
-        console.log("CASH OUT FAILED");
+        if (!data.valid) {
+            console.log("CASH OUT FAILED");
+        } else {
+            walletBalance += noteValue;
+        }
+        updateAvailableBills();
     } else {
-        console.log("CASHOUT ADDING NOTES");
+        console.log("LOCAL MODE, SIMULATING CASH OUT")
         walletBalance += noteValue;
+        updateAvailableBills();
     }
-    updateAvailableBills();
     
     // Get the current position and size of the note
     const noteRect = note.getBoundingClientRect();
@@ -1043,23 +1043,27 @@ async function cashout() {
                 });
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
-                const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": token,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ amount: value })
-                });
-                
-                const data = await res.json();
-                console.log("CASH IN RESPONSE: ", data);
-                if (!data.valid) {
-                    console.log("CASH IN FAILED");
+                if (!localMode) {
+                    const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": token,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ amount: value })
+                    });
+                    
+                    const data = await res.json();
+                    if (!data.valid) {
+                        console.log("CASH IN FAILED");
+                    } else {
+                        playerCredit += value;
+                        updateCreditDisplay();
+                    }
                 } else {
+                    console.log("LOCAL MODE, SIMULATING CASH IN")
                     playerCredit += value;
                     updateCreditDisplay();
-                    console.log(isProcessingCashout);
                 }
                 // Wait before next note
                 await new Promise(resolve => setTimeout(resolve, 300));
@@ -1743,9 +1747,6 @@ document.addEventListener('mousedown', (e) => {
         robotController.playSpecialSequence();
     }
 });
-
-
-
 
 cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
