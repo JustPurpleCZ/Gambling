@@ -4,9 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lobbies</title>
+    <link rel="stylesheet" href="dices-hub.css">
 </head>
 <body>
     <p>Available lobbies:</p>
+
+    <div id="lobbies"></div>
+    <button id="refresh">Refresh</button>
+
+    <p>Create lobby:</p>
+    <form id="createForm">
+        <p>Name:</p>
+        <input type="text" id="inputName" required>
+        <button type="submit">Create</button>
+    </form>
 
     <script type="module" src="dices-hub.js"></script>
 </body>

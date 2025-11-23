@@ -161,7 +161,7 @@ async function initUnlocks() {
         localStorage.removeItem("userToken");
         window.location.href = "index.html";
     } else if (token == 1) {
-        unlocks = {"slotMachine": true, "wheelOfFortune": true, "dices": false}
+        unlocks = {"slotMachine": true, "wheelOfFortune": true, "dices": true}
         console.log("local mode");
     } else {
         await setUnlocks();

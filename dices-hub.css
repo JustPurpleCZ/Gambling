@@ -1,0 +1,22 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+.lobby {
+    display: flex;
+    color: red;
+    border: solid 1px white;
+}
+
+.lobby * {
+    margin: 1vh;
+}
+
+form {
+    display: flex;
+}
+
+form * {
+    margin: 1vh;
+}
