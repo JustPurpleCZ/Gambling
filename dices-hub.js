@@ -97,7 +97,9 @@ async function loadLobbies() {
     });
 }
 
-async function createLobby(inputLobbyName) {
+async function createLobby() {
+    const inputLobbyName = document.getElementById("inputName").value;
+    console.log("Lobby name: " + inputLobbyName);
     const res = await fetch("https://dices-create-gtw5ppnvta-ey.a.run.app", {
         method: "POST",
         headers: {
@@ -111,7 +113,9 @@ async function createLobby(inputLobbyName) {
     console.log(response);
 
     if (response.success) {
-        return true;
+        console.log("Lobby created");
+    } else {
+        console.log("no.");
     }
 }
 
@@ -127,13 +131,7 @@ document.getElementById("refresh").addEventListener("click", () => {
 const createForm = document.getElementById("createForm");
 createForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const inputLobbyName = document.getElementById("inputName").textContent;
-    
-    if (createLobby(inputLobbyName)) {
-        console.log("Lobby created");
-    } else {
-        console.log("no.");
-    }
+    createLobby()
 });
 
 window.addEventListener("keydown", (key) => {
