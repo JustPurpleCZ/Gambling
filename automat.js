@@ -1,37 +1,31 @@
-const token = localStorage.getItem('userToken');
+// Add to top of automat.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-//Check for local mode (testing purporses)
-let localMode = false;
-if (token && token == 1) {
-    localMode = true;
-}
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.appspot.com",
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getDatabase();
 async function checkAuth() {
-    if (!token) {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
         window.location.href = 'index.html';
         return;
     }
     
-    //O - validate token
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-
-    const tokenValid = await res.json();
-    console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token valid: ", tokenValid.tokenValid);
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 5000);
-    }
-
     //DEBUG - TOKEN SHENANIGANS
-    try {
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -42,48 +36,56 @@ async function checkAuth() {
 
     localBalance = await res.json();
     console.log("Fetched balance:", localBalance);
-    } catch (e) {
-        console.log("Error fetching balance:", e);
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 5000);
-        return;
-    }
     
     if (!localBalance) {
-        console.log("NO BALANCE, LOGGING OUT");
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 5000);
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
         return;
     }
+
+    //DEBUG - END OF MY CODE
 }
 
 // Get user data
 let localBalance;
-let userData;
+const token = localStorage.getItem('userToken');
+const userData = checkAuth();
 
 //Update online status every 1 minute
-if (!localMode) {
-    setInterval(() => {
-        console.log("Updating last online")
-        fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-            method: "GET",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            }
-        });
-    }, 60000);
-} else {
-    console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
-}
+setInterval(() => {
+    console.log("Updating last online")
+    fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+}, 60000);
 
-// O - Exit function (formerly logout)
+// Logout function
 function logout() {
-    window.location.href = "navigation.html";
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+        // Update user's online status to false before logging out
+        const userRef = ref(db, 'users/' + currentUser + '/online');
+        set(userRef, false)
+            .then(() => {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('userToken');
+                window.location.href = 'index.html';
+            })
+            .catch(error => {
+                console.error('Error updating online status:', error);
+                // Still logout even if updating online status fails
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('userToken');
+                window.location.href = 'index.html';
+            });
+    } else {
+        window.location.href = 'index.html';
+    }
 }
 const symbolImages = [
     'icon/1.png',
@@ -147,10 +149,10 @@ document.addEventListener('click', () => {
 
 
 // Convert measurements to vh
-const SYMBOL_HEIGHT = 14; // 14vh to match CSS
+const SYMBOL_HEIGHT = 14; // 5vh to match CSS
 const VISIBLE_SYMBOLS = 3;
-const BUFFER_SYMBOLS = 2; // One above, one below
-const TOTAL_SYMBOLS = VISIBLE_SYMBOLS + BUFFER_SYMBOLS; // 5 total symbols per reel
+const BUFFER_SYMBOLS = 2;
+const TOTAL_SYMBOLS = VISIBLE_SYMBOLS + BUFFER_SYMBOLS;
 
 
 const LEVER_GIF = 'main/automat/paka.gif';
@@ -176,10 +178,8 @@ const displayDiv = document.querySelector('.credit-display');
 
 
 async function initializeWallet() {
-    if (!localMode) {
-    await checkAuth();
-
-    if (!token) {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
         window.location.href = 'index.html';
         return;
     }
@@ -189,6 +189,7 @@ async function initializeWallet() {
         await localBalance;
         console.log(localBalance)
         setTimeout(() => {
+localStorage.removeItem('currentUser');
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
         return;
@@ -199,13 +200,7 @@ async function initializeWallet() {
     playerCredit = localBalance.creditBalance;
     updateAvailableBills();
     updateCreditDisplay();
-    } else {
-        console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
-        walletBalance = 500;
-        playerCredit = 100;
-        updateAvailableBills();
-        updateCreditDisplay();
-    }
+
 }
 
 function updateCreditDisplay() {
@@ -352,11 +347,22 @@ function playTickSound() {
 }
 
 function checkSymbolPosition(top) {
-    // The middle visible slot is at SYMBOL_HEIGHT * 2 (28vh)
-    const centerPosition = SYMBOL_HEIGHT * 2;
+    const centerPosition = SYMBOL_HEIGHT;
     return Math.abs(top - centerPosition) < 0.5;
 }
 
+//DEBUG - GETSYMBOLSATPOSITION HAS TO BE A CLOUDFUNCTION, RETURNS THE WINNING SYMBOLS (OR NULL), NEEDS: reels, 
+
+function getSymbolsAtPosition(position) {
+    return Array.from(reels).map(reel => {
+        const symbols = Array.from(reel.children);
+        const symbol = symbols.find(s => {
+            const top = parseFloat(s.style.top);
+            return Math.abs(top - (SYMBOL_HEIGHT * position)) < SYMBOL_HEIGHT * 0.1;
+        });
+        return symbol ? symbol.querySelector('img').src : null;
+    });
+}
 function playWinSound(win_type) {
     let soundToPlay;
     
@@ -389,8 +395,6 @@ function vhToPx(vh) {
 function initializeReel(reel) {
     reel.innerHTML = '';
     
-    // TOTAL_SYMBOLS is 5
-    // They will be at 0, 14, 28, 42, 56 vh
     for (let i = 0; i < TOTAL_SYMBOLS; i++) {
         const symbol = document.createElement('div');
         symbol.className = 'symbol';
@@ -524,55 +528,38 @@ async function toggleMusic() {
         isMusicPlaying = false;
     }
 }
+async function updateStatistics(wonAmount = 0) {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
 
-// Helper to get symbols at a specific row (0, 1, or 2)
-function getSymbolsAtPosition(row) {
-    const symbols = [];
-    const targetTop = SYMBOL_HEIGHT * (row + 1); // Row 0 -> 14vh, Row 1 -> 28vh, Row 2 -> 42vh
-    
-    reels.forEach(reel => {
-        const reelSymbols = Array.from(reel.children);
-        for (const symbol of reelSymbols) {
-            const top = parseFloat(symbol.style.top);
-            // Check if symbol is at the target top position
-            if (Math.abs(top - targetTop) < 0.1) {
-                symbols.push(symbol.querySelector('img').src);
-                break; // Found symbol for this reel
-            }
-        }
+    const statsRef = ref(db, `users/${currentUser}/statistics/slotMachine`);
+    const snapshot = await get(statsRef);
+    const currentStats = snapshot.val() || { spins: 0, moneywon: 0 };
+
+    await set(statsRef, {
+        spins: currentStats.spins + 1,
+        moneywon: currentStats.moneywon + wonAmount
     });
-    return symbols;
 }
 
-
-//DEBUG - NOW ONLY VISUAL, WIN CHECKING IS A CLOUDFUNCTION
+//DEBUG - CHECKS THE ROWS AND CHECKS FOR WINS, CLOUD FUNCTION (partially, NEEDS DECONSTRUCTION for = [playing sounds, changing slot machine display number, showing win])
 function checkWin() {
-    // Get symbols from the middle row (row index 1)
-    const middleRow = getSymbolsAtPosition(1); 
-    
-    // Check if all symbols in the middle row are the same
-    if (middleRow.length === 3 && middleRow.every(symbol => symbol === middleRow[0])) {
-        const winningSymbolSrc = middleRow[0];
-        
-        // Extract symbol name (e.g., '4.png', 'raiden.png')
-        const winningSymbolFile = winningSymbolSrc.split('/').pop();
-        const baseSymbol = `icon/${winningSymbolFile}`; // Reconstruct base path for comparison
+    const middleRow = getSymbolsAtPosition(1);
+    if (middleRow.every(symbol => symbol === middleRow[0])) {
+        const winningSymbol = middleRow[0].split('/').pop();
+        const baseSymbol = `icon/${winningSymbol}`;
         
         const topRow = getSymbolsAtPosition(0);
         const bottomRow = getSymbolsAtPosition(2);
         
         let winAmount;
         
-        // Check for 3 full rows
-        if (topRow.length === 3 && topRow.every(symbol => symbol === topRow[0]) &&
-            bottomRow.length === 3 && bottomRow.every(symbol => symbol === bottomRow[0]) &&
-            topRow[0] === middleRow[0] && bottomRow[0] === middleRow[0]) {
-            
-            winAmount = 9999; // Jackpot
+        if (topRow.every(symbol => symbol === topRow[0]) && 
+            bottomRow.every(symbol => symbol === bottomRow[0])) {
+            winAmount = 9999;
             displayDiv.textContent = `JACKPOT:$${winAmount}!`;
             playWinSound('giant');
         } else {
-            // Standard win on middle row
             if (baseSymbol === 'icon/4.png') {
                 winAmount = 250;
                 displayDiv.textContent = `BIG WIN: $${winAmount}!`;
@@ -581,7 +568,7 @@ function checkWin() {
                 winAmount = 50;
                 displayDiv.textContent = `WIN: $${winAmount}!`;
                 playWinSound('mid');
-            } else { // 'icon/1.png'
+            } else {
                 winAmount = 5;
                 displayDiv.textContent = `WIN: $${winAmount}!`;
                 playWinSound('low');
@@ -590,6 +577,9 @@ function checkWin() {
         
         displayDiv.classList.add('showing-win');
         
+        // Add to credit
+        playerCredit += winAmount;
+        updateStatistics(winAmount);
         // Reset display after 5 seconds
         setTimeout(() => {
             displayDiv.classList.remove('showing-win');
@@ -598,46 +588,29 @@ function checkWin() {
         
         return true;
     }
-    
-    // No win
+    updateStatistics(0);
     updateCreditDisplay();
     return false;
 }
 
-// Global/shared state for reel stopping
-let reel1stopIndex = 0;
-let reel2stopIndex = 0;
-let reel3stopIndex = 0;
-
-/**
- * [REVISED FUNCTION]
- * Animates a single reel.
- * - Spins symbols using random images.
- * - As it slows down (based on duration), it "feeds" the finalSymbols
- * into the reel from the top.
- * - Finishes by snapping the reel so the final symbols are perfectly
- * aligned in the visible slots.
- */
-function animateReel(reel, speed, duration, index, finalSymbols) {
+function animateReel(reel, speed, duration) {
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
         let startTime = null;
         let isSlowingDown = false;
         let currentSpeed = speed;
+        let lastTickPosition = null;
 
         function update(timestamp) {
             if (!startTime) startTime = timestamp;
             const elapsed = timestamp - startTime;
             
-            // Start slowing down when 70% of duration has passed
             if (elapsed > duration * 0.7 && !isSlowingDown) {
                 isSlowingDown = true;
             }
 
-            // Decelerate if slowing down
             if (isSlowingDown) {
-                // Slow down, but maintain a minimum speed for the final approach
-                currentSpeed = Math.max(0.1, currentSpeed * 0.98); 
+                currentSpeed = Math.max(0.05, currentSpeed * 0.97);
             }
 
             symbols.forEach(symbol => {
@@ -645,137 +618,47 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
                 const previousTop = top;
                 top += currentSpeed;
 
-                // Play tick sound when passing the middle visible symbol
-                const centerPosition = SYMBOL_HEIGHT * 2; // Middle slot (28vh)
-                if (previousTop < centerPosition && top >= centerPosition) {
+                // Check if symbol passed center point
+                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
+                    (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
                     playTickSound();
                 }
 
-                // When a symbol wraps around from bottom to top
-                if (top >= SYMBOL_HEIGHT * TOTAL_SYMBOLS) { // 14vh * 5 = 70vh
+                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
                     top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
                     const img = symbol.querySelector('img');
-                    
-                    let symbolSet = false;
-                    // If slowing down, try to set one of the final symbols
-                    if (isSlowingDown && finalSymbols && finalSymbols.length >= 9) {
-                        let symbolToSet = null;
-                        
-                        // [FIXED] Moved index increment to be *after* a symbol is set
-                        if (index === 0) { // Reel 1
-                            if (reel1stopIndex === 0) {
-                                symbolToSet = finalSymbols[0]; // Top
-                                reel1stopIndex++;
-                            } else if (reel1stopIndex === 1) {
-                                symbolToSet = finalSymbols[3]; // Middle
-                                reel1stopIndex++;
-                            } else if (reel1stopIndex === 2) {
-                                symbolToSet = finalSymbols[6]; // Bottom
-                                reel1stopIndex++;
-                            }
-                        } else if (index === 1) { // Reel 2
-                            if (reel2stopIndex === 0) {
-                                symbolToSet = finalSymbols[1]; // Top
-                                reel2stopIndex++;
-                            } else if (reel2stopIndex === 1) {
-                                symbolToSet = finalSymbols[4]; // Middle
-                                reel2stopIndex++;
-                            } else if (reel2stopIndex === 2) {
-                                symbolToSet = finalSymbols[7]; // Bottom
-                                reel2stopIndex++;
-                            }
-                        } else if (index === 2) { // Reel 3
-                            if (reel3stopIndex === 0) {
-                                symbolToSet = finalSymbols[2]; // Top
-                                reel3stopIndex++;
-                            } else if (reel3stopIndex === 1) {
-                                symbolToSet = finalSymbols[5]; // Middle
-                                reel3stopIndex++;
-                            } else if (reel3stopIndex === 2) {
-                                symbolToSet = finalSymbols[8]; // Bottom
-                                reel3stopIndex++;
-                            }
-                        }
-                        
-                        if (symbolToSet) {
-                            img.src = symbolToSet;
-                            symbolSet = true;
-                        }
-                    }
-
-                    // If not slowing down, or if we've already set the 3 final symbols,
-                    // use a random one for the buffer.
-                    if (!symbolSet) {
-                        img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                    }
+                    img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
                 }
+
                 symbol.style.top = `${top}vh`;
             });
 
-            // Check if duration is over
             if (elapsed < duration) {
                 requestAnimationFrame(update);
             } else {
-                // --- FINAL SNAP LOGIC (REVISED) ---
-                // Time's up. Snap the *middle* symbol into the middle slot.
+                // Previous stopping logic remains the same...
+                const firstSymbol = symbols[0];
+                const currentOffset = parseFloat(firstSymbol.style.top);
+                const targetOffset = Math.round(currentOffset / SYMBOL_HEIGHT) * SYMBOL_HEIGHT;
+                const distance = targetOffset - currentOffset;
 
-                // 1. Determine the target image src for the MIDDLE slot of *this* reel
-                let targetMiddleSrc = null;
-                if (finalSymbols && finalSymbols.length >= 9) {
-                    if (index === 0) targetMiddleSrc = finalSymbols[3]; // M1
-                    else if (index === 1) targetMiddleSrc = finalSymbols[4]; // M2
-                    else if (index === 2) targetMiddleSrc = finalSymbols[5]; // M3
-                }
-
-                let symbolToSnap = null;
-                
-                // 2. Find the symbol element that currently holds that middle image
-                if (targetMiddleSrc) {
-                    // We use endsWith because the browser might store the full URL
-                    symbolToSnap = symbols.find(s => s.querySelector('img').src.endsWith(targetMiddleSrc));
-                }
-
-                // 3. Fallback: If we couldn't find it (e.g., animation stopped too early),
-                // snap the symbol closest to the *middle* slot, NOT the top slot.
-                const middlePosition = SYMBOL_HEIGHT * 2; // 28vh
-                if (!symbolToSnap) {
-                    console.log(`Reel ${index}: Could not find middle symbol, using fallback snap.`);
-                    let minDistance = Infinity;
-                    symbols.forEach(symbol => {
-                        const top = parseFloat(symbol.style.top);
-                        const distance = Math.abs(top - middlePosition);
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            symbolToSnap = symbol;
-                        }
-                    });
-                }
-
-                // 4. Calculate the offset needed to move this symbol *exactly* to 28vh
-                const snapOffset = middlePosition - parseFloat(symbolToSnap.style.top);
-
-                // 5. Apply this offset to all symbols in the reel with a smooth animation
                 symbols.forEach(symbol => {
                     const currentTop = parseFloat(symbol.style.top);
-                    let finalTop = currentTop + snapOffset;
-
-                    // Wrap symbols that go off the top/bottom
-                    // Use a robust modulo for potentially negative numbers
-                    finalTop = ((finalTop % (TOTAL_SYMBOLS * SYMBOL_HEIGHT)) + (TOTAL_SYMBOLS * SYMBOL_HEIGHT)) % (TOTAL_SYMBOLS * SYMBOL_HEIGHT);
-                    
-                    // Round to avoid floating point errors
-                    finalTop = Math.round(finalTop * 100) / 100;
-
+                    const finalTop = currentTop + distance;
                     symbol.style.transition = 'top 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
                     symbol.style.top = `${finalTop}vh`;
                 });
 
-                // After the snap animation, remove the transition property
                 setTimeout(() => {
                     symbols.forEach(symbol => {
                         symbol.style.transition = 'none';
+                        let top = parseFloat(symbol.style.top);
+                        if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                            top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                            symbol.style.top = `${top}vh`;
+                        }
                     });
-                    resolve(); // Reel animation is complete
+                    resolve();
                 }, 500);
             }
         }
@@ -784,15 +667,10 @@ function animateReel(reel, speed, duration, index, finalSymbols) {
     });
 }
 
-
 let canSpin, spinPositions, newCredit;
-let finalSymbolsGlobal = null; // We still use this as a fallback
 
-/**
- * [MODIFIED FUNCTION]
- * - Added reset for reel stop indexes.
- */
 async function spin() {
+    console.log('Spin lever pulled');
     if (isSpinning) {
         shakeLever();
         shakeSound();
@@ -811,129 +689,210 @@ async function spin() {
     updateCreditDisplay();
     playLeverSound();
     playLeverAnimation();
-
-    // *** CRITICAL FIX ***
-    // Reset reel stop indexes for the new spin
-    reel1stopIndex = 0;
-    reel2stopIndex = 0;
-    reel3stopIndex = 0;
     
-    let finalSymbols;
-    let serverData;
+    // 1. Clear any previous win text
+    winText.textContent = "";
+    displayDiv.classList.remove('showing-win');
 
-    // Await the fetch *before* starting the spin animation
-    // This guarantees we have the final symbols
     try {
-        if (!localMode) {
-            const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
-                method: "POST",
-                headers: {
-                    "Authorization": token,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ bet: betAmount, ts: Date.now() })
-            });
-            const data = await res.json();
-            serverData = data;
-            
-            // Map server numeric slots into icon paths
-            finalSymbols = [];
-            
-            // [FIXED] Use a loop to guarantee order from the object
-            const finalNumbers = [];
-            if (data.winSlots) {
-                for (let i = 0; i < 9; i++) {
-                    // Push the number (or undefined if missing)
-                    finalNumbers.push(data.winSlots[String(i)]);
-                }
-            }
-            
-            // Check for *length* and also that no values are undefined
-            if (finalNumbers.length >= 9 && finalNumbers.every(n => n !== undefined)) {
-                // Get the first 9 symbols (top, mid, bot for 3 reels)
-                finalNumbers.forEach(number => { // No slice needed
-                    switch (number) {
-                        case 1: finalSymbols.push('icon/3.png'); break;
-                        case 2: finalSymbols.push('icon/raiden.png'); break;
-                        case 3: finalSymbols.push('icon/4.png'); break;
-                        case 4: finalSymbols.push('icon/1.png'); break;
-                        default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                    }
-                });
-            } else {
-                 // Fallback if server data is incomplete
-                console.log("Incomplete server data, using random symbols");
-                finalSymbols = [];
-                for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-            }
-            console.log("Final symbols from server:", finalSymbols);
+        // 2. Request the result from the server
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+        });
 
-        } else {
-            // local mode: prepare finalSymbols immediately
-            // Test a win: [mid, mid, mid] -> [x,x,x, 2,2,2, x,x,x]
-            // Server format: [T1,T2,T3, M1,M2,M3, B1,B2,B3]
-            // We'll use [1,1,1, 2,2,2, 3,3,3]
-            // const finalNumbers = [1,1,1, 2,2,2, 3,3,3]; 
-            const finalNumbers = [
-                Math.ceil(Math.random() * 4), Math.ceil(Math.random() * 4), Math.ceil(Math.random() * 4),
-                2, 2, 2, // Force middle row win (raiden)
-                Math.ceil(Math.random() * 4), Math.ceil(Math.random() * 4), Math.ceil(Math.random() * 4)
-            ];
-            finalSymbols = [];
-            finalNumbers.forEach(number => {
-                switch (number) {
-                    case 1: finalSymbols.push('icon/3.png'); break;
-                    case 2: finalSymbols.push('icon/raiden.png'); break;
-                    case 3: finalSymbols.push('icon/4.png'); break;
-                    case 4: finalSymbols.push('icon/1.png'); break;
-                    default: finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-                }
-            });
-            // Simulate server win data for local mode
-            serverData = { valid: true, winAmount: 50, winSlots: {} }; 
-            console.log("Final symbols (local):", finalSymbols);
-        }
-    } catch (e) {
-        console.log("Spin fetch failed:", e);
-        // fallback to random final symbols if fetch fails
-        finalSymbols = [];
-        for (let i = 0; i < 9; i++) finalSymbols.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-        serverData = null;
-    }
-    
-    // Set global as a fallback (though animateReel now takes it as a param)
-    finalSymbolsGlobal = finalSymbols; 
+        const data = await res.json();
+        console.log("Spin result:", data);
 
-    // Now start visual spin
-    const spinPromises = Array.from(reels).map((reel, index) => {
-        // Use time-based durations
-        const duration = 2000 + (index * 1000); // 2s, 3s, 4s
-        const speed = 4; // Initial speed
-        // Pass the final symbols to animateReel
-        return animateReel(reel, speed, duration, index, finalSymbols);
-    });
-
-    // wait for reels to finish visually
-    await Promise.all(spinPromises);
-
-    // Apply win / credit changes from the server data we already fetched
-    if (serverData) {
-        if (!serverData.valid) {
-            // Handle invalid spin (e.g., desync)
-            await initializeWallet(); // Re-sync with server
-            isSpinning = false;
+        if (!data.valid) {
+            isSpinning = false; 
             return;
         }
-        playerCredit += serverData.winAmount || 0;
+
+        // 3. Start the Deterministic Animation
+        // We assume data.reelSymbols is [[r1s1, r1s2, r1s3], [r2s1...], [r3s1...]]
+        // If your server only returns IDs, you need to map them to 'icon/x.png' here.
+        
+        const spinPromises = Array.from(reels).map((reel, index) => {
+            // Add a slight delay for each reel (Waterfall effect)
+            const delay = index * 200; 
+            // Get the specific symbols for this reel from server response
+            const targetSymbols = data.reelSymbols[index]; 
+            
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    animateReelToResult(reel, targetSymbols).then(resolve);
+                }, delay);
+            });
+        });
+
+        // 4. Wait for all reels to stop
+        await Promise.all(spinPromises);
+
+        // 5. Handle Win Logic
+        playerCredit = data.newBalance; // Best to trust server balance
+        // Or use: playerCredit += data.winAmount;
+        
+        updateCreditDisplay();
+        
+        if (data.winAmount > 0) {
+            // Trigger your existing win logic/sounds
+            // You might need to adapt checkWin to just display the result
+            // since the server already decided it.
+            displayWin(data.winAmount, data.winType); 
+        } else {
+            updateStatistics(0);
+        }
+
+    } catch (e) {
+        console.error("Spin error:", e);
+        // Refund bet or show error in UI
+    } finally {
+        isSpinning = false;
     }
-
-    updateCreditDisplay();
-    // This function just updates the win display text/sounds based on visual symbols
-    checkWin(); 
-
-    isSpinning = false;
 }
+function displayWin(amount, type) {
+    // type could be 'low', 'mid', 'big', 'giant' passed from server
+    // or calculate it based on amount
+    
+    let winType = 'low';
+    if (amount >= 9999) winType = 'giant';
+    else if (amount >= 250) winType = 'big';
+    else if (amount >= 50) winType = 'mid';
 
+    displayDiv.textContent = `WIN: $${amount}!`;
+    displayDiv.classList.add('showing-win');
+    playWinSound(winType);
+
+    setTimeout(() => {
+        displayDiv.classList.remove('showing-win');
+        updateCreditDisplay();
+    }, 5000);
+}
+/**
+ * Generates a strip of symbols above the current view and slides them down.
+ * @param {HTMLElement} reel - The reel container
+ * @param {Array} targetSymbols - Array of 3 image paths ['icon/1.png', ...]
+ */
+function animateReelToResult(reel, targetSymbols) {
+    return new Promise(resolve => {
+        const SPINS_COUNT = 20; // Number of "random" symbols to scroll past
+        const DURATION = 2000; // Animation duration in ms (2 seconds)
+        
+        // 1. Get current symbols to ensure visual continuity
+        const currentSymbols = Array.from(reel.children);
+        
+        // 2. Create a fragment for new symbols
+        const fragment = document.createDocumentFragment();
+        const allNewSymbols = [];
+
+        // We are animating TOP from negative to 0.
+        // The structure in DOM will be:
+        // [Top: -X] Target Symbol 0
+        // [Top: -Y] Target Symbol 1
+        // ...
+        // [Top: -Z] Random Symbol (Buffer)
+        // ...
+        // [Top: 0] Current Symbol (Old)
+        
+        // A. Generate the Random Buffer (The "20 symbols")
+        // These go immediately above the current visible ones
+        for (let i = 0; i < SPINS_COUNT; i++) {
+            const symbol = document.createElement('div');
+            symbol.className = 'symbol';
+            const img = document.createElement('img');
+            img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+            symbol.appendChild(img);
+            
+            // Position them stacking upwards (negative VH)
+            // Current symbols are at 0, 14, 28.
+            // First random symbol is at -14, second at -28, etc.
+            const position = -(i + 1) * SYMBOL_HEIGHT;
+            symbol.style.top = `${position}vh`;
+            
+            fragment.appendChild(symbol);
+            allNewSymbols.push(symbol);
+        }
+
+        // B. Generate the Target Symbols (The result)
+        // These go above the random buffer
+        targetSymbols.forEach((src, index) => {
+            const symbol = document.createElement('div');
+            symbol.className = 'symbol';
+            const img = document.createElement('img');
+            img.src = src; // Server provided image
+            symbol.appendChild(img);
+            
+            // Position above the random buffer
+            const position = -(SPINS_COUNT + 1 + index) * SYMBOL_HEIGHT;
+            symbol.style.top = `${position}vh`;
+            
+            fragment.appendChild(symbol);
+            allNewSymbols.push(symbol);
+        });
+
+        // 3. Add new symbols to DOM
+        reel.appendChild(fragment);
+
+        // 4. Force Reflow (browser needs to acknowledge the new elements positions)
+        reel.offsetHeight; 
+
+        // 5. Animate
+        // We want the Target Symbols to land at 0, 14, 28.
+        // Currently, Target[0] is at -(SPINS_COUNT + 1) * 14.
+        // To bring Target[0] to 0, we must move EVERYTHING down by (SPINS_COUNT + 1) * 14.
+        
+        const totalDistance = (SPINS_COUNT + 1) * SYMBOL_HEIGHT; // distance to move
+        
+        // Apply transition to ALL symbols (old and new)
+        const allSymbols = Array.from(reel.children);
+        
+        // Play ticking sound loop during animation
+        const tickInterval = setInterval(playTickSound, DURATION / SPINS_COUNT);
+
+        // Enable transition
+        requestAnimationFrame(() => {
+            allSymbols.forEach(sym => {
+                // Use ease-out for a nice snapping effect at the end
+                sym.style.transition = `top ${DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`;
+                
+                const currentTop = parseFloat(sym.style.top);
+                sym.style.top = `${currentTop + totalDistance}vh`;
+            });
+        });
+
+        // 6. Cleanup after animation finishes
+        setTimeout(() => {
+            clearInterval(tickInterval);
+            
+            // Remove the old symbols and the random buffer
+            // Keep only the 3 target symbols
+            reel.innerHTML = ''; 
+            
+            targetSymbols.forEach((src, i) => {
+                const symbol = document.createElement('div');
+                symbol.className = 'symbol';
+                const img = document.createElement('img');
+                img.src = src;
+                symbol.appendChild(img);
+                
+                // Reset position to clean 0, 14, 28 without transition
+                symbol.style.transition = 'none';
+                symbol.style.top = `${i * SYMBOL_HEIGHT}vh`;
+                
+                reel.appendChild(symbol);
+            });
+
+            // Play a "Thud" or "Stop" sound here if you have one
+            // stopSound.play();
+            
+            resolve();
+        }, DURATION);
+    });
+}
 async function spawnNote(noteValue) {
     return new Promise(resolve => {
         const note = document.createElement('img');
@@ -974,29 +933,24 @@ async function pickupNote(note) {
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
 
     //DEBUG - CASH OUT
-    if (!localMode) {
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ Amount: noteValue })
-        });
-                    
-        const data = await res.json();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ Amount: noteValue })
+    });
+                
+    const data = await res.json();
 
-        if (!data.valid) {
-            console.log("CASH OUT FAILED");
-        } else {
-            walletBalance += noteValue;
-        }
-        updateAvailableBills();
+    if (!data.valid) {
+        console.log("CASH OUT FAILED");
     } else {
-        console.log("LOCAL MODE, SIMULATING CASH OUT")
+        console.log("CASHOUT ADDING NOTES");
         walletBalance += noteValue;
-        updateAvailableBills();
     }
+    updateAvailableBills();
     
     // Get the current position and size of the note
     const noteRect = note.getBoundingClientRect();
@@ -1088,28 +1042,24 @@ async function cashout() {
                     console.log('Sound play failed:', error);
                 });
                 // Add to credit
-                //DEBUG - SEND CASH IN CLOUDFUNCTION REQUEST
-                if (!localMode) {
-                    const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
-                        method: "POST",
-                        headers: {
-                            "Authorization": token,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ amount: value })
-                    });
-                    
-                    const data = await res.json();
-                    if (!data.valid) {
-                        console.log("CASH IN FAILED");
-                    } else {
-                        playerCredit += value;
-                        updateCreditDisplay();
-                    }
+                //DEBUG - SEND CASH IN CLOUD REQUEST
+                const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ amount: value })
+                });
+                
+                const data = await res.json();
+                console.log("CASH IN RESPONSE: ", data);
+                if (!data.valid) {
+                    console.log("CASH IN FAILED");
                 } else {
-                    console.log("LOCAL MODE, SIMULATING CASH IN")
                     playerCredit += value;
                     updateCreditDisplay();
+                    console.log(isProcessingCashout);
                 }
                 // Wait before next note
                 await new Promise(resolve => setTimeout(resolve, 300));
@@ -1132,7 +1082,6 @@ async function cashout() {
     }
     else if(playerCredit > 0 && !isDoorOpen && !isOutputting){
     // Normal cashout process remains the same
-    isOutputting = true; // Set flag
     const notesToDispense = calculateNotes(playerCredit);
     playerCredit = 0;
     updateCreditDisplay();
@@ -1148,8 +1097,6 @@ async function cashout() {
     
     await openDoor();
     isDoorOpen = true;
-    isOutputting = false; // Clear flag
-    isProcessingCashout = false; // Clear flag
     }
 }
 async function collectNote(note) {
@@ -1796,6 +1743,9 @@ document.addEventListener('mousedown', (e) => {
         robotController.playSpecialSequence();
     }
 });
+
+
+
 
 cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
