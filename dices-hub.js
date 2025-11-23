@@ -59,7 +59,7 @@ async function loadLobbies() {
 
         for (const lobby in data) {
 
-            lobbies[lobby] = data[lobby];
+            lobbies.push(data[lobby]);
 
         }
 
@@ -74,6 +74,7 @@ async function loadLobbies() {
     lobbiesDiv.replaceChildren();
 
     lobbies.forEach(lobby => {
+
         const lobbyDiv = document.createElement("div");
         const lobbyName = document.createElement("p");
         const hostName = document.createElement("p");
