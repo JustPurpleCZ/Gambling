@@ -624,151 +624,131 @@ function spinAnimation(reel, speed = 4, duration, index, finalSymbols) {
     });
 }
 
-function animateReel(reel, speed, duration, index, finalSymbols) {
-
-    return new Promise(resolve => {
-        const symbols = Array.from(reel.children);
-        let startTime = null;
-        let isSlowingDown = false;
-        let currentSpeed = speed;
-        let passed = 0;
-        let stopNow = false;
-        let stopperCounter = 0;
-
-        function update(timestamp) {
-            if (!startTime) startTime = timestamp;
-            let elapsed = timestamp - startTime;
-            
-            if (passed > duration && !isSlowingDown) {
-                isSlowingDown = true;
-            }
-
-            symbols.forEach(symbol => {
-                let top = parseFloat(symbol.style.top);
-                const previousTop = top;
-                top += currentSpeed;
-
-                // Check if symbol passed center point
-                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
-                    (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
-                    playTickSound();
-
-                    if (isSlowingDown) {
-                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25)
-                    }
-                }
-
-                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                    const img = symbol.querySelector('img');
-                    passed++;
-                    switch (index) {
-                        case 0:
-                            if (currentSpeed < 0.3) {
-                                //FIRST REEL ENGING SPEEDS: 2.4, 1.9, 1.5
-                                switch (reel1stopIndex) {
-                                    case 0:
-                                        img.src = finalSymbols[0];
-                                        break;
-                                    case 1:
-                                        img.src = finalSymbols[3];
-                                        break;
-                                    case 2:
-                                        img.src = finalSymbols[6];
-                                        currentSpeed = 0;
-                                        break;
-                                }
-                                reel1stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
-                        case 1:
-                            if (currentSpeed < 0.3) {
-                                //SECOND REEL ENGING SPEEDS: 1.9, 1.5, 1.1
-                                switch (reel2stopIndex) {
-                                    case 0:
-                                        img.src = finalSymbols[1];
-                                        break;
-                                    case 1:
-                                        img.src = finalSymbols[4];
-                                        break;
-                                    case 2:
-                                        img.src = finalSymbols[7];
-                                        currentSpeed = 0;
-                                        break;
-                                }
-                                reel2stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
-                        case 2:
-                            console.log("skibidi", currentSpeed)
-                            if (currentSpeed < 1) {
-                                //THIRD REEL ENGING SPEEDS: 1.4, 1.0, 0.5
-                                console.log("IT HAPPENED")
-                                switch (reel3stopIndex) {
-                                    case 0:
-                                        img.src = finalSymbols[2];
-                                        break;
-                                    case 1:
-                                        img.src = finalSymbols[5];
-                                        break;
-                                    case 2:
-                                        img.src = finalSymbols[8];
-                                        currentSpeed = 0;
-                                        break;
-                                }
-                                reel3stopIndex++;
-                            } else {
-                                img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-                            }
-                            break;
-                    }
-                }
-
-                symbol.style.top = `${top}vh`;
-            });
-
-            if (!stopNow) {
-                requestAnimationFrame(update);
-            } else {
-                const firstSymbol = symbols[0];
-                const currentOffset = parseFloat(firstSymbol.style.top);
-                const targetOffset = Math.round(currentOffset / SYMBOL_HEIGHT) * SYMBOL_HEIGHT;
-                const distance = targetOffset - currentOffset;
-
-                symbols.forEach(symbol => {
-                    const currentTop = parseFloat(symbol.style.top);
-                    const finalTop = currentTop + distance;
-                    symbol.style.transition = 'top 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
-                    symbol.style.top = `${finalTop}vh`;
-                });
-
-                setTimeout(() => {
-                    symbols.forEach(symbol => {
-                        symbol.style.transition = 'none';
-                        let top = parseFloat(symbol.style.top);
-                        if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                            top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                            symbol.style.top = `${top}vh`;
-                        }
-                    });
-                    resolve();
-                }, 500);
-            }
-        }
-
-        requestAnimationFrame(update);
-    });
-}
-
 let canSpin, spinPositions, newCredit;
 let reel1stopIndex = 0;
 let reel2stopIndex = 0;
 let reel3stopIndex = 0;
 
+function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
+    return new Promise(resolve => {
+        const symbols = Array.from(reel.children);
+        let symbolsPassed = 0;
+        const speed = 4; // vh per frame
+        
+        // Create random symbols array + winning symbols at the end
+        const symbolQueue = [];
+        
+        // Add random symbols
+        for (let i = 0; i < totalSymbolsToSpin; i++) {
+            symbolQueue.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
+        }
+        
+        // Add winning symbols at the end (top, middle, bottom for this reel)
+        symbolQueue.push(finalSymbols[reelIndex]); // top (0vh)
+        symbolQueue.push(finalSymbols[reelIndex + 3]); // middle (14vh)
+        symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
+        
+        let queueIndex = 0;
+        let hasSetWinningSymbols = false;
+        let winningSymbolsStartIndex = -1;
+        
+        function animate() {
+            symbols.forEach(symbol => {
+                let top = parseFloat(symbol.style.top);
+                const previousTop = top;
+                top += speed;
+                
+                // Play tick sound when passing center
+                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
+                    (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                    playTickSound();
+                }
+                
+                // When symbol goes off screen, wrap it and assign next symbol from queue
+                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                    const img = symbol.querySelector('img');
+                    
+                    if (queueIndex < symbolQueue.length) {
+                        img.src = symbolQueue[queueIndex];
+                        queueIndex++;
+                        symbolsPassed++;
+                        
+                        // Mark when we start placing winning symbols
+                        if (queueIndex === symbolQueue.length - 2) {
+                            winningSymbolsStartIndex = symbolsPassed;
+                        }
+                        
+                        // Check if we just placed the last winning symbol
+                        if (queueIndex === symbolQueue.length) {
+                            hasSetWinningSymbols = true;
+                        }
+                    }
+                }
+                
+                symbol.style.top = `${top}vh`;
+            });
+            
+            // Stop when winning symbols have been set AND all three are visible in correct positions
+            if (hasSetWinningSymbols) {
+                // Find symbols with winning images
+                const winningImages = [
+                    finalSymbols[reelIndex],
+                    finalSymbols[reelIndex + 3],
+                    finalSymbols[reelIndex + 6]
+                ];
+                
+                const winningSymbolElements = symbols.filter(symbol => {
+                    const imgSrc = symbol.querySelector('img').src;
+                    return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
+                });
+                
+                // Check if all winning symbols are in their correct positions
+                if (winningSymbolElements.length >= 3) {
+                    const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
+                    const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
+                    
+                    // Check if positions are close to target (within 2vh tolerance)
+                    const isAligned = positions.slice(0, 3).every((pos, idx) => 
+                        Math.abs(pos - targetPositions[idx]) < 2
+                    );
+                    
+                    if (isAligned) {
+                        // Snap to exact positions
+                        symbols.forEach(symbol => {
+                            const top = parseFloat(symbol.style.top);
+                            let targetTop = top;
+                            
+                            // Find closest target position
+                            if (Math.abs(top - 0) < SYMBOL_HEIGHT / 2) {
+                                targetTop = 0;
+                            } else if (Math.abs(top - SYMBOL_HEIGHT) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT;
+                            } else if (Math.abs(top - (SYMBOL_HEIGHT * 2)) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT * 2;
+                            }
+                            
+                            symbol.style.transition = 'top 0.2s ease-out';
+                            symbol.style.top = `${targetTop}vh`;
+                        });
+                        
+                        setTimeout(() => {
+                            symbols.forEach(symbol => {
+                                symbol.style.transition = 'none';
+                            });
+                            resolve();
+                        }, 200);
+                        return;
+                    }
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        requestAnimationFrame(animate);
+    });
+}
 async function spin() {
     if (isSpinning) {
         shakeLever();
@@ -791,69 +771,25 @@ async function spin() {
     
     //Send cloud spin request
     if (!localMode) {
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
-        method: "POST",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        },
-    });
-
-    const data = await res.json();
-    console.log("Spin result:", data)
-
-    if (!data.valid) {
-        initializeWallet();
-        isSpinning = false;
-        return;
-    }
-
-    let finalSymbols = [];
-    let finalNumbers = Object.values(data.winSlots);
-
-        finalNumbers.forEach(number => {
-            switch (number) {
-                case 1:
-                    finalSymbols.push('icon/3.png');
-                    break;
-                case 2:
-                    finalSymbols.push('icon/raiden.png');
-                    break;
-                case 3:
-                    finalSymbols.push('icon/4.png');
-                    break;
-                case 4:
-                    finalSymbols.push('icon/1.png');
-                    break;
-            }
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
         });
 
-        reel1stopIndex = 0;
-        reel2stopIndex = 0;
-        reel3stopIndex = 0;
+        const data = await res.json();
+        console.log("Spin result:", data)
 
-        //Spin animation temporarily disabled
-        /*
-    const spinPromises = Array.from(reels).map((reel, index) => {
-        const duration = 20 + (index * 10);
-        const speed = 4;
-        return animateReel(reel, speed, duration, index, finalSymbols);
-    });
-
-    await Promise.all(spinPromises);
-    */
-
-    checkWin()
-    playerCredit += data.winAmount;
-    updateCreditDisplay();
-    
-    isSpinning = false;
-    } else {
-        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
-        console.log("Spin result: none")
+        if (!data.valid) {
+            initializeWallet();
+            isSpinning = false;
+            return;
+        }
 
         let finalSymbols = [];
-        let finalNumbers = [1, 2, 3, 1, 2, 3, 1, 2, 3];
+        let finalNumbers = Object.values(data.winSlots);
 
         finalNumbers.forEach(number => {
             switch (number) {
@@ -872,17 +808,85 @@ async function spin() {
             }
         });
 
+        // Create spinning animation with winning symbols at the end
+        const spinPromises = Array.from(reels).map((reel, reelIndex) => {
+            // Reel 1: base amount, Reel 2: +10, Reel 3: +25 (10+15)
+            const extraSymbols = reelIndex * 10 + (reelIndex === 2 ? 15 : 0);
+            const totalSymbols = 20 + extraSymbols;
+            // Add 1 extra symbol for reel 3 to compensate
+            const adjustedTotal = reelIndex === 2 ? totalSymbols + 1 : totalSymbols;
+            return animateReelSimple(reel, reelIndex, adjustedTotal, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+
+        /* ANIMATION CODE - COMMENTED OUT FOR LATER USE
         reel1stopIndex = 0;
         reel2stopIndex = 0;
         reel3stopIndex = 0;
 
         const spinPromises = Array.from(reels).map((reel, index) => {
-        const duration = 40 + (index * 20);
+            const duration = 20 + (index * 10);
             const speed = 4;
             return animateReel(reel, speed, duration, index, finalSymbols);
         });
 
         await Promise.all(spinPromises);
+        */
+
+        checkWin()
+        playerCredit += data.winAmount;
+        updateCreditDisplay();
+        
+        isSpinning = false;
+    } else {
+        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
+        console.log("Spin result: none")
+
+        let finalSymbols = [];
+        let finalNumbers = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+        finalNumbers.forEach(number => {
+            switch (number) {
+                case 1:
+                    finalSymbols.push('icon/3.png');
+                    break;
+                case 2:
+                    finalSymbols.push('icon/raiden.png');
+                    break;
+                case 3:
+                    finalSymbols.push('icon/4.png');
+                    break;
+                case 4:
+                    finalSymbols.push('icon/1.png');
+                    break;
+            }
+        });
+
+        // Create spinning animation with winning symbols at the end
+        const spinPromises = Array.from(reels).map((reel, reelIndex) => {
+            // Reel 1: base amount, Reel 2: +10, Reel 3: +25 (10+15)
+            const extraSymbols = reelIndex * 10 + (reelIndex === 2 ? 15 : 0);
+            const totalSymbols = 20 + extraSymbols;
+            return animateReelSimple(reel, reelIndex, totalSymbols, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+
+        /* ANIMATION CODE - COMMENTED OUT FOR LATER USE
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
+        const spinPromises = Array.from(reels).map((reel, index) => {
+            const duration = 40 + (index * 20);
+            const speed = 4;
+            return animateReel(reel, speed, duration, index, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+        */
+        
         checkWin();
 
         isSpinning = false;
