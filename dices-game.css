@@ -5,27 +5,62 @@
 }
 
 body {
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  background-color: darkslategray;
+  background-color: #2c2c2c; /* Dark background outside the board */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* This container acts as the "Table" image */
+#game-container {
+  position: relative;
+  /* Adjust this aspect ratio to match your background image's actual dimensions */
+  aspect-ratio: 16 / 9; 
+  width: 100vw;
+  height: 100vh;
+  background-image: url(main/dice/deck_prototype.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.ui-layer {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  color: white; /* Made text white to be visible on wood */
+  font-weight: bold;
+  pointer-events: none; /* Let clicks pass through to game */
+}
+
+/* This defines the "Middle Rectangle" where dice bounce */
 #gameCanvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  cursor: default;
+  /* TWEAK THESE VALUES to fit the green rectangle perfectly */
+  top: 18%;    
+  left: 15%;   
+  width: 70%;  
+  height: 64%; 
+  /* Debug border - remove later */
+  /*border: 1px solid rgba(255,0,0,0.3);*/
 }
 
 .cup {
   position: absolute;
-  width: 10vh;
-  height: 10vh;
+  /* Cup size is now relative to the board container width, not screen */
+  width: 20vh;
+  height: 50vh;
   cursor: grab;
   user-select: none;
-  transition: transform 0.1s;
+ 
   z-index: 1000;
   background-position: center;
+  background-size: cover;
   background-repeat: no-repeat;
 }
 
@@ -39,8 +74,10 @@ body {
 
 .die {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  /* Dice size relative to board */
+  width: 8vh; 
+  height: auto;
+  aspect-ratio: 1/1;
   cursor: pointer;
   user-select: none;
   transition: opacity 0.2s;
@@ -61,11 +98,22 @@ body {
 
 .locked-area {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 200px;
-  min-height: 100px;
-  border: 3px dashed rgba(255, 255, 255, 0.5);
+  bottom: 5%;
+  left: 5%;
+  width: 25%;
+  height: 15%;
+  border: 3px dashed rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  padding: 10px;
+}
+.locked-overlay {
+  position: absolute;
+  width: 161%;
+  height: 161%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-image: url(main/dice/dice_lock_1.gif);
+  background-size: contain;
+  pointer-events: none;
+
 }
