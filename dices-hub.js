@@ -111,12 +111,7 @@ async function loadLobbies() {
     });
 }
 
-async function createLobby() {
-    const inputLobbyName = document.getElementById("inputName").value;
-    const inputMaxPlayers = document.getElementById("inputMaxPlayers").value;
-    let inputPassword = document.getElementById("inputCreatePassword").value;
-    const inputBetSize = document.getElementById("inputCreateBetSize").value;
-
+async function createLobby(inputLobbyName = document.getElementById("inputName").value, inputMaxPlayers = document.getElementById("inputMaxPlayers").value, inputPassword = document.getElementById("inputCreatePassword").value, inputBetSize = document.getElementById("inputCreateBetSize").value) {
     console.log("Creating lobby with params:");
     console.log("Lobby name:", inputLobbyName);
     console.log("Max players:", inputMaxPlayers);
@@ -193,6 +188,8 @@ async function quickJoin() {
             joinLobby(lobby.lobbyId);
         }
     });
+
+    createLobby("quickJoin", 2, null, inputJoinBetSize);
 }
 
 //O - Main logic

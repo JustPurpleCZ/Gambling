@@ -96,12 +96,13 @@ async function updatePlayerList() {
 
                 name.textContent = player.username;
             });
+
+            playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
+            
         } else {
             console.log("Not found");
         }
     }).catch(console.error);
-
-    playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
 }
 
 async function kick(kickPlayer) {
