@@ -53,10 +53,11 @@ if (isHost) {
 async function updatePlayerList() {
     console.log("Updating player list");
     let playerCount = 0;
+    let players;
 
     get(playersRef).then((snapshot) => {
         if (snapshot.exists()) {
-            const players = snapshot.val();
+            players = snapshot.val();
             console.log("Player list:", players);
         } else {
             console.log("Not found");
