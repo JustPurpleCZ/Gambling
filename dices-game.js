@@ -19,27 +19,39 @@ const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
 
 let lobbyInfo;
-get(lobbyRef).then((snapshot) => {
-    if (snapshot.exists()) {
-        lobbyInfo = snapshot.val();
-        console.log("Lobby data", lobbyInfo)
-    } else {
-        console.log("Lobby data failed to load");
+async function getLobbyInfo() {
+    try {
+        const snapshot = await get(lobbyRef);
+        if (snapshot.exists()) {
+            lobbyInfo = snapshot.val();
+            console.log("Lobby data", lobbyInfo);
+            return lobbyInfo;
+        } else {
+            console.log("Lobby data failed to load");
+        }
+    } catch (err) {
+        console.error(err);
     }
-}).catch(console.error);
+}
+
+getLobbyInfo();
 
 const playerList = document.getElementById("playerList");
 const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
 const token = localStorage.getItem("userToken");
 console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
-onChildAdded(playersRef, () => {
-    updatePlayerList();
-});
+(async () => {
+    await getLobbyInfo();
+    
+    onChildAdded(playersRef, () => {
+        updatePlayerList();
+    });
 
-onChildRemoved(playersRef, () => {
-    updatePlayerList();
-});
+    onChildRemoved(playersRef, () => {
+        updatePlayerList();
+    });
+})();
 
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
