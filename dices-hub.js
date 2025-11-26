@@ -46,9 +46,11 @@ async function checkLogin() {
     }
 }
 
+let lobbies = [];
+
 //O - Get lobbies
 async function loadLobbies() {
-    let lobbies = [];
+    lobbies = [];
 
     //O - Getting lobbies from firebase
     const pathRef = ref(db, "games/lobbies/dices");
@@ -81,9 +83,11 @@ async function loadLobbies() {
         const joinBtn = document.createElement("button");
         const playerCount = document.createElement("p");
         const isPrivate = document.createElement("p");
+        const betSize = document.createElement("p");
 
         lobbyDiv.appendChild(lobbyName);
         lobbyDiv.appendChild(hostName);
+        lobbyDiv.appendChild(betSize);
         lobbyDiv.appendChild(playerCount);
         lobbyDiv.appendChild(isPrivate);
         lobbyDiv.appendChild(joinBtn);
@@ -96,6 +100,7 @@ async function loadLobbies() {
             isPrivate.textContent = "Private";
         }
         joinBtn.textContent = "Join";
+        betSize.textContent = lobby.betSize;
 
         joinBtn.addEventListener("click", () => {
             joinLobby(lobby.lobbyId);
@@ -110,6 +115,7 @@ async function createLobby() {
     const inputLobbyName = document.getElementById("inputName").value;
     const inputMaxPlayers = document.getElementById("inputMaxPlayers").value;
     const inputPassword = document.getElementById("inputCreatePassword").value;
+    const inputBetSize = document.getElementById("inputCreateBetSize").value;
 
     console.log("Creating lobby with params:");
     console.log("Lobby name:", inputLobbyName);
@@ -124,7 +130,8 @@ async function createLobby() {
         body: JSON.stringify({
             "lobbyName": inputLobbyName,
             "maxPlayers": inputMaxPlayers,
-            "password": inputPassword
+            "password": inputPassword,
+            "betSize": inputBetSize
         })
     });
 
@@ -138,7 +145,7 @@ async function createLobby() {
         window.location.href = "dices-game.html";
         return;
     } else {
-        console.log("Failed to create lobby");
+        console.log("Failed to create lobby:", response.reply);
     }
 }
 
@@ -169,8 +176,17 @@ async function joinLobby(selectedLobbyId) {
         window.location.href = "dices-game.html";
         return;
     } else {
-        console.log("Failed to join lobby");
+        console.log("Failed to join lobby:", response.reply);
     }
+}
+
+async function quickJoin() {
+    inputJoinBetSize = document.getElementById("inputJoinBetSize").value;
+    lobbies.forEach(lobby => {
+        if (lobby.maxPlayers == 2 && lobby.playerCount < 2 && lobby.betSize == inputJoinBetSize && !lobby.isPrivate) {
+            joinLobby(lobby.lobbyId);
+        }
+    });
 }
 
 //O - Main logic
@@ -185,7 +201,13 @@ document.getElementById("refresh").addEventListener("click", () => {
 const createForm = document.getElementById("createForm");
 createForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    createLobby()
+    createLobby();
+});
+
+const quickJoinForm = document.getElementById("quickJoinForm");
+quickJoinForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    quickJoin();
 });
 
 window.addEventListener("keydown", (key) => {

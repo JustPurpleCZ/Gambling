@@ -20,6 +20,7 @@ const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 
 const playerList = document.getElementById("playerList");
+document.getElementById("lobbyName").textContent = get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
 
 onChildAdded(playersRef, (snapshot) => {
     const player = snapshot.val();
@@ -50,9 +51,24 @@ async function loadPlayers() {
         const data = snapshot.val();
 
         for (const player in data) {
-            const playerPar = document.createElement("p");
-            playerList.appendChild(playerPar);
-            playerPar.textContent = player.username;
+            const playerDiv = document.createElement("div");
+            const name = document.createElement("p");
+
+            if (localStorage.getItem("dicesIsHost")) {
+                const kickBtn = document.createElement("button");
+                playerDiv.appendChild(kickBtn);
+                kickBtn.textContent = "kick player";
+
+                kickBtn.addEventListener("click", () => {
+                    kick(player);
+                });
+
+            }
+
+            playerList.appendChild(playerDiv);
+            playerDiv.appendChild(name);
+
+            name.textContent = player.username;
         }
 
         console.log("Players loaded");
@@ -60,6 +76,35 @@ async function loadPlayers() {
     } else {
         console.log("Failed to load players");
     }
+
+    if (localStorage.getItem("dicesIsHost")) {
+        startBtn.style.display = "block";
+
+        startBtn.addEventListener("click", () => {
+            //Start game
+        })
+    }
+}
+
+let startBtn = document.getElementById("startBtn");
+
+async function kick(kickPlayer) {
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "user": kickPlayer
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+
 }
 
 loadPlayers();

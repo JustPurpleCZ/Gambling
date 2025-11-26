@@ -2,3 +2,7 @@ body {
     background-color: black;
     color: white;
 }
+
+#startBtn {
+    display: none;
+}
