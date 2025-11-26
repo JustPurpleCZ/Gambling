@@ -34,8 +34,6 @@ async function getLobbyInfo() {
     }
 }
 
-getLobbyInfo();
-
 const playerList = document.getElementById("playerList");
 const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
 const token = localStorage.getItem("userToken");

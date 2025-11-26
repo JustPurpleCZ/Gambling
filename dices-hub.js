@@ -146,6 +146,7 @@ async function createLobby() {
         console.log("Lobby created");
         localStorage.setItem("dicesLobbyId", response.lobbyId);
         localStorage.setItem("dicesIsHost", true);
+        localStorage.setItem("selfUID", success.uid);
         window.location.href = "dices-game.html";
         return;
     } else {
@@ -176,7 +177,8 @@ async function joinLobby(selectedLobbyId) {
     if (response.success) {
         console.log("Lobby joined");
         localStorage.setItem("dicesLobbyId", selectedLobbyId);
-        localStorage.setItem("dicesIsHost", false);
+        localStorage.setItem("dicesIsHost", success.isHost);
+        localStorage.setItem("selfUID", success.uid);
         window.location.href = "dices-game.html";
         return;
     } else {
