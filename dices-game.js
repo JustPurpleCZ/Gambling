@@ -36,7 +36,7 @@ onChildAdded(playersRef, (snapshot) => {
         kickBtn.textContent = "kick player";
 
         kickBtn.addEventListener("click", () => {
-            kick(player);
+            kick(snapshot.key);
         });
 
     }
