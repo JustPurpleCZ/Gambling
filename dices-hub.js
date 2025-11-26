@@ -161,6 +161,15 @@ async function joinLobby(selectedLobbyId) {
 
     const response = await res.json();
     console.log(response);
+
+    if (response.success) {
+        console.log("Lobby joined");
+        localStorage.setItem("dicesLobbyId", response.lobbyId);
+        window.location.href = "dices-game.html";
+        return;
+    } else {
+        console.log("Failed to join lobby");
+    }
 }
 
 //O - Main logic
