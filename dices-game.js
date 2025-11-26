@@ -66,7 +66,7 @@ async function updatePlayerList() {
 
     playerList.replaceChildren();
 
-    players.array.forEach(player => {
+    players.forEach(player => {
         console.log("Adding player:", player.username);
         playerCount++;
         playerCountPar = playerCount + "/" + lobbyInfo.maxPlayers;
