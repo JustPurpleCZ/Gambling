@@ -1,8 +1,7 @@
 console.log("Lobby id:" + localStorage.getItem("dicesLobbyId") + "Is host:" + localStorage.getItem("dicesIsHost"));
 
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue } from "firebase/database";
-import { onChildAdded, onChildRemoved } from "firebase/database";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, onValue, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
