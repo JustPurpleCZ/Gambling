@@ -114,7 +114,7 @@ async function loadLobbies() {
 async function createLobby() {
     const inputLobbyName = document.getElementById("inputName").value;
     const inputMaxPlayers = document.getElementById("inputMaxPlayers").value;
-    const inputPassword = document.getElementById("inputCreatePassword").value;
+    let inputPassword = document.getElementById("inputCreatePassword").value;
     const inputBetSize = document.getElementById("inputCreateBetSize").value;
 
     console.log("Creating lobby with params:");

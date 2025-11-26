@@ -48,17 +48,7 @@ onChildAdded(playersRef, (snapshot) => {
 });
 
 onChildRemoved(playersRef, (snapshot) => {
-    const player = snapshot.val();
-    const username = player.username;
-    console.log("Player left:", player.username);
-
-    const paragraphs = playerList.querySelectorAll("p");
-    
-    paragraphs.forEach(p => {
-        if (p.textContent === username) {
-            p.remove();
-        }
-    });
+    console.log("Player should be remvoed:", snapshot.key, snapshot.val);
 });
 
 let startBtn = document.getElementById("startBtn");
