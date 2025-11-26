@@ -121,6 +121,10 @@ async function createLobby() {
     console.log("Lobby name:", inputLobbyName);
     console.log("Max players:", inputMaxPlayers);
     console.log("Password:", inputPassword);
+
+    if (inputPassword == "") {
+        inputPassword = null;
+    }
     const res = await fetch("https://dices-create-gtw5ppnvta-ey.a.run.app", {
         method: "POST",
         headers: {

@@ -21,6 +21,7 @@ const playerList = document.getElementById("playerList");
 document.getElementById("lobbyName").textContent = await get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
 const isHost = localStorage.getItem("dicesIsHost");
 const token = localStorage.getItem("userToken");
+console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
 onChildAdded(playersRef, (snapshot) => {
     const player = snapshot.val();
@@ -70,7 +71,7 @@ if (isHost) {
 }
 
 async function kick(kickPlayer) {
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
+    const res = await fetch("https://dices-kick-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {
                 "Authorization": token,
@@ -87,5 +88,3 @@ async function kick(kickPlayer) {
 
 
 }
-
-loadPlayers();
