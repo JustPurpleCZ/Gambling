@@ -6,3 +6,7 @@ body {
 #startBtn {
     display: none;
 }
+
+#playerList div {
+    display: flex;
+}
