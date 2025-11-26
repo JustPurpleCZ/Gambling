@@ -59,50 +59,14 @@ onChildRemoved(playersRef, (snapshot) => {
     });
 });
 
-async function loadPlayers() {
-    const snapshot = await get(playersRef);
-    if (snapshot.exists()) {
-        const data = snapshot.val();
-
-        for (const player in data) {
-            const playerDiv = document.createElement("div");
-            const name = document.createElement("p");
-
-            if (isHost) {
-                const kickBtn = document.createElement("button");
-                playerDiv.appendChild(kickBtn);
-                kickBtn.textContent = "kick player";
-
-                kickBtn.addEventListener("click", () => {
-                    kick(player);
-                });
-
-            }
-
-            playerList.appendChild(playerDiv);
-            playerDiv.appendChild(name);
-
-            name.textContent = player.username;
-        }
-
-        console.log("Players loaded");
-
-    } else {
-        console.log("Failed to load players");
-    }
-    
-    document.getElementById("isHost").textContent = isHost;
-    
-    if (isHost) {
-        startBtn.style.display = "block";
-
-        startBtn.addEventListener("click", () => {
-            //Start game
-        })
-    }
-}
-
 let startBtn = document.getElementById("startBtn");
+if (isHost) {
+    startBtn.style.display = "block";
+
+    startBtn.addEventListener("click", () => {
+        //Start game
+    })
+}
 
 async function kick(kickPlayer) {
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
