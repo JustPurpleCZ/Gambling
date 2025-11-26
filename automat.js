@@ -27,7 +27,7 @@ async function checkAuth() {
         setTimeout(() => {
             localStorage.removeItem("userToken");
             window.location.href = "index.html";
-        }, 20000);
+        }, 5000);
     }
 
     //DEBUG - TOKEN SHENANIGANS

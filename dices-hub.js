@@ -157,7 +157,10 @@ async function joinLobby(selectedLobbyId) {
                 "lobbyId": selectedLobbyId,
                 "password": document.getElementById("inputJoinPassword").value
             })
-        });
+    });
+
+    const response = await res.json();
+    console.log(response);
 }
 
 //O - Main logic
