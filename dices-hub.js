@@ -79,18 +79,26 @@ async function loadLobbies() {
         const lobbyName = document.createElement("p");
         const hostName = document.createElement("p");
         const joinBtn = document.createElement("button");
+        const playerCount = document.createElement("p");
+        const isPrivate = document.createElement("p");
 
         lobbyDiv.appendChild(lobbyName);
         lobbyDiv.appendChild(hostName);
+        lobbyDiv.appendChild(playerCount);
+        lobbyDiv.appendChild(isPrivate);
         lobbyDiv.appendChild(joinBtn);
 
         lobbyName.textContent = lobby.name;
         hostName.textContent = lobby.hostNick;
+        playerCount.textContent = lobby.playerCount + "/" + lobby.maxPlayers;
+        isPrivate.textContent = "Public";
+        if (lobby.isPrivate) {
+            isPrivate.textContent = "Private";
+        }
         joinBtn.textContent = "Join";
 
         joinBtn.addEventListener("click", () => {
-            localStorage.setItem("lobbyName", lobby.name)
-            window.location.href = "dices-game.html";
+            joinLobby(lobby.lobbyId);
         })
 
         lobbyDiv.classList.add("lobby");
@@ -100,14 +108,24 @@ async function loadLobbies() {
 
 async function createLobby() {
     const inputLobbyName = document.getElementById("inputName").value;
-    console.log("Lobby name: " + inputLobbyName);
+    const inputMaxPlayers = document.getElementById("inputMaxPlayers").value;
+    const inputPassword = document.getElementById("inputCreatePassword").value;
+
+    console.log("Creating lobby with params:");
+    console.log("Lobby name:", inputLobbyName);
+    console.log("Max players:", inputMaxPlayers);
+    console.log("Password:", inputPassword);
     const res = await fetch("https://dices-create-gtw5ppnvta-ey.a.run.app", {
         method: "POST",
         headers: {
             "Authorization": token,
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({"lobbyName": inputLobbyName})
+        body: JSON.stringify({
+            "lobbyName": inputLobbyName,
+            "maxPlayers": inputMaxPlayers,
+            "password": inputPassword
+        })
     });
 
     const response = await res.json();
@@ -115,9 +133,31 @@ async function createLobby() {
 
     if (response.success) {
         console.log("Lobby created");
+        localStorage.setItem("dicesLobbyId", response.lobbyId);
+        localStorage.setItem("dicesIsHost", true);
+        window.location.href = "dices-game.html";
+        return;
     } else {
-        console.log("no.");
+        console.log("Failed to create lobby");
     }
+}
+
+async function joinLobby(selectedLobbyId) {
+    console.log("Joinning lobby with params:");
+    console.log("LobbyID:", selectedLobbyId);
+    console.log("Password:", document.getElementById("inputJoinPassword").value);
+
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": selectedLobbyId,
+                "password": document.getElementById("inputJoinPassword").value
+            })
+        });
 }
 
 //O - Main logic
