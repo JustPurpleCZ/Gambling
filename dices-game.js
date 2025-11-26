@@ -20,6 +20,7 @@ const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const playerList = document.getElementById("playerList");
 document.getElementById("lobbyName").textContent = await get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
 const isHost = localStorage.getItem("dicesIsHost");
+const token = localStorage.getItem("userToken");
 
 onChildAdded(playersRef, (snapshot) => {
     const player = snapshot.val();
