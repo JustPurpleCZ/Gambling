@@ -1,5 +1,3 @@
-console.log("Lobby id:" + localStorage.getItem("dicesLobbyId") + "Is host:" + localStorage.getItem("dicesIsHost"));
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, onValue, onChildAdded, onChildRemoved, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
@@ -20,15 +18,31 @@ const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 
 const playerList = document.getElementById("playerList");
-document.getElementById("lobbyName").textContent = get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
+document.getElementById("lobbyName").textContent = await get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
+const isHost = localStorage.getItem("dicesIsHost");
 
 onChildAdded(playersRef, (snapshot) => {
     const player = snapshot.val();
     console.log("Player joined:", player.username);
 
-    const playerPar = document.createElement("p");
-    playerList.appendChild(playerPar);
-    playerPar.textContent = player.username;
+    const playerDiv = document.createElement("div");
+    const name = document.createElement("p");
+
+    if (isHost) {
+        const kickBtn = document.createElement("button");
+        playerDiv.appendChild(kickBtn);
+        kickBtn.textContent = "kick player";
+
+        kickBtn.addEventListener("click", () => {
+            kick(player);
+        });
+
+    }
+
+    playerList.appendChild(playerDiv);
+    playerDiv.appendChild(name);
+
+    name.textContent = player.username;
 });
 
 onChildRemoved(playersRef, (snapshot) => {
@@ -54,7 +68,7 @@ async function loadPlayers() {
             const playerDiv = document.createElement("div");
             const name = document.createElement("p");
 
-            if (localStorage.getItem("dicesIsHost")) {
+            if (isHost) {
                 const kickBtn = document.createElement("button");
                 playerDiv.appendChild(kickBtn);
                 kickBtn.textContent = "kick player";
@@ -76,8 +90,10 @@ async function loadPlayers() {
     } else {
         console.log("Failed to load players");
     }
-
-    if (localStorage.getItem("dicesIsHost")) {
+    
+    document.getElementById("isHost").textContent = isHost;
+    
+    if (isHost) {
         startBtn.style.display = "block";
 
         startBtn.addEventListener("click", () => {
