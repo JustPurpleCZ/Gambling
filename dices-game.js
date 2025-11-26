@@ -1,7 +1,7 @@
 console.log("Lobby id:" + localStorage.getItem("dicesLobbyId") + "Is host:" + localStorage.getItem("dicesIsHost"));
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, onValue, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, onValue, onChildAdded, onChildRemoved, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -22,7 +22,7 @@ const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const playerList = document.getElementById("playerList");
 
 onChildAdded(playersRef, (snapshot) => {
-    const player = snapshot.key;
+    const player = snapshot.val();
     console.log("Player joined:", player.username);
 
     const playerPar = document.createElement("p");
@@ -31,7 +31,8 @@ onChildAdded(playersRef, (snapshot) => {
 });
 
 onChildRemoved(playersRef, (snapshot) => {
-    const player = snapshot.key;
+    const player = snapshot.val();
+    const username = player.username;
     console.log("Player left:", player.username);
 
     const paragraphs = playerList.querySelectorAll("p");
@@ -42,3 +43,23 @@ onChildRemoved(playersRef, (snapshot) => {
         }
     });
 });
+
+async function loadPlayers() {
+    const snapshot = await get(playersRef);
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+
+        for (const player in data) {
+            const playerPar = document.createElement("p");
+            playerList.appendChild(playerPar);
+            playerPar.textContent = player.username;
+        }
+
+        console.log("Players loaded");
+
+    } else {
+        console.log("Failed to load players");
+    }
+}
+
+loadPlayers();

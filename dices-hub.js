@@ -164,7 +164,8 @@ async function joinLobby(selectedLobbyId) {
 
     if (response.success) {
         console.log("Lobby joined");
-        localStorage.setItem("dicesLobbyId", response.lobbyId);
+        localStorage.setItem("dicesLobbyId", selectedLobbyId);
+        localStorage.setItem("dicesIsHost", false);
         window.location.href = "dices-game.html";
         return;
     } else {
