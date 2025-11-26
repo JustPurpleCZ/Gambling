@@ -63,6 +63,8 @@ if (isHost) {
     })
 }
 
+const playerCountPar = document.getElementById("playerCountPar");
+
 async function updatePlayerList() {
     console.log("Updating player list");
     let playerCount = 0;
