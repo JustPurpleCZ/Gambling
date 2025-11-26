@@ -19,7 +19,7 @@ const auth = getAuth();
 
 // Check if user is already logged in
 if (localStorage.getItem('userToken')) {
-    window.location.href = 'automat.html';
+    window.location.href = 'navigation.html';
 }
 
 // Get DOM elements
