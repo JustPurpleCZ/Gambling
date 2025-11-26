@@ -59,40 +59,38 @@ async function updatePlayerList() {
         if (snapshot.exists()) {
             players = snapshot.val();
             console.log("Player list:", players);
+
+            playerList.replaceChildren();
+
+            Object.values(players).forEach(player => {
+                console.log("Adding player:", player.username);
+                playerCount++;
+                playerCountPar = playerCount + "/" + lobbyInfo.maxPlayers;
+                const playerDiv = document.createElement("div");
+                const name = document.createElement("p");
+
+                playerList.appendChild(playerDiv);
+                playerDiv.appendChild(name);
+
+                if (isHost) {
+                    const kickBtn = document.createElement("button");
+                    playerDiv.appendChild(kickBtn);
+                    kickBtn.textContent = "kick player";
+
+                    kickBtn.addEventListener("click", () => {
+                        kick(snapshot.key);
+                    });
+                }
+
+                name.textContent = player.username;
+            });
         } else {
             console.log("Not found");
         }
     }).catch(console.error);
 
-    playerList.replaceChildren();
-
-    Object.values(players).forEach(player => {
-        console.log("Adding player:", player.username);
-        playerCount++;
-        playerCountPar = playerCount + "/" + lobbyInfo.maxPlayers;
-        const playerDiv = document.createElement("div");
-        const name = document.createElement("p");
-
-        playerList.appendChild(playerDiv);
-        playerDiv.appendChild(name);
-
-        if (isHost) {
-            const kickBtn = document.createElement("button");
-            playerDiv.appendChild(kickBtn);
-            kickBtn.textContent = "kick player";
-
-            kickBtn.addEventListener("click", () => {
-                kick(snapshot.key);
-            });
-        }
-
-        name.textContent = player.username;
-    });
-
     playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
 }
-
-updatePlayerList();
 
 async function kick(kickPlayer) {
     /*
