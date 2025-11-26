@@ -18,9 +18,10 @@ const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
 
+let lobbyInfo;
 get(lobbyRef).then((snapshot) => {
     if (snapshot.exists()) {
-        const lobbyInfo = snapshot.val();
+        lobbyInfo = snapshot.val();
         console.log("Lobby data", lobbyInfo)
     } else {
         console.log("Lobby data failed to load");
