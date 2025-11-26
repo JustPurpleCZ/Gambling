@@ -10,3 +10,7 @@ body {
 #playerList div {
     display: flex;
 }
+
+#playerList div button {
+    height: fit-content;
+}

@@ -16,39 +16,28 @@ const db = getDatabase(app);
 
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
+const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
+
+get(lobbyRef).then((snapshot) => {
+    if (snapshot.exists()) {
+        const lobbyInfo = snapshot.val();
+        console.log("Lobby data", lobbyInfo)
+    } else {
+        console.log("Lobby data failed to load");
+    }
+}).catch(console.error);
 
 const playerList = document.getElementById("playerList");
-document.getElementById("lobbyName").textContent = await get(ref(db, `/games/lobbies/dices/${lobbyId}/name`));
 const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
 const token = localStorage.getItem("userToken");
 console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
-onChildAdded(playersRef, (snapshot) => {
-    const player = snapshot.val();
-    console.log("Player joined:", player.username);
-
-    const playerDiv = document.createElement("div");
-    const name = document.createElement("p");
-
-    if (isHost) {
-        const kickBtn = document.createElement("button");
-        playerDiv.appendChild(kickBtn);
-        kickBtn.textContent = "kick player";
-
-        kickBtn.addEventListener("click", () => {
-            kick(snapshot.key);
-        });
-
-    }
-
-    playerList.appendChild(playerDiv);
-    playerDiv.appendChild(name);
-
-    name.textContent = player.username;
+onChildAdded(playersRef, () => {
+    updatePlayerList();
 });
 
-onChildRemoved(playersRef, (snapshot) => {
-    console.log("Player should be remvoed:", snapshot.key, snapshot.val);
+onChildRemoved(playersRef, () => {
+    updatePlayerList();
 });
 
 let startBtn = document.getElementById("startBtn");
@@ -56,11 +45,56 @@ if (isHost) {
     startBtn.style.display = "block";
 
     startBtn.addEventListener("click", () => {
+        console.log("Starting game");
         //Start game
     })
 }
 
+async function updatePlayerList() {
+    console.log("Updating player list");
+    let playerCount = 0;
+
+    get(playersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const players = snapshot.val();
+            console.log("Player list:", players);
+        } else {
+            console.log("Not found");
+        }
+    }).catch(console.error);
+
+    playerList.replaceChildren();
+
+    players.array.forEach(player => {
+        console.log("Adding player:", player.username);
+        playerCount++;
+        playerCountPar = playerCount + "/" + lobbyInfo.maxPlayers;
+        const playerDiv = document.createElement("div");
+        const name = document.createElement("p");
+
+        playerList.appendChild(playerDiv);
+        playerDiv.appendChild(name);
+
+        if (isHost) {
+            const kickBtn = document.createElement("button");
+            playerDiv.appendChild(kickBtn);
+            kickBtn.textContent = "kick player";
+
+            kickBtn.addEventListener("click", () => {
+                kick(snapshot.key);
+            });
+        }
+
+        name.textContent = player.username;
+    });
+
+    playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
+}
+
+updatePlayerList();
+
 async function kick(kickPlayer) {
+    /*
     const res = await fetch("https://dices-kick-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {
@@ -76,5 +110,33 @@ async function kick(kickPlayer) {
     const response = await res.json();
     console.log(response);
 
-
+    */
+   console.log("Kicking disabled");
 }
+
+async function leaveLobby() {
+    const res = await fetch(" https://dices-leave-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        localStorage.removeItem("dicesLobbyId", "dicesIsHost");
+        window.location.href = "dices-hub.html";
+    } else {
+        console.log("Failed to leave:", response.reply);
+    }
+}
+
+document.getElementById("leaveBtn").addEventListener("click", () => {
+    leaveLobby();
+})
