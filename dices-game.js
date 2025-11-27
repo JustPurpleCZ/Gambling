@@ -17,7 +17,7 @@ const db = getDatabase(app);
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
-const selfUID = localStorage.getItem("selfUID");
+const uid = auth.currentUser.uid;
 
 let lobbyInfo;
 async function getLobbyInfo() {
@@ -154,8 +154,8 @@ document.getElementById("leaveBtn").addEventListener("click", () => {
     leaveLobby();
 })
 
-const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${selfUID}/connected`);
-console.log("Setting presence for", selfUID);
+const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+console.log("Setting presence for", uid);
 
 set(presenceRef, true);
 onDisconnect(presenceRef).set(false);
