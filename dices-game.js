@@ -17,6 +17,7 @@ const db = getDatabase(app);
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
+const selfUID = localStorage.getItem("selfUID");
 
 let lobbyInfo;
 async function getLobbyInfo() {
@@ -127,7 +128,7 @@ async function kick(kickPlayer) {
 }
 
 async function leaveLobby() {
-    const res = await fetch(" https://dices-leave-gtw5ppnvta-ey.a.run.app", {
+    const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {
                 "Authorization": token,
@@ -152,3 +153,9 @@ async function leaveLobby() {
 document.getElementById("leaveBtn").addEventListener("click", () => {
     leaveLobby();
 })
+
+const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${selfUID}/connected`);
+console.log("Setting presence for", selfUID);
+
+set(presenceRef, true);
+onDisconnect(presenceRef).set(false);
