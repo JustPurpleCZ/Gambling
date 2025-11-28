@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -75,9 +75,11 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         updatePlayerList();
     });
 
-    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
-        if (addedLobby.key === lobbyId) {
+    onChildAdded(ref(db, `/games/active/dices`), (snapshot) => {
+        if (snapshot.key == lobbyId) {
             gameStart();
+        } else {
+            console.log("Active lobby added:", snapshot.key);
         }
     });
 
@@ -257,7 +259,8 @@ async function gameStart() {
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
 
-    playerOrder = await get(`/games/active/dices/${lobbyId}/playerOrder`);
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
+    playerOrder = snap.val();
 
     document.getElementById("preStart").style.display = "none";
     updateActivePlayerList();
@@ -275,7 +278,7 @@ async function gameStart() {
 async function updateActivePlayerList() {
     console.log("Updating player list");
     const playersInfo = await get(activePlayersRef);
-    for (player in playerOrder) {
+    for (player of playerOrder) {
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
@@ -286,14 +289,14 @@ async function updateActivePlayerList() {
         activePlayerDiv.appendChild(score);
         activePlayerDiv.appendChild(theirTurn);
 
-        name.textContent = playersInfo.player.username;
-        score.textContent = playersInfo.player.score;
-        theirTurn.textContent = playersInfo.player.playersTurn
+        name.textContent = playersInfo.val()[player].username;
+        score.textContent = playersInfo.val()[player].score;
+        theirTurn.textContent = playersInfo.val()[player].playersTurn
     }
 }
 
 async function submitMove() {
-    const token = await await auth.currentUser.getIdToken();
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
             method: "POST",
             headers: {
