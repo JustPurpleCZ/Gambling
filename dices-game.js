@@ -16,8 +16,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
-
 async function checkAuth() {
     const user = await new Promise(resolve => {
         const unsub = onAuthStateChanged(auth, (u) => {
@@ -41,6 +39,7 @@ async function checkAuth() {
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
+const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
 let uid;
 
 let lobbyInfo;
