@@ -50,7 +50,6 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            localStorage.removeItem("userToken");
             window.location.href = "index.html";
         }, 5000);
         return;
@@ -59,7 +58,6 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            localStorage.removeItem("userToken");
             window.location.href = "index.html";
         }, 5000);
         return;
@@ -166,28 +164,23 @@ const displayDiv = document.querySelector('.credit-display');
 
 async function initializeWallet() {
     if (!localMode) {
-    await checkAuth();
+        await checkAuth();
 
-    if (!token) {
-        window.location.href = 'index.html';
-        return;
-    }
+        if (!localBalance) {
+            console.log("NO LOCAL BALANCE, LOGGING OUT")
+            await localBalance;
+            console.log(localBalance)
+            setTimeout(() => {
+            window.location.href = 'index.html';
+            return;
+            }, 10000);
+            
+        }
+        walletBalance = localBalance.walletBalance;
+        playerCredit = localBalance.creditBalance;
+        updateAvailableBills();
+        updateCreditDisplay();
 
-    if (!localBalance) {
-        console.log("NO LOCAL BALANCE, LOGGING OUT")
-        await localBalance;
-        console.log(localBalance)
-        setTimeout(() => {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-        return;
-        }, 10000);
-        
-    }
-    walletBalance = localBalance.walletBalance;
-    playerCredit = localBalance.creditBalance;
-    updateAvailableBills();
-    updateCreditDisplay();
     } else {
         console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
         walletBalance = 500;
