@@ -16,9 +16,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
+const token = await auth.currentUser.getIdToken();
 
 // Check if user is already logged in
-if (localStorage.getItem('userToken')) {
+if (token) {
     window.location.href = 'navigation.html';
 }
 
@@ -87,13 +88,12 @@ authForm.addEventListener('submit', async (e) => {
             // Login with Firebase
             try {
                 if ((email && email == "test@test.com") && (password && password == "test123")) {
-                    localStorage.setItem('userToken', 1);
+                    localStorage.setItem('localMode', true);
                     window.location.href = 'navigation.html';
                 }
 
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const token = await userCredential.user.accessToken;
-                localStorage.setItem('userToken', token);
 
                 const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
                     method: "POST",
@@ -172,8 +172,6 @@ authForm.addEventListener('submit', async (e) => {
                 });
 
                 const data = await res.json();
-                
-                localStorage.setItem('userToken', token);
                 window.location.href = 'navigation.html';
 
             } catch (error) {
