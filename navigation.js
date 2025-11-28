@@ -128,7 +128,7 @@ const machines = document.querySelectorAll(".unavailable");
 let unlocks = {};
 
 async function setUnlocks() {
-    const token = await auth.currentUser.IdToken();
+    const token = await auth.currentUser.getIdToken();
     
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
         method: "GET",
