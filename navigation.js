@@ -108,7 +108,7 @@ setInitialState();
 
 //O - Firebase init and getting token
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -126,16 +126,6 @@ const auth = getAuth(app);
 const localMode = JSON.parse(localStorage.getItem("localMode"));
 const machines = document.querySelectorAll(".unavailable");
 let unlocks = {};
-
-async function checkAuth() {
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    if (!token) {
-        window.location.href = 'index.html';
-        return;
-    }
-}
 
 async function setUnlocks() {
     const user = auth.currentUser;
@@ -209,8 +199,15 @@ async function initUnlocks() {
     });
 }
 
-checkAuth();
-initUnlocks();
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+        localStorage.removeItem("localMode");
+        return;
+    }
+
+    await initUnlocks();
+});
 
 window.addEventListener("keydown", (key) => {
     if (key.key === "l") {
