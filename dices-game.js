@@ -16,6 +16,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+
 async function checkAuth() {
     const user = await new Promise(resolve => {
         const unsub = onAuthStateChanged(auth, (u) => {
@@ -30,7 +32,6 @@ async function checkAuth() {
     }
 
     uid = user.uid;
-    const presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
     console.log("Setting presence for", uid);
     set(presenceRef, true);
     onDisconnect(presenceRef).set(false);
@@ -168,6 +169,7 @@ async function leaveLobby() {
     console.log(response);
 
     if (response.success) {
+        await presenceRef.onDisconnect().cancel();
         localStorage.removeItem("dicesLobbyId", "dicesIsHost");
         window.location.href = "dices-hub.html";
     } else {

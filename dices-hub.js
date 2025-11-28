@@ -170,6 +170,7 @@ async function joinLobby(selectedLobbyId) {
 }
 
 async function quickJoin() {
+    await loadLobbies();
     const inputJoinBetSize = document.getElementById("inputJoinBetSize").value;
     for (const lobby of lobbies) {
         if (lobby.maxPlayers == 2 && lobby.playerCount < 2 && lobby.betSize == inputJoinBetSize && !lobby.isPrivate) {
