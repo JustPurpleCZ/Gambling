@@ -77,6 +77,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
     onChildAdded(ref(db, `/games/active/dices`), (snapshot) => {
         if (snapshot.key == lobbyId) {
+            console.log("Starting game uwu");
             gameStart();
         } else {
             console.log("Active lobby added:", snapshot.key);
@@ -246,7 +247,7 @@ async function startGame() {
 }
 
 //Game start
-const activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`)
+let activePresenceRef;
 let playerOrder;
 console.log("Player order:", playerOrder);
 
@@ -259,6 +260,7 @@ async function gameStart() {
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
 
+    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
     playerOrder = snap.val();
 
@@ -278,7 +280,8 @@ async function gameStart() {
 async function updateActivePlayerList() {
     console.log("Updating player list");
     const playersInfo = await get(activePlayersRef);
-    for (player of playerOrder) {
+     for (const player of playerOrder) {
+        activePlayerList.replaceChildren();
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
@@ -291,7 +294,7 @@ async function updateActivePlayerList() {
 
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
-        theirTurn.textContent = playersInfo.val()[player].playersTurn
+        theirTurn.textContent = playersInfo.val()[player].playersTurn;
     }
 }
 
