@@ -75,7 +75,8 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         updatePlayerList();
     });
 
-    onChildAdded(ref(db, `/games/active/dices`), (snapshot) => {
+    onChildAdded(ref(db, `games/active/dices`), (snapshot) => {
+        console.log("New lobby added to active");
         if (snapshot.key == lobbyId) {
             console.log("Starting game uwu");
             gameStart();
