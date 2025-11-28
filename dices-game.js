@@ -75,7 +75,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         updatePlayerList();
     });
 
-    onChildAdded(activeGameRef, (addedLobby) => {
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
         if (addedLobby.key === lobbyId) {
             gameStart();
         }
@@ -221,7 +221,6 @@ document.getElementById("leaveBtn").addEventListener("click", () => {
 })
 
 async function startGame() {
-    console.log("Starting game");
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
             method: "POST",
@@ -238,7 +237,6 @@ async function startGame() {
     console.log(response);
 
     if (response.success) {
-        console.log("Game started");
         onDisconnect(presenceRef).cancel();
     } else {
         console.log("Failed to start game:", response.reply);
