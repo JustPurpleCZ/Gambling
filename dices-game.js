@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, onValue, onChildAdded, onChildRemoved, get, onDisconnect, set } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -13,6 +14,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+
+async function checkAuth() {
+    const user = await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+            unsub();
+            resolve(u);
+        });
+    });
+
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+}
+
 
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
@@ -37,10 +54,10 @@ async function getLobbyInfo() {
 
 const playerList = document.getElementById("playerList");
 const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
-const token = localStorage.getItem("userToken");
 console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
 (async () => {
+    await checkAuth();
     await getLobbyInfo();
     
     onChildAdded(playersRef, () => {
@@ -108,6 +125,7 @@ async function updatePlayerList() {
 
 async function kick(kickPlayer) {
     /*
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-kick-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {
@@ -128,6 +146,7 @@ async function kick(kickPlayer) {
 }
 
 async function leaveLobby() {
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {

@@ -1,6 +1,7 @@
 //O - Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, onValue, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -14,35 +15,20 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
 //O - Check login
-const token = localStorage.getItem("userToken");
-console.log("Token: " + token);
-async function checkLogin() {
-    if (!token) {
-        localStorage.removeItem("userToken");
-        window.location.href = "index.html";
-    } else if (token == 1) {
-        console.log("LOCAL MODE");
-        return;
-    }
-
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
+async function checkAuth() {
+    const user = await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+            unsub();
+            resolve(u);
+        });
     });
 
-    const tokenValid = await res.json();
-    console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token invalid");
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 5000);
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
     }
 }
 
@@ -120,6 +106,7 @@ async function createLobby(inputLobbyName = document.getElementById("inputName")
     if (inputPassword == "") {
         inputPassword = null;
     }
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-create-gtw5ppnvta-ey.a.run.app", {
         method: "POST",
         headers: {
@@ -154,6 +141,7 @@ async function joinLobby(selectedLobbyId) {
     console.log("LobbyID:", selectedLobbyId);
     console.log("Password:", document.getElementById("inputJoinPassword").value);
 
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
             method: "POST",
             headers: {
@@ -194,7 +182,7 @@ async function quickJoin() {
 }
 
 //O - Main logic
-checkLogin();
+checkAuth();
 loadLobbies();
 
 //O - Buttons and leaving
