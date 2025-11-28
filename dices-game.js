@@ -247,7 +247,7 @@ async function startGame() {
 
 //Game start
 const activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`)
-let playerOrder = get(`/games/active/dices/${lobbyId}/playerOrder`);
+let playerOrder;
 console.log("Player order:", playerOrder);
 
 const activePlayerList = document.getElementById("activePlayerList");
@@ -258,6 +258,9 @@ async function gameStart() {
     gameStarted = true;
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
+
+    playerOrder = await get(`/games/active/dices/${lobbyId}/playerOrder`);
+
     document.getElementById("preStart").style.display = "none";
     updateActivePlayerList();
     activePlayerList.style.display = "block";
