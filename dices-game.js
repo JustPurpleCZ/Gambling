@@ -170,7 +170,7 @@ async function leaveLobby() {
     console.log(response);
 
     if (response.success) {
-        presenceRef.onDisconnect().cancel();
+        onDisconnect(presenceRef).cancel();
         localStorage.removeItem("dicesLobbyId", "dicesIsHost");
         window.location.href = "dices-hub.html";
     } else {
