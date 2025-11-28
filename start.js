@@ -16,10 +16,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
-const token = await auth.currentUser.getIdToken();
 
 // Check if user is already logged in
-if (token) {
+if (await auth.currentUser) {
     window.location.href = 'navigation.html';
 }
 
