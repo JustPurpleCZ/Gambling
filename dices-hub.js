@@ -1,6 +1,6 @@
 //O - Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -31,18 +31,6 @@ async function checkAuth() {
         return;
     }
 }
-
-const lobbiesRef = ref(db, "games/lobbies/dices/{lobbyId}/name}");
-
-(async () => {
-    await checkAuth();
-    
-    onValue(lobbiesRef, (snapshot) => {
-        if (snapshot.exists()) {
-            loadLobbies();
-        }
-    });
-})();
 
 let lobbies = [];
 
@@ -194,7 +182,15 @@ async function quickJoin() {
     await createLobby("quickJoin", 2, null, inputJoinBetSize);
 }
 
+//O - Main logic
+checkAuth();
+loadLobbies();
+
 //O - Buttons and leaving
+document.getElementById("refresh").addEventListener("click", () => {
+    loadLobbies();
+});
+
 const createForm = document.getElementById("createForm");
 createForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -207,6 +203,6 @@ quickJoinForm.addEventListener("submit", (e) => {
     quickJoin();
 });
 
-document.getElementById("leaveBtn").addEventListener("click", () => {
-    window.location.href = "navigation.html";
+document.getElementById("exitBtn").addEventListener("click", () => {
+    window.localation.href = "navigation.html";
 })
