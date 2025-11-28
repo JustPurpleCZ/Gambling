@@ -106,6 +106,7 @@ onAuthStateChanged(auth, async (user) => {
                     });
 
                     const data = await res.json();
+                    localStorage.setItem('localMode', false);
                     window.location.href = 'navigation.html';
                 } catch (error) {
                     console.error('Login error:', error);
@@ -173,6 +174,7 @@ onAuthStateChanged(auth, async (user) => {
                     });
 
                     const data = await res.json();
+                    localStorage.setItem('localMode', false);
                     window.location.href = 'navigation.html';
 
                 } catch (error) {
