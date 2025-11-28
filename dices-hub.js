@@ -1,6 +1,6 @@
 //O - Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, get, onChildAdded, onChildRemoved} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -32,17 +32,15 @@ async function checkAuth() {
     }
 }
 
-const lobbiesRef = ref(db, "games/lobbies/dices");
+const lobbiesRef = ref(db, "games/lobbies/dices/{lobbyId}/name}");
 
 (async () => {
     await checkAuth();
     
-    onChildAdded(lobbiesRef, () => {
-        loadLobbies();
-    });
-
-    onChildRemoved(lobbiesRef, () => {
-        loadLobbies();
+    onValue(lobbiesRef, (snapshot) => {
+        if (snapshot.exists()) {
+            loadLobbies();
+        }
     });
 })();
 

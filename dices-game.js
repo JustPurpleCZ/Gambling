@@ -82,16 +82,18 @@ if (isHost) {
     startBtn.style.display = "block";
 
     startBtn.addEventListener("click", () => {
-        console.log("Starting game");
-        //Start game
+        if (playerCount >= 2) {
+            startGame();
+        }
     })
 }
 
 const playerCountPar = document.getElementById("playerCountPar");
+let playerCount;
 
 async function updatePlayerList() {
     console.log("Updating player list");
-    let playerCount = 0;
+    playerCount = 0;
     let players;
 
     get(playersRef).then((snapshot) => {
@@ -181,3 +183,28 @@ async function leaveLobby() {
 document.getElementById("leaveBtn").addEventListener("click", () => {
     leaveLobby();
 })
+
+async function startGame() {
+    console.log("Starting game");
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://dices-start-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        console.log("Game started");
+        onDisconnect(presenceRef).cancel();
+    } else {
+        console.log("Failed to start game:", response.reply);
+    }
+}
