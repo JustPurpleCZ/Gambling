@@ -75,6 +75,13 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     onChildRemoved(playersRef, () => {
         updatePlayerList();
     });
+
+    onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
+        if (removedLobby.key === lobbyId) {
+            onDisconnect(presenceRef).cancel();
+            window.location.href = "dices-hub.html";
+        }
+    });
 })();
 
 let startBtn = document.getElementById("startBtn");
@@ -187,7 +194,7 @@ document.getElementById("leaveBtn").addEventListener("click", () => {
 async function startGame() {
     console.log("Starting game");
     const token = await auth.currentUser.getIdToken();
-    const res = await fetch("https://dices-start-gtw5ppnvta-ey.a.run.app", {
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
             method: "POST",
             headers: {
                 "Authorization": token,
