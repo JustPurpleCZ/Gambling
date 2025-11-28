@@ -93,13 +93,13 @@ let playerCount;
 
 async function updatePlayerList() {
     console.log("Updating player list");
-    playerCount = 0;
     let players;
 
     get(playersRef).then((snapshot) => {
         if (snapshot.exists()) {
             players = snapshot.val();
             console.log("Player list:", players);
+            playerCount = 0;
 
             playerList.replaceChildren();
 
