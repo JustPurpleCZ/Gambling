@@ -28,13 +28,15 @@ async function checkAuth() {
         window.location.href = 'index.html';
         return;
     }
+
+    uid = user.uid;
 }
 
 
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
-const uid = auth.currentUser.uid;
+let uid;
 
 let lobbyInfo;
 async function getLobbyInfo() {

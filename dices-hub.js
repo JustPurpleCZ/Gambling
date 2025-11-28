@@ -54,7 +54,7 @@ async function loadLobbies() {
         console.log("Loaded lobbies: ", lobbies);
 
     } else {
-        console.log("Failed to load lobbies");
+        console.log("Failed to load lobbies, or no lobbies found");
     }
 
     //O - Listing lobbies
