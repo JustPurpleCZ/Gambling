@@ -62,14 +62,23 @@ async function getLobbyInfo() {
 
 const playerList = document.getElementById("playerList");
 const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
+let gameStarted = false;
+const activeGameRef = ref(db, `/games/active/dices/${lobbyId}`);
 console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
 (async () => {
     await checkAuth();
     await getLobbyInfo();
+    await checkRecovery();
     
     onChildAdded(playersRef, () => {
         updatePlayerList();
+    });
+
+    onChildAdded(activeGameRef, (addedLobby) => {
+        if (addedLobby.key === lobbyId) {
+            gameStart();
+        }
     });
 
     onChildRemoved(playersRef, () => {
@@ -77,12 +86,32 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     });
 
     onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
-        if (removedLobby.key === lobbyId) {
+        if (removedLobby.key === lobbyId && !gameStarted) {
             onDisconnect(presenceRef).cancel();
             window.location.href = "dices-hub.html";
         }
     });
 })();
+
+async function checkRecovery() {
+    const snapshot = await get(presenceRef);
+    if (!snapshot.exists() || snapshot.val() === false) {
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+        });
+        
+        const response = await res.json();
+        console.log("Recovery response:", response);
+    }
+}
 
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
@@ -214,4 +243,68 @@ async function startGame() {
     } else {
         console.log("Failed to start game:", response.reply);
     }
+}
+
+//Game start
+const activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`)
+let playerOrder = get(`/games/active/dices/${lobbyId}/playerOrder`);
+console.log("Player order:", playerOrder);
+
+const activePlayerList = document.getElementById("activePlayerList");
+const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
+
+async function gameStart() {
+    console.log("Game is starting");
+    gameStarted = true;
+    onDisconnect(presenceRef).cancel();
+    onDisconnect(activePresenceRef).set(false);
+    document.getElementById("preStart").style.display = "none";
+    updateActivePlayerList();
+    activePlayerList.style.display = "block";
+
+    onValue(activePlayersRef, () => {
+        updateActivePlayerList();
+    });
+
+    document.getElementById("moveBtn").addEventListener("click", () => {
+        submitMove();
+    })
+}
+
+async function updateActivePlayerList() {
+    console.log("Updating player list");
+    const playersInfo = await get(activePlayersRef);
+    for (player in playerOrder) {
+        const activePlayerDiv = document.createElement("div");
+        const name = document.createElement("p");
+        const score = document.createElement("p");
+        const theirTurn = document.createElement("p");
+
+        activePlayerList.appendChild(activePlayerDiv);
+        activePlayerDiv.appendChild(name);
+        activePlayerDiv.appendChild(score);
+        activePlayerDiv.appendChild(theirTurn);
+
+        name.textContent = playersInfo.player.username;
+        score.textContent = playersInfo.player.score;
+        theirTurn.textContent = playersInfo.player.playersTurn
+    }
+}
+
+async function submitMove() {
+    const token = await await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "move": "skip"
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
 }

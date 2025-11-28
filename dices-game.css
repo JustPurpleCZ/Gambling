@@ -14,3 +14,11 @@ body {
 #playerList div button {
     height: fit-content;
 }
+
+#gameDiv {
+    display: none;
+}
+
+#activePlayerList div {
+    display: flex;
+}
