@@ -65,10 +65,12 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 (async () => {
     await checkAuth();
     await getLobbyInfo();
+
+    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+
     await checkRecovery();
     
     console.log("Setting presence for", uid);
-    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
     set(presenceRef, true);
     onDisconnect(presenceRef).set(false);
 
