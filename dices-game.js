@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -32,10 +32,6 @@ async function checkAuth() {
     }
 
     uid = user.uid;
-    console.log("Setting presence for", uid);
-    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
-    set(presenceRef, true);
-    onDisconnect(presenceRef).set(false);
 }
 
 
@@ -71,14 +67,13 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     await getLobbyInfo();
     await checkRecovery();
     
+    console.log("Setting presence for", uid);
+    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+    set(presenceRef, true);
+    onDisconnect(presenceRef).set(false);
+
     onChildAdded(playersRef, () => {
         updatePlayerList();
-    });
-
-    onChildAdded(activeGameRef, (addedLobby) => {
-        if (addedLobby.key === lobbyId) {
-            gameStart();
-        }
     });
 
     onChildRemoved(playersRef, () => {
@@ -91,11 +86,18 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
             window.location.href = "dices-hub.html";
         }
     });
+
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
+        if (addedLobby.key === lobbyId) {
+            gameStart();
+        }
+    });
 })();
 
 async function checkRecovery() {
     const snapshot = await get(presenceRef);
-    if (!snapshot.exists() || snapshot.val() === false) {
+    if (snapshot.exists() && snapshot.val() === false) {
+        console.log("Recovering connection");
         const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
             method: "POST",
@@ -110,6 +112,12 @@ async function checkRecovery() {
         
         const response = await res.json();
         console.log("Recovery response:", response);
+
+        if (response.success) {
+            return;
+        } else {
+            leaveLobby();
+        }
     }
 }
 
@@ -221,7 +229,6 @@ document.getElementById("leaveBtn").addEventListener("click", () => {
 })
 
 async function startGame() {
-    console.log("Starting game");
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
             method: "POST",
@@ -238,7 +245,6 @@ async function startGame() {
     console.log(response);
 
     if (response.success) {
-        console.log("Game started");
         onDisconnect(presenceRef).cancel();
     } else {
         console.log("Failed to start game:", response.reply);
@@ -246,9 +252,8 @@ async function startGame() {
 }
 
 //Game start
-const activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`)
-let playerOrder = get(`/games/active/dices/${lobbyId}/playerOrder`);
-console.log("Player order:", playerOrder);
+let activePresenceRef;
+let playerOrder;
 
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
@@ -258,6 +263,11 @@ async function gameStart() {
     gameStarted = true;
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
+
+    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
+    playerOrder = snap.val();
+
     document.getElementById("preStart").style.display = "none";
     updateActivePlayerList();
     activePlayerList.style.display = "block";
@@ -274,7 +284,8 @@ async function gameStart() {
 async function updateActivePlayerList() {
     console.log("Updating player list");
     const playersInfo = await get(activePlayersRef);
-    for (player in playerOrder) {
+     for (const player of playerOrder) {
+        activePlayerList.replaceChildren();
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
@@ -285,14 +296,14 @@ async function updateActivePlayerList() {
         activePlayerDiv.appendChild(score);
         activePlayerDiv.appendChild(theirTurn);
 
-        name.textContent = playersInfo.player.username;
-        score.textContent = playersInfo.player.score;
-        theirTurn.textContent = playersInfo.player.playersTurn
+        name.textContent = playersInfo.val()[player].username;
+        score.textContent = playersInfo.val()[player].score;
+        theirTurn.textContent = playersInfo.val()[player].playersTurn;
     }
 }
 
 async function submitMove() {
-    const token = await await auth.currentUser.getIdToken();
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
             method: "POST",
             headers: {
