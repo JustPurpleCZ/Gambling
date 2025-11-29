@@ -276,13 +276,15 @@ async function gameStart() {
         }
     });
 
-    onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), () => {
+    onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
         if (snap.val() != null) {
+          playerOrder = snap.val()
+
           document.getElementById("preStart").style.display = "none";
           updateActivePlayerList();
           document.getElementById("gameDiv").style.display = "block";
 
-          onValue(activePlayersRef, () => {
+          onValue(activePlayersRef, (snapshot) => {
               updateActivePlayerList();
           });
 
