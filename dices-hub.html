@@ -3,20 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobbies</title>
+    <title>Dices: LOBBIES</title>
     <link rel="stylesheet" href="dices-hub.css">
 </head>
 <body>
+    <button id="exitBtn">Exit</button>
+
     <p>Available lobbies:</p>
 
     <div id="lobbies"></div>
+    <input id="inputJoinPassword">
     <button id="refresh">Refresh</button>
 
     <p>Create lobby:</p>
     <form id="createForm">
         <p>Name:</p>
         <input type="text" id="inputName" required>
+
+        <p>Password: (leave blank for no password)</p>
+        <input type="text" id="inputCreatePassword">
+
+        <select id="inputMaxPlayers" required>
+            <option value="">Maximum players</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+        </select>
+
+        <select id="inputCreateBetSize" required>
+            <option value="">Bet size</option>
+            <option value="100">Small ($100)</option>
+            <option value="350">Meduim ($350)</option>
+            <option value="1000">Large ($1000)</option>
+        </select>
+
         <button type="submit">Create</button>
+    </form>
+
+    <form id="quickJoinForm">
+        <select id="inputJoinBetSize" required>
+            <option value="">Bet size</option>
+            <option value="100">Small ($100)</option>
+            <option value="350">Meduim ($350)</option>
+            <option value="1000">Large ($1000)</option>
+        </select>
+
+        <button id="quickJoinBtn" type="submit">Quick Join</button>
     </form>
 
     <script type="module" src="dices-hub.js"></script>

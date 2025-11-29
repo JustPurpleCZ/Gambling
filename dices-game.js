@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const nameP = document.getElementById("lobbyName");
 if(localStorage.getItem("lobbyName")) {
     nameP.textContent = localStorage.getItem("lobbyName");
@@ -268,10 +269,45 @@ function collectDice() {
     if (dist < collectRadius) {
       if (die.element) die.element.remove();
       dice.splice(i, 1);
+=======
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.firebasestorage.app",
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let presenceRef;
+
+async function checkAuth() {
+    const user = await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+            unsub();
+            resolve(u);
+        });
+    });
+
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd
     }
-  }
+
+    uid = user.uid;
 }
 
+<<<<<<< HEAD
 function lockDie(die) {
   if (die.rolling) return;
   const index = dice.indexOf(die);
@@ -303,29 +339,29 @@ function lockDie(die) {
   
   lockedDice.push(die);
 }
+=======
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd
 
-function animateToPosition(element, targetX, targetY, callback) {
-  const startX = parseFloat(element.style.left);
-  const startY = parseFloat(element.style.top);
-  const duration = 500;
-  const startTime = Date.now();
-  
-  function animate() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    
-    const currentX = startX + (targetX - startX) * eased;
-    const currentY = startY + (targetY - startY) * eased;
-    
-    element.style.left = currentX + 'px';
-    element.style.top = currentY + 'px';
-    
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else if (callback) {
-      callback();
+const lobbyId = localStorage.getItem("dicesLobbyId");
+const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
+const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
+let uid;
+
+let lobbyInfo;
+async function getLobbyInfo() {
+    try {
+        const snapshot = await get(lobbyRef);
+        if (snapshot.exists()) {
+            lobbyInfo = snapshot.val();
+            console.log("Lobby data", lobbyInfo);
+            return lobbyInfo;
+        } else {
+            console.log("Lobby data failed to load");
+        }
+    } catch (err) {
+        console.error(err);
     }
+<<<<<<< HEAD
   }
   animate();
 }
@@ -475,18 +511,80 @@ function update() {
       
       // 6. RENDER
       renderDiePosition(die);
-    }
-  });
-  
-  if (allStopped && isRolling) {
-    isRolling = false;
-  }
-  
-  requestAnimationFrame(update);
+=======
 }
 
-update();
+const playerList = document.getElementById("playerList");
+const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
+let gameStarted = false;
+const activeGameRef = ref(db, `/games/active/dices/${lobbyId}`);
+console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
+(async () => {
+    await checkAuth();
+    await getLobbyInfo();
+    await checkRecovery();
+    
+    console.log("Setting presence for", uid);
+    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+    set(presenceRef, true);
+    onDisconnect(presenceRef).set(false);
+
+    onChildAdded(playersRef, () => {
+        updatePlayerList();
+    });
+
+    onChildRemoved(playersRef, () => {
+        updatePlayerList();
+    });
+
+    onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
+        if (removedLobby.key === lobbyId && !gameStarted) {
+            onDisconnect(presenceRef).cancel();
+            window.location.href = "dices-hub.html";
+        }
+    });
+
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
+        if (addedLobby.key === lobbyId) {
+            gameStart();
+        }
+    });
+})();
+
+async function checkRecovery() {
+    const snapshot = await get(presenceRef);
+    if (snapshot.exists() && snapshot.val() === false) {
+        console.log("Recovering connection");
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+        });
+        
+        const response = await res.json();
+        console.log("Recovery response:", response);
+
+        if (response.success) {
+            return;
+        } else {
+            leaveLobby();
+        }
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd
+    }
+}
+
+let startBtn = document.getElementById("startBtn");
+if (isHost) {
+    startBtn.style.display = "block";
+
+<<<<<<< HEAD
 // --- RESIZE HANDLER ---
 // This is the key fix for responsiveness
 window.addEventListener('resize', () => {
@@ -511,3 +609,199 @@ window.addEventListener("keydown", (key) => {
     window.location.href = "dices-hub.html";
   }
 });
+=======
+    startBtn.addEventListener("click", () => {
+        if (playerCount >= 2) {
+            startGame();
+        }
+    })
+}
+
+const playerCountPar = document.getElementById("playerCountPar");
+let playerCount;
+
+async function updatePlayerList() {
+    console.log("Updating player list");
+    let players;
+
+    get(playersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            players = snapshot.val();
+            console.log("Player list:", players);
+            playerCount = 0;
+
+            playerList.replaceChildren();
+
+            Object.values(players).forEach(player => {
+                console.log("Adding player:", player.username);
+                playerCount++;
+                const playerDiv = document.createElement("div");
+                const name = document.createElement("p");
+
+                playerList.appendChild(playerDiv);
+                playerDiv.appendChild(name);
+
+                if (isHost) {
+                    const kickBtn = document.createElement("button");
+                    playerDiv.appendChild(kickBtn);
+                    kickBtn.textContent = "kick player";
+
+                    kickBtn.addEventListener("click", () => {
+                        kick(snapshot.key);
+                    });
+                }
+
+                name.textContent = player.username;
+            });
+
+            playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
+            
+        } else {
+            console.log("Not found");
+        }
+    }).catch(console.error);
+}
+
+async function kick(kickPlayer) {
+    /*
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://dices-kick-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "user": kickPlayer
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    */
+   console.log("Kicking disabled");
+}
+
+async function leaveLobby() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        onDisconnect(presenceRef).cancel();
+        localStorage.removeItem("dicesLobbyId", "dicesIsHost");
+        window.location.href = "dices-hub.html";
+    } else {
+        console.log("Failed to leave:", response.reply);
+    }
+}
+
+document.getElementById("leaveBtn").addEventListener("click", () => {
+    leaveLobby();
+})
+
+async function startGame() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        onDisconnect(presenceRef).cancel();
+    } else {
+        console.log("Failed to start game:", response.reply);
+    }
+}
+
+//Game start
+let activePresenceRef;
+let playerOrder;
+
+const activePlayerList = document.getElementById("activePlayerList");
+const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
+
+async function gameStart() {
+    console.log("Game is starting");
+    gameStarted = true;
+    onDisconnect(presenceRef).cancel();
+    onDisconnect(activePresenceRef).set(false);
+
+    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
+    playerOrder = snap.val();
+
+    document.getElementById("preStart").style.display = "none";
+    updateActivePlayerList();
+    activePlayerList.style.display = "block";
+
+    onValue(activePlayersRef, () => {
+        updateActivePlayerList();
+    });
+
+    document.getElementById("moveBtn").addEventListener("click", () => {
+        submitMove();
+    })
+}
+
+async function updateActivePlayerList() {
+    console.log("Updating player list");
+    const playersInfo = await get(activePlayersRef);
+     for (const player of playerOrder) {
+        activePlayerList.replaceChildren();
+        const activePlayerDiv = document.createElement("div");
+        const name = document.createElement("p");
+        const score = document.createElement("p");
+        const theirTurn = document.createElement("p");
+
+        activePlayerList.appendChild(activePlayerDiv);
+        activePlayerDiv.appendChild(name);
+        activePlayerDiv.appendChild(score);
+        activePlayerDiv.appendChild(theirTurn);
+
+        name.textContent = playersInfo.val()[player].username;
+        score.textContent = playersInfo.val()[player].score;
+        theirTurn.textContent = playersInfo.val()[player].playersTurn;
+    }
+}
+
+async function submitMove() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "move": "skip"
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+}
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd

@@ -1,37 +1,42 @@
-const token = localStorage.getItem('userToken');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-//Check for local mode (testing purporses)
-let localMode = false;
-if (token && token == 1) {
-    localMode = true;
-}
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const localMode = JSON.parse(localStorage.getItem('localMode'));
+
 async function checkAuth() {
-    if (!token) {
+    const user = await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+            unsub();
+            resolve(u);
+        });
+    });
+
+    if (!user) {
         window.location.href = 'index.html';
         return;
     }
-    
-    //O - validate token
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
 
-    const tokenValid = await res.json();
-    console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token valid: ", tokenValid.tokenValid);
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 20000);
+    if (!localMode) {
+        onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
     }
 
-    //DEBUG - TOKEN SHENANIGANS
     try {
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -45,7 +50,6 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            localStorage.removeItem("userToken");
             window.location.href = "index.html";
         }, 5000);
         return;
@@ -54,7 +58,6 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            localStorage.removeItem("userToken");
             window.location.href = "index.html";
         }, 5000);
         return;
@@ -64,22 +67,6 @@ async function checkAuth() {
 // Get user data
 let localBalance;
 let userData;
-
-//Update online status every 1 minute
-if (!localMode) {
-    setInterval(() => {
-        console.log("Updating last online")
-        fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-            method: "GET",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            }
-        });
-    }, 60000);
-} else {
-    console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
-}
 
 // O - Exit function (formerly logout)
 function logout() {
@@ -177,28 +164,23 @@ const displayDiv = document.querySelector('.credit-display');
 
 async function initializeWallet() {
     if (!localMode) {
-    await checkAuth();
+        await checkAuth();
 
-    if (!token) {
-        window.location.href = 'index.html';
-        return;
-    }
+        if (!localBalance) {
+            console.log("NO LOCAL BALANCE, LOGGING OUT")
+            await localBalance;
+            console.log(localBalance)
+            setTimeout(() => {
+            window.location.href = 'index.html';
+            return;
+            }, 10000);
+            
+        }
+        walletBalance = localBalance.walletBalance;
+        playerCredit = localBalance.creditBalance;
+        updateAvailableBills();
+        updateCreditDisplay();
 
-    if (!localBalance) {
-        console.log("NO LOCAL BALANCE, LOGGING OUT")
-        await localBalance;
-        console.log(localBalance)
-        setTimeout(() => {
-        localStorage.removeItem('userToken');
-        window.location.href = 'index.html';
-        return;
-        }, 10000);
-        
-    }
-    walletBalance = localBalance.walletBalance;
-    playerCredit = localBalance.creditBalance;
-    updateAvailableBills();
-    updateCreditDisplay();
     } else {
         console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
         walletBalance = 500;
@@ -727,6 +709,7 @@ async function spin() {
     
     //Send cloud spin request
     if (!localMode) {
+        const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
             method: "POST",
             headers: {
@@ -859,6 +842,7 @@ async function pickupNote(note) {
 
     //DEBUG - CASH OUT
     if (!localMode) {
+        const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
             method: "POST",
             headers: {
@@ -977,6 +961,7 @@ async function cashout() {
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
                 if (!localMode) {
+                    const token = await auth.currentUser.getIdToken();
                     const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
                         method: "POST",
                         headers: {

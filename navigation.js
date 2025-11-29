@@ -106,38 +106,30 @@ window.addEventListener('mousemove', handleMouseMove);
 setInitialState();
 });
 
-//O - unlocked places checking
+//O - Firebase init and getting token
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const localMode = JSON.parse(localStorage.getItem("localMode"));
 const machines = document.querySelectorAll(".unavailable");
-const token = localStorage.getItem("userToken");
 let unlocks = {};
 
-async function checkAuth() {
-    if (!token) {
-        window.location.href = 'index.html';
-        return;
-    }
-    
-    //O - validate token
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-
-    const tokenValid = await res.json();
-    console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token invalid");
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 5000);
-    }
-}
-
 async function setUnlocks() {
+    const token = await auth.currentUser.getIdToken();
+    
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
         method: "GET",
         headers: {
@@ -147,25 +139,19 @@ async function setUnlocks() {
     });
 
     const unlocksResponse = await res.json();
-    console.log(unlocksResponse);
     unlocks["slotMachine"] = unlocksResponse.unlocks.slotMachine;
     unlocks["wheelOfFortune"] = unlocksResponse.unlocks.wheelOfFortune;
     unlocks["dices"] = unlocksResponse.unlocks.dices;
-    console.log(unlocks);
-    console.log(unlocks["slotMachine"]);
-    console.log(unlocks.slotMachine);
 }
 
 async function initUnlocks() {
-    if (!token) {
-        localStorage.removeItem("userToken");
-        window.location.href = "index.html";
-    } else if (token == 1) {
+    if (localMode) {
         unlocks = {"slotMachine": true, "wheelOfFortune": true, "dices": true}
-        console.log("local mode");
     } else {
         await setUnlocks();
     }
+
+    console.log("Unlocks: ", unlocks);
 
     machines.forEach((machine) => {
         let name;
@@ -210,16 +196,19 @@ async function initUnlocks() {
     });
 }
 
-checkAuth();
-initUnlocks();
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = 'index.html';
+        localStorage.removeItem("localMode");
+        return;
+    }
 
-function logout() {
-    localStorage.removeItem("userToken");
-    window.location.href = "index.html";
-}
+    await initUnlocks();
+});
 
 window.addEventListener("keydown", (key) => {
     if (key.key === "l") {
-        logout();
+        localStorage.removeItem("localMode");
+        window.location.href = "index.html";
     }
 })

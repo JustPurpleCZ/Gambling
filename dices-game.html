@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="dices-game.css">
 </head>
 <body>
+<<<<<<< HEAD
     <div id="game-container">
         <div class="ui-layer">
             <p>Lobby name:</p>
@@ -17,7 +18,22 @@
         
         <div class="locked-area"></div>
         <div id="cup" class="cup"></div>
+=======
+    <div id="preStart">
+        <button id="leaveBtn">Leave lobby</button>
+        <h3>Players:</h3>
+        <div id="playerList"></div>
+        <p id="playerCountPar"></p>
+        <button id="startBtn">Start game</button>
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd
     </div>
-    <script src="dices-game.js"></script>
+
+    <div id="gameDiv">
+        <h2>Dices Game</h2>
+        <div id="activePlayerList"></div>
+        <button id="modeBtn">Make your move!</button>
+    </div>
+
+    <script src="dices-game.js" type="module"></script>
 </body>
 </html>
