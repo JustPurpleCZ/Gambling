@@ -97,6 +97,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
     onChildAdded(ref(db, `/games/active/dices`), (added) => {
         if (addedLobby.key === lobbyId) {
+            gameStarted = true;
             onDisconnect(presenceRef).cancel();
             gameStart();
         }
@@ -279,7 +280,7 @@ async function gameStart() {
     onDisconnect(activePresenceRef).set(false);
 
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
-        if (removedLobby.key === lobbyId && !gameStarted) {
+        if (removedLobby.key === lobbyId) {
             onDisconnect(activePresenceRef).cancel();
             window.location.href = "dices-hub.html";
         }

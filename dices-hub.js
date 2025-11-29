@@ -204,5 +204,5 @@ quickJoinForm.addEventListener("submit", (e) => {
 });
 
 document.getElementById("exitBtn").addEventListener("click", () => {
-    window.localation.href = "navigation.html";
+    window.location.href = "navigation.html";
 })
