@@ -32,10 +32,6 @@ async function checkAuth() {
     }
 
     uid = user.uid;
-    console.log("Setting presence for", uid);
-    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
-    set(presenceRef, true);
-    onDisconnect(presenceRef).set(false);
 }
 
 
@@ -71,6 +67,11 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     await getLobbyInfo();
     await checkRecovery();
     
+    console.log("Setting presence for", uid);
+    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+    set(presenceRef, true);
+    onDisconnect(presenceRef).set(false);
+
     onChildAdded(playersRef, () => {
         updatePlayerList();
     });
