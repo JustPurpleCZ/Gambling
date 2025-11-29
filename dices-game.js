@@ -269,21 +269,28 @@ async function gameStart() {
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
 
-    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
-    playerOrder = snap.val();
-    console.log("Player order:", playerOrder);
-
-    document.getElementById("preStart").style.display = "none";
-    updateActivePlayerList();
-    document.getElementById("gameDiv").style.display = "block";
-
-    onValue(activePlayersRef, () => {
-        updateActivePlayerList();
+    onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
+        if (removedLobby.key === lobbyId && !gameStarted) {
+            onDisconnect(activePresenceRef).cancel();
+            window.location.href = "dices-hub.html";
+        }
     });
 
-    document.getElementById("moveBtn").addEventListener("click", () => {
-        submitMove();
-    })
+    onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), () => {
+        if (snap.val() != null) {
+          document.getElementById("preStart").style.display = "none";
+          updateActivePlayerList();
+          document.getElementById("gameDiv").style.display = "block";
+
+          onValue(activePlayersRef, () => {
+              updateActivePlayerList();
+          });
+
+          document.getElementById("moveBtn").addEventListener("click", () => {
+              submitMove();
+          })
+        }
+    });
 }
 
 async function updateActivePlayerList() {
@@ -295,16 +302,25 @@ async function updateActivePlayerList() {
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
-        const theirTurn = document.createElement("p");
-
+        
         activePlayerList.appendChild(activePlayerDiv);
         activePlayerDiv.appendChild(name);
         activePlayerDiv.appendChild(score);
-        activePlayerDiv.appendChild(theirTurn);
-
+        
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
-        theirTurn.textContent = playersInfo.val()[player].playersTurn;
+        
+        if (playersInfo.val()[player].playersTurn == true) {
+          const theirTurn = document.createElement("p");
+          activePlayerDiv.appendChild(theirTurn);
+          theirTurn.textContent = "Playing";
+        }
+
+        if (playersInfo.val()[player].connected == false) {
+          const connected = document.createElement("p");
+          activePlayerDiv.appendChild(connected);
+          connected.textContent = "Disconnected";
+        }
     }
 }
 
