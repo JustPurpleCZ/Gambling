@@ -47,7 +47,7 @@ async function getLobbyInfo() {
         if (snapshot.exists()) {
             lobbyInfo = snapshot.val();
             console.log("Lobby data", lobbyInfo);
-            return lobbyInfo;
+            return;
         } else {
             console.log("Lobby data failed to load");
         }
@@ -65,6 +65,12 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 (async () => {
     await checkAuth();
     await getLobbyInfo();
+
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
+        if (addedLobby.key === lobbyId) {
+            gameStart();
+        }
+    });
 
     presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
 
@@ -86,12 +92,6 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         if (removedLobby.key === lobbyId && !gameStarted) {
             onDisconnect(presenceRef).cancel();
             window.location.href = "dices-hub.html";
-        }
-    });
-
-    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
-        if (addedLobby.key === lobbyId) {
-            gameStart();
         }
     });
 })();
@@ -267,7 +267,8 @@ async function gameStart() {
     activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
 
     onDisconnect(presenceRef).cancel();
-    console.log("Setting new presence:", uid)
+    console.log("Setting new presence:", uid);
+    set(activePresenceRef, true);
     onDisconnect(activePresenceRef).set(false);
 
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
