@@ -75,6 +75,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         updatePlayerList();
     });
 
+    /*
     onChildAdded(ref(db, `games/active/dices`), (snapshot) => {
         console.log("New lobby added to active");
         if (snapshot.key == lobbyId) {
@@ -84,6 +85,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
             console.log("Active lobby added:", snapshot.key);
         }
     });
+    */
 
     onChildRemoved(playersRef, () => {
         updatePlayerList();
@@ -93,6 +95,13 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         if (removedLobby.key === lobbyId && !gameStarted) {
             onDisconnect(presenceRef).cancel();
             window.location.href = "dices-hub.html";
+        }
+    });
+
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
+        console.log("active lobby added:", addedLobby.key);
+        if (addedLobby.key === lobbyId) {
+            console.log("game should start just about... now :3");
         }
     });
 })();
