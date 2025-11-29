@@ -288,11 +288,10 @@ async function gameStart() {
 
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
-    console.log("Updating active player list:", playersInfo);
+    console.log("Updating active player list");
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
-        console.log("Adding player:", player);
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");

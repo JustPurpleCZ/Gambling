@@ -22,3 +22,7 @@ body {
 #activePlayerList div {
     display: flex;
 }
+
+#activePlayerList div * {
+    margin-right: 10px;
+}
