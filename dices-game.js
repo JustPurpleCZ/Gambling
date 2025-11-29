@@ -75,18 +75,6 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         updatePlayerList();
     });
 
-    /*
-    onChildAdded(ref(db, `games/active/dices`), (snapshot) => {
-        console.log("New lobby added to active");
-        if (snapshot.key == lobbyId) {
-            console.log("Starting game uwu");
-            gameStart();
-        } else {
-            console.log("Active lobby added:", snapshot.key);
-        }
-    });
-    */
-
     onChildRemoved(playersRef, () => {
         updatePlayerList();
     });
@@ -99,16 +87,16 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     });
 
     onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
-        console.log("active lobby added:", addedLobby.key);
         if (addedLobby.key === lobbyId) {
-            console.log("game should start just about... now :3");
+            gameStart();
         }
     });
 })();
 
 async function checkRecovery() {
     const snapshot = await get(presenceRef);
-    if (!snapshot.exists() || snapshot.val() === false) {
+    if (snapshot.exists() && snapshot.val() === false) {
+        console.log("Recovering connection");
         const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
             method: "POST",
@@ -123,6 +111,12 @@ async function checkRecovery() {
         
         const response = await res.json();
         console.log("Recovery response:", response);
+
+        if (response.success) {
+            return;
+        } else {
+            leaveLobby();
+        }
     }
 }
 
@@ -259,7 +253,6 @@ async function startGame() {
 //Game start
 let activePresenceRef;
 let playerOrder;
-console.log("Player order:", playerOrder);
 
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
