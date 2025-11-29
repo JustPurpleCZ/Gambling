@@ -263,10 +263,12 @@ const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
 async function gameStart() {
     console.log("Game is starting");
     gameStarted = true;
+
+    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
+
     onDisconnect(presenceRef).cancel();
     onDisconnect(activePresenceRef).set(false);
 
-    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
     playerOrder = snap.val();
 
