@@ -66,11 +66,11 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     await checkAuth();
     await getLobbyInfo();
 
-    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
-        if (addedLobby.key === lobbyId) {
-            gameStart();
-        }
-    });
+    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}`), );
+    if (snapshot.exists()) {
+      console.log("Game already active, skipping lobby");
+      gameStart();
+    } else {
 
     presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
 
@@ -94,6 +94,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
             window.location.href = "dices-hub.html";
         }
     });
+  }
 })();
 
 async function checkRecovery() {
