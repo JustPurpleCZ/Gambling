@@ -271,10 +271,11 @@ async function gameStart() {
 
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/playerOrder`));
     playerOrder = snap.val();
+    console.log("Player order:", playerOrder);
 
     document.getElementById("preStart").style.display = "none";
     updateActivePlayerList();
-    activePlayerList.style.display = "block";
+    document.getElementById("gameDiv").style.display = "block";
 
     onValue(activePlayersRef, () => {
         updateActivePlayerList();
@@ -286,10 +287,12 @@ async function gameStart() {
 }
 
 async function updateActivePlayerList() {
-    console.log("Updating player list");
     const playersInfo = await get(activePlayersRef);
+    console.log("Updating active player list:", playersInfo);
+
+    activePlayerList.replaceChildren();
      for (const player of playerOrder) {
-        activePlayerList.replaceChildren();
+        console.log("Adding player:", player);
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
