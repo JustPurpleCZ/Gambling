@@ -98,6 +98,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     onChildAdded(ref(db, `/games/active/dices`), (added) => {
         if (addedLobby.key === lobbyId) {
             gameStarted = true;
+            set(presenceRef, false);
             onDisconnect(presenceRef).cancel();
             gameStart();
         }
