@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const nameP = document.getElementById("lobbyName");
 if(localStorage.getItem("lobbyName")) {
     nameP.textContent = localStorage.getItem("lobbyName");
@@ -268,6 +269,7 @@ function collectDice() {
     if (dist < collectRadius) {
       if (die.element) die.element.remove();
       dice.splice(i, 1);
+=======
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -299,6 +301,7 @@ async function checkAuth() {
     if (!user) {
         window.location.href = 'index.html';
         return;
+>>>>>>> 3165d6947475b8ddeb582229a9d6f774df4528dd
     }
 
     uid = user.uid;
