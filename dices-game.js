@@ -267,6 +267,7 @@ async function gameStart() {
     activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
 
     onDisconnect(presenceRef).cancel();
+    console.log("Setting new presence:", uid)
     onDisconnect(activePresenceRef).set(false);
 
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
