@@ -94,6 +94,13 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
             window.location.href = "dices-hub.html";
         }
     });
+
+    onChildAdded(ref(db, `/games/active/dices`), (added) => {
+        if (addedLobby.key === lobbyId) {
+            onDisconnect(presenceRef).cancel();
+            gameStart();
+        }
+    });
   }
 })();
 
@@ -267,7 +274,6 @@ async function gameStart() {
 
     activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
 
-    onDisconnect(presenceRef).cancel();
     console.log("Setting new presence:", uid);
     set(activePresenceRef, true);
     onDisconnect(activePresenceRef).set(false);
