@@ -280,7 +280,7 @@ img {
     left: 0;
     z-index: 500;
 }
-.vlad img{
+.vlada{
     position: absolute;
     width: 100%;
     height: auto;
@@ -525,4 +525,21 @@ img {
     text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     animation: flicker 0.2s infinite alternate;
     z-index: 52;
+}
+
+.robot-hand {
+    position: absolute;
+    width: 40vh;
+    height: auto;
+    bottom: 20vh;
+    left: 30vh;
+    z-index: 501;
+    opacity: 0;
+    transition: all 0.5s ease-out;
+    pointer-events: none;
+    transform: scaleX(-1);
+}
+
+.robot-hand.visible {
+    opacity: 1;
 }
