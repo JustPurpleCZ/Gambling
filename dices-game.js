@@ -266,6 +266,10 @@ async function startGame() {
 //Game start
 let activePresenceRef;
 let playerOrder;
+let playing;
+
+const playStuff = document.getElementById("playStuff");
+const rolledDiceDiv = document.getElementById("rolledDice");
 
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
@@ -296,11 +300,15 @@ async function gameStart() {
           document.getElementById("gameDiv").style.display = "block";
 
           onValue(activePlayersRef, (snapshot) => {
-              updateActivePlayerList();
+            updateActivePlayerList();
           });
 
           document.getElementById("moveBtn").addEventListener("click", () => {
-              submitMove();
+            submitMove();
+          })
+
+          document.getElementById("rollBtn").addEventListener("click", () => {
+            rollDice();
           })
         }
     });
@@ -327,6 +335,45 @@ async function updateActivePlayerList() {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
           theirTurn.textContent = "Playing";
+
+          if (player.key == uid) {
+            playStuff.style.display = "block";
+            rolledDiceDiv.replaceChildren();
+            const rolledDice = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+            const heldDice = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+            let i = 0;
+            for (const roll in rolledDice, i++) {
+                const diceBtn = document.createElement("button");
+                rolledDiceDiv.appendChild(diceBtn);
+                diceBtn.textContent = roll.key;
+
+                if (heldDice[i]) {
+                    diceBtn.classList.add("heldDice");
+                }
+
+                heldDice.addEventListener("click", () => {
+                    if (diceBtn.classList.contains("heldDice")) {
+                        diceBtn.classList.remove("heldDice");
+                        set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, false);
+                    } else {
+                        diceBtn.classList.add("heldDice");
+                        set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, true);
+                    }
+                })
+            }
+
+          } else {
+            playStuff.style.display = "none";
+
+            const rolledDice = document.createElement("p");
+            const heldDice = document.createElement("p");
+
+            activePlayerDiv.appendChild(rolledDice);
+            activePlayerDiv.appendChild(heldDice);
+
+            rolledDice.textContent = playersInfo.val()[player].rolledDice;
+            heldDice.textContent = playersInfo.val()[player].heldDice;
+          }
         }
 
         if (playersInfo.val()[player].connected == false) {
@@ -334,6 +381,29 @@ async function updateActivePlayerList() {
           activePlayerDiv.appendChild(connected);
           connected.textContent = "Disconnected";
         }
+    }
+}
+
+async function rollDice() {
+    console.log("Rolling dice");
+    const rollCount = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+
+    if (rollCount < 3) {
+
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
+                method: "POST",
+                headers: {
+                    "Authorization": token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "lobbyId": lobbyId,
+                })
+        });
+
+        const response = await res.json();
+        console.log("Roll response:", response);
     }
 }
 
@@ -352,5 +422,5 @@ async function submitMove() {
     });
 
     const response = await res.json();
-    console.log(response);
+    console.log("Move response:", response);
 }
