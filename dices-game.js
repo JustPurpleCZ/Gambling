@@ -419,19 +419,15 @@ async function rollDice() {
 
         switch(rollCount) {
             case 0:
-                document.getElementById("rollBtn").textContent = "Roll the dice!" + 3 + " Left";
+                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 2 + " Left)";
                 break;
             
             case 1:
-                document.getElementById("rollBtn").textContent = "Roll the dice!" + 2 + " Left";
-                break;
-
-            case 2:
-                document.getElementById("rollBtn").textContent = "Roll the dice!" + 1 + " Left";
+                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 1 + " Left)";
                 break;
 
             default:
-                document.getElementById("rollBtn").textContent = "Roll the dice!" + 0 + " Left";
+                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 0 + " Left)";
         }
     }
 }
