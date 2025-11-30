@@ -349,26 +349,28 @@ async function updateActivePlayerList() {
 
             rolledDiceDiv.replaceChildren();
 
-            for (let i = 0; i < 6; i++) {
-                console.log("Adding dice button");
-                const diceBtn = document.createElement("button");
-                rolledDiceDiv.appendChild(diceBtn);
-                diceBtn.textContent = rolledDice[i];
-                const rollIndex = i;
+            if (rolledDice) {
+                for (let i = 0; i < 6; i++) {
+                    console.log("Adding dice button");
+                    const diceBtn = document.createElement("button");
+                    rolledDiceDiv.appendChild(diceBtn);
+                    diceBtn.textContent = rolledDice[i];
+                    const rollIndex = i;
 
-                if (heldDice[i]) {
-                    diceBtn.classList.add("heldDice");
-                }
-
-                diceBtn.addEventListener("click", () => {
-                    if (diceBtn.classList.contains("heldDice")) {
-                        diceBtn.classList.remove("heldDice");
-                        set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), false);
-                    } else {
+                    if (heldDice[i]) {
                         diceBtn.classList.add("heldDice");
-                        set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), true);
                     }
-                })
+
+                    diceBtn.addEventListener("click", () => {
+                        if (diceBtn.classList.contains("heldDice")) {
+                            diceBtn.classList.remove("heldDice");
+                            set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), false);
+                        } else {
+                            diceBtn.classList.add("heldDice");
+                            set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), true);
+                        }
+                    })
+                }
             }
 
           } else {
@@ -396,9 +398,7 @@ async function updateActivePlayerList() {
 async function rollDice() {
     console.log("Rolling dice");
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
-    console.log("Roll count:", snap);
     const rollCount = snap.val();
-    console.log("New roll count:", rollCount);
 
     if (rollCount < 3) {
 
@@ -416,6 +416,23 @@ async function rollDice() {
 
         const response = await res.json();
         console.log("Roll response:", response);
+
+        switch(rollCount) {
+            case 0:
+                document.getElementById("rollBtn").textContent = "Roll the dice!" + 3 + " Left";
+                break;
+            
+            case 1:
+                document.getElementById("rollBtn").textContent = "Roll the dice!" + 2 + " Left";
+                break;
+
+            case 2:
+                document.getElementById("rollBtn").textContent = "Roll the dice!" + 1 + " Left";
+                break;
+
+            default:
+                document.getElementById("rollBtn").textContent = "Roll the dice!" + 0 + " Left";
+        }
     }
 }
 
