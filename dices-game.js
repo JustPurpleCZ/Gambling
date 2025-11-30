@@ -348,7 +348,7 @@ async function updateActivePlayerList() {
             console.log("Rolls:", rolledDice, heldDice);
 
             let i = 0;
-            for (const roll in rolledDice, i++) {
+            for (const roll in rolledDice) {
                 console.log("Adding dice button");
                 const diceBtn = document.createElement("button");
                 rolledDiceDiv.appendChild(diceBtn);
@@ -367,6 +367,8 @@ async function updateActivePlayerList() {
                         set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, true);
                     }
                 })
+
+                i++;
             }
 
           } else {
@@ -414,8 +416,6 @@ async function rollDice() {
 
         const response = await res.json();
         console.log("Roll response:", response);
-
-        updateActivePlayerList();
     }
 }
 
