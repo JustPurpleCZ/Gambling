@@ -347,12 +347,14 @@ async function updateActivePlayerList() {
 
             console.log("Rolls:", rolledDice, heldDice);
 
-            let i = 0;
-            for (const roll in rolledDice) {
+            rolledDiceDiv.replaceChildren();
+
+            for (let i = 0; i < 6; i++) {
                 console.log("Adding dice button");
                 const diceBtn = document.createElement("button");
                 rolledDiceDiv.appendChild(diceBtn);
-                diceBtn.textContent = roll;
+                diceBtn.textContent = rolledDice[i];
+                const rollIndex = i;
 
                 if (heldDice[i]) {
                     diceBtn.classList.add("heldDice");
@@ -361,14 +363,12 @@ async function updateActivePlayerList() {
                 diceBtn.addEventListener("click", () => {
                     if (diceBtn.classList.contains("heldDice")) {
                         diceBtn.classList.remove("heldDice");
-                        set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, false);
+                        set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), false);
                     } else {
                         diceBtn.classList.add("heldDice");
-                        set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, true);
+                        set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), true);
                     }
                 })
-
-                i++;
             }
 
           } else {
