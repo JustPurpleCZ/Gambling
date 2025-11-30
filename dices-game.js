@@ -336,7 +336,7 @@ async function updateActivePlayerList() {
           activePlayerDiv.appendChild(theirTurn);
           theirTurn.textContent = "Playing";
 
-          if (player.key == uid) {
+          if (player == uid) {
             playStuff.style.display = "block";
             rolledDiceDiv.replaceChildren();
             const rolledDice = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
