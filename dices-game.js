@@ -407,6 +407,8 @@ async function rollDice() {
 
         const response = await res.json();
         console.log("Roll response:", response);
+
+        updatePlayerList();
     }
 }
 
