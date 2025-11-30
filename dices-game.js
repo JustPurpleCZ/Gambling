@@ -345,11 +345,14 @@ async function updateActivePlayerList() {
             const rolledDice = snap.val();
             const heldDice = snapshot.val();
 
+            console.log("Rolls:", rolledDice, heldDice);
+
             let i = 0;
             for (const roll in rolledDice, i++) {
+                console.log("Adding dice button");
                 const diceBtn = document.createElement("button");
                 rolledDiceDiv.appendChild(diceBtn);
-                diceBtn.textContent = roll.key;
+                diceBtn.textContent = roll;
 
                 if (heldDice[i]) {
                     diceBtn.classList.add("heldDice");
