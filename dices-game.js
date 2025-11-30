@@ -386,7 +386,10 @@ async function updateActivePlayerList() {
 
 async function rollDice() {
     console.log("Rolling dice");
-    const rollCount = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+    console.log("Roll count:", snap);
+    const rollCount = snap.val();
+    console.log("New roll count:", rollCount);
 
     if (rollCount < 3) {
 
