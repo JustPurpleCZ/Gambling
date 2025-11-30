@@ -358,7 +358,7 @@ async function updateActivePlayerList() {
                     diceBtn.classList.add("heldDice");
                 }
 
-                heldDice.addEventListener("click", () => {
+                diceBtn.addEventListener("click", () => {
                     if (diceBtn.classList.contains("heldDice")) {
                         diceBtn.classList.remove("heldDice");
                         set(`/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`, false);
