@@ -339,8 +339,12 @@ async function updateActivePlayerList() {
           if (player == uid) {
             playStuff.style.display = "block";
             rolledDiceDiv.replaceChildren();
-            const rolledDice = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
-            const heldDice = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+            const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+            const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+
+            const rolledDice = snap.val();
+            const heldDice = snap.val();
+
             let i = 0;
             for (const roll in rolledDice, i++) {
                 const diceBtn = document.createElement("button");
