@@ -343,7 +343,7 @@ async function updateActivePlayerList() {
             const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
 
             const rolledDice = snap.val();
-            const heldDice = snap.val();
+            const heldDice = snapshot.val();
 
             let i = 0;
             for (const roll in rolledDice, i++) {
