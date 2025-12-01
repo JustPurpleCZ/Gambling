@@ -278,7 +278,7 @@ img {
     height: 22.8vh; /* Scaled from 12vh */
     top: 57vh;      /* Scaled from 30vh */
     left: 0;
-    z-index: 500;
+    z-index: 30;
 }
 .vlada{
     position: absolute;
@@ -286,7 +286,7 @@ img {
     height: auto;
     bottom: 0;
     filter: blur(2px) brightness(70%);
-    z-index: 500;
+    z-index: 30;
 }
 .exit{
     position: absolute;
@@ -529,17 +529,25 @@ img {
 
 .robot-hand {
     position: absolute;
-    width: 40vh;
+    width: 60vh;
     height: auto;
-    bottom: 20vh;
-    left: 30vh;
-    z-index: 501;
+    bottom: 40vh;
+    left: -25vh;
+    z-index: 29;
     opacity: 0;
     transition: all 0.5s ease-out;
     pointer-events: none;
-    transform: scaleX(-1);
+    animation: bob 0.7s infinite alternate;
+    transform-origin: center right;
 }
-
+@keyframes bob {
+    from {
+        bottom: 40vh;
+    }
+    to {
+        bottom: 39vh;
+    }
+}
 .robot-hand.visible {
     opacity: 1;
 }

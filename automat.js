@@ -27,7 +27,7 @@ async function checkAuth() {
     });
 
     if (!user) {
-        window.location.href = 'index.html';
+        //window.location.href = 'index.html';
         return;
     }
 
@@ -50,7 +50,7 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            window.location.href = "index.html";
+            //window.location.href = "index.html";
         }, 5000);
         return;
     }
@@ -58,7 +58,7 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            window.location.href = "index.html";
+            //window.location.href = "index.html";
         }, 5000);
         return;
     }
@@ -171,7 +171,7 @@ async function initializeWallet() {
             await localBalance;
             console.log(localBalance)
             setTimeout(() => {
-            window.location.href = 'index.html';
+            //window.location.href = 'index.html';
             return;
             }, 10000);
             
@@ -1137,6 +1137,14 @@ const ROBOT_STATES = {
         brightness: '100%',
         gif: 'robot/idle.gif'
     },
+    ACTIVE_RIGHT: {
+        position: '110vh',
+        size: '90vh',
+        top: '80vh',
+        blur: '0px',
+        brightness: '100%',
+        gif: 'robot/idle.gif'
+    },
     OFFSCREEN_LEFT: {
         position: '-80vh',
         size: '60vh',
@@ -1154,57 +1162,58 @@ const TUTORIAL_SEQUENCE = {
     STEPS: [
         {
             id: 'intro',
-            sound: 'robot/dialogue/tutorial_intro.mp3', // You'll need to add these audio files
+            sound: 'robot/dialogue/part1.mp3', // You'll need to add these audio files
             animations: [
+                { gif: 'robot/talk2.gif', duration: 2300 },
+                { gif: 'robot/talk2end.gif', duration: 250 },
                 { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 3000 },
-                { gif: 'robot/talkend.gif', duration: 250 },
-                { gif: 'robot/idle.gif', duration: 100 }
+                { gif: 'robot/talk.gif', duration: 5000 },
+                { gif: 'robot/talkend.gif', duration: 250 }
             ],
             waitFor: null
         },
         {
             id: 'point_wallet',
-            sound: 'robot/dialogue/tutorial_wallet.mp3',
+            sound: 'robot/dialogue/part2.mp3',
             animations: [
                 { gif: 'robot/pointswitch.gif', duration: 250 },
-                { gif: 'robot/point.gif', duration: 2000 }
+                { gif: 'robot/point.gif', duration: 20 }
             ],
             pointTo: 'wallet',
             waitFor: 'wallet_hover'
         },
         {
             id: 'point_cashout',
-            sound: 'robot/dialogue/tutorial_cashout.mp3',
+            sound: 'robot/dialogue/part3.mp3',
             animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 2000 },
-                { gif: 'robot/idle.gif', duration: 500 }
+                { gif: 'robot/idle.gif', duration: 3000 },
+                { gif: 'robot/pointswitch.gif', duration: 250 },
+                { gif: 'robot/point.gif', duration: 20 }
             ],
             pointTo: 'cashout',
             waitFor: 'cashout_pressed'
         },
         {
             id: 'wait_deposit',
-            sound: 'robot/dialogue/tutorial_deposit.mp3',
+            sound: 'robot/dialogue/part4.mp3',
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
                 { gif: 'robot/talk.gif', duration: 2500 },
-                { gif: 'robot/idle.gif', duration: 500 }
+                { gif: 'robot/idle.gif', duration: 4500 }
             ],
             pointTo: null,
-            waitFor: 'money_deposited'
+            waitFor: null//'money_deposited'
         },
         {
             id: 'point_lever',
-            sound: 'robot/dialogue/tutorial_lever.mp3',
+            sound: 'robot/dialogue/part5.mp3',
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
                 { gif: 'robot/talk.gif', duration: 2000 },
                 { gif: 'robot/idle.gif', duration: 500 }
             ],
             pointTo: 'lever',
-            waitFor: 'lever_pulled'
+            waitFor: null//'lever_pulled'
         },
         {
             id: 'conclusion',
@@ -1310,9 +1319,9 @@ const MANUAL_SEQUENCES = {
     }
 };
 const POINT_POSITIONS = {
-    wallet: { left: '35vh', bottom: '30vh' },
-    cashout: { left: '35vh', bottom: '25vh' },
-    lever: { left: '45vh', bottom: '40vh' }
+    wallet: { rotation: '290'},
+    cashout: { rotation: '340'},
+    lever: { rotation: '40'}
 };
 
 class RobotController {
@@ -1662,8 +1671,7 @@ class RobotController {
         }
 
         const pos = POINT_POSITIONS[position];
-        this.hand.style.left = pos.left;
-        this.hand.style.bottom = pos.bottom;
+        this.hand.style.rotate = pos.rotation + 'deg';
         this.hand.classList.add('visible');
     }
 
@@ -1690,8 +1698,13 @@ class RobotController {
         await audioPromise;
         
         // Special handling for intro step - exit left and return from right
-        if (step === 0) {
+        if (step === 1) {
             await this.exitLeftAndReturnRight();
+        }
+        
+        // Special handling for lever step - exit right and return from left
+        if (step === 5) {
+            await this.exitRightAndReturnLeft();
         }
         
         // Show hand if needed
@@ -1724,7 +1737,26 @@ class RobotController {
         // Force reflow
         this.container.offsetHeight;
         
-        // Slide in from the right
+        // Slide in from the right to the right position
+        this.container.style.transition = 'left 0.5s ease-out';
+        this.container.style.left = ROBOT_STATES.ACTIVE_RIGHT.position;
+        await this.delay(500);
+    }
+
+    async exitRightAndReturnLeft() {
+        // Slide out to the right
+        this.container.style.transition = 'left 0.5s ease-out';
+        this.container.style.left = '100vw';
+        await this.delay(500);
+        
+        // Reposition offscreen to the left (no transition)
+        this.container.style.transition = 'none';
+        this.container.style.left = '-80vh';
+        
+        // Force reflow
+        this.container.offsetHeight;
+        
+        // Slide in from the left to the left position
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = ROBOT_STATES.ACTIVE.position;
         await this.delay(500);
