@@ -332,8 +332,7 @@ async function updateActivePlayerList() {
         
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
-        parTurnScore.textContent = playersInfo.val()[player].score;
-
+        parTurnScore.textContent = playersInfo.val()[player].turnScore;
         
         if (playersInfo.val()[player].playersTurn == true) {
           const theirTurn = document.createElement("p");
