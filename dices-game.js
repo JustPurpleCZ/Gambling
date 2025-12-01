@@ -342,7 +342,8 @@ async function updateActivePlayerList() {
           if (player == uid) {
             playStuff.style.display = "block";
 
-            const turnScore = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`)).val()
+            const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
+            const turnScore = turnScoreSnap.val();
             document.getElementById("turnScorePar").textContent = "Your score this turn: " + turnScore;
 
             rolledDiceDiv.replaceChildren();
