@@ -11,7 +11,7 @@ body {
     display: flex;
 }
 
-#playerList div button {
+button {
     height: fit-content;
 }
 
@@ -21,4 +21,20 @@ body {
 
 #activePlayerList div {
     display: flex;
+}
+
+#activePlayerList div * {
+    margin-right: 10px;
+}
+
+#rolledDice {
+    display: flex;
+}
+
+#rolledDice button {
+    margin-right: 10px;
+}
+
+.heldDice {
+    border: 2px solid yellow;
 }
