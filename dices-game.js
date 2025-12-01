@@ -323,16 +323,17 @@ async function updateActivePlayerList() {
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
-        const turnScore = document.createElement("p");
+        const parTurnScore = document.createElement("p");
         
         activePlayerList.appendChild(activePlayerDiv);
         activePlayerDiv.appendChild(name);
         activePlayerDiv.appendChild(score);
-        activePlayerDiv.appendChild(turnScore);
+        activePlayerDiv.appendChild(parTurnScore);
         
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
-        turnScore.textContent = playersInfo.val()[player].turnScore;
+        parTurnScore.textContent = playersInfo.val()[player].score;
+
         
         if (playersInfo.val()[player].playersTurn == true) {
           const theirTurn = document.createElement("p");
