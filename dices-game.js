@@ -350,7 +350,7 @@ async function updateActivePlayerList() {
             rolledDiceDiv.replaceChildren();
 
             if (rolledDice) {
-                for (let i = 0; i < 6; i++) {
+                for (let i = 0; i < rolledDice.length; i++) {
                     console.log("Adding dice button");
                     const diceBtn = document.createElement("button");
                     rolledDiceDiv.appendChild(diceBtn);
