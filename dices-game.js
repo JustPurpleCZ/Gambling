@@ -338,6 +338,10 @@ async function updateActivePlayerList() {
 
           if (player == uid) {
             playStuff.style.display = "block";
+
+            const turnScore = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`)).val()
+            document.getElementById("turnScorePar").textContent = "Your score this turn: " + turnScore;
+
             rolledDiceDiv.replaceChildren();
             const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
             const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
@@ -416,19 +420,6 @@ async function rollDice() {
 
         const response = await res.json();
         console.log("Roll response:", response);
-
-        switch(rollCount) {
-            case 0:
-                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 2 + " Left)";
-                break;
-            
-            case 1:
-                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 1 + " Left)";
-                break;
-
-            default:
-                document.getElementById("rollBtn").textContent = "Roll the dice! (" + 0 + " Left)";
-        }
     }
 }
 
