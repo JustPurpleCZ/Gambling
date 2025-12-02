@@ -587,6 +587,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         let queueIndex = 0;
         let hasSetWinningSymbols = false;
         let winningSymbolsStartIndex = -1;
+        let framesSinceWinningSymbols = 0; // Safety counter
         
         function animate() {
             symbols.forEach(symbol => {
@@ -627,6 +628,8 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
             
             // Stop when winning symbols have been set AND all three are visible in correct positions
             if (hasSetWinningSymbols) {
+                framesSinceWinningSymbols++;
+                
                 // Find symbols with winning images
                 const winningImages = [
                     finalSymbols[reelIndex],
@@ -644,24 +647,31 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                     const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
                     const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
                     
-                    // Check if positions are close to target (within 2vh tolerance)
+                    // Check if positions are close to target (within 3vh tolerance - increased for reliability)
                     const isAligned = positions.slice(0, 3).every((pos, idx) => 
-                        Math.abs(pos - targetPositions[idx]) < 2
+                        Math.abs(pos - targetPositions[idx]) < 3
                     );
                     
-                    if (isAligned) {
+                    // SAFETY: Force stop after reasonable time even if alignment isn't perfect
+                    const forceStop = framesSinceWinningSymbols > 100;
+                    
+                    if (isAligned || forceStop) {
+                        if (forceStop) {
+                            console.warn(`Reel ${reelIndex} force-stopped after ${framesSinceWinningSymbols} frames`);
+                        }
+                        
                         // Snap to exact positions
                         symbols.forEach(symbol => {
                             const top = parseFloat(symbol.style.top);
                             let targetTop = top;
                             
                             // Find closest target position
-                            if (Math.abs(top - 0) < SYMBOL_HEIGHT / 2) {
-                                targetTop = 0;
-                            } else if (Math.abs(top - SYMBOL_HEIGHT) < SYMBOL_HEIGHT / 2) {
-                                targetTop = SYMBOL_HEIGHT;
-                            } else if (Math.abs(top - (SYMBOL_HEIGHT * 2)) < SYMBOL_HEIGHT / 2) {
-                                targetTop = SYMBOL_HEIGHT * 2;
+                            const distances = targetPositions.map(target => Math.abs(top - target));
+                            const closestIndex = distances.indexOf(Math.min(...distances));
+                            
+                            // Only snap if reasonably close (within 10vh)
+                            if (distances[closestIndex] < 10) {
+                                targetTop = targetPositions[closestIndex];
                             }
                             
                             symbol.style.transition = 'top 0.2s ease-out';
