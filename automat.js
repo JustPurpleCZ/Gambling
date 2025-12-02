@@ -1167,7 +1167,7 @@ const TUTORIAL_SEQUENCE = {
                 { gif: 'robot/talk2.gif', duration: 2300 },
                 { gif: 'robot/talk2end.gif', duration: 250 },
                 { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 5000 },
+                { gif: 'robot/talk.gif', duration: 5800 },
                 { gif: 'robot/talkend.gif', duration: 250 }
             ],
             waitFor: null
@@ -1202,7 +1202,7 @@ const TUTORIAL_SEQUENCE = {
                 { gif: 'robot/idle.gif', duration: 4500 }
             ],
             pointTo: null,
-            waitFor: null//'money_deposited'
+            waitFor: 'money_deposited'
         },
         {
             id: 'point_lever',
@@ -1213,7 +1213,7 @@ const TUTORIAL_SEQUENCE = {
                 { gif: 'robot/idle.gif', duration: 500 }
             ],
             pointTo: 'lever',
-            waitFor: null//'lever_pulled'
+            waitFor: 'lever_pulled'
         },
         {
             id: 'conclusion',
