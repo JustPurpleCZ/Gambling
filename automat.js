@@ -565,7 +565,6 @@ let reel1stopIndex = 0;
 let reel2stopIndex = 0;
 let reel3stopIndex = 0;
 
-
 function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
@@ -579,100 +578,129 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
             symbolQueue.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
         }
         
-        // Add winning symbols at the end
-        symbolQueue.push(finalSymbols[reelIndex]); // top (0vh)
-        symbolQueue.push(finalSymbols[reelIndex + 3]); // middle (14vh)
-        symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
+        // Add winning symbols at the end in correct order
+        // These should appear at positions: 0vh (top), 14vh (middle), 28vh (bottom)
+        const winningSymbols = [
+            finalSymbols[reelIndex],     // top row
+            finalSymbols[reelIndex + 3], // middle row
+            finalSymbols[reelIndex + 6]  // bottom row
+        ];
+        
+        symbolQueue.push(...winningSymbols);
         
         let globalQueueIndex = 0;
-        let hasSetWinningSymbols = false;
-        let framesSinceWinningSymbols = 0;
+        let symbolsSpawned = 0;
+        const targetSymbolsToSpawn = symbolQueue.length;
+        
+        // Track which symbols are the final winning ones
+        let winningSymbolsPlaced = false;
+        let framesSinceWinningPlaced = 0;
         
         function animate() {
-            // Collect symbols that need wrapping this frame
-            const symbolsToWrap = [];
-            
-            // First pass: move all symbols and collect those that need wrapping
+            // Move all symbols down
             symbols.forEach(symbol => {
                 let top = parseFloat(symbol.style.top);
                 const previousTop = top;
                 top += speed;
+                symbol.style.top = `${top}vh`;
                 
                 // Play tick sound when passing center
                 if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
                     (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
                     playTickSound();
                 }
-                
-                // Check if symbol needs wrapping
-                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    symbolsToWrap.push({ symbol, top });
-                } else {
-                    symbol.style.top = `${top}vh`;
-                }
             });
             
-            // Second pass: wrap symbols in consistent order (sorted by their pre-wrap position)
-            symbolsToWrap.sort((a, b) => parseFloat(a.symbol.style.top) - parseFloat(b.symbol.style.top));
+            // Find symbols that need wrapping (moved past bottom)
+            const symbolsToWrap = symbols
+                .map(symbol => ({
+                    element: symbol,
+                    top: parseFloat(symbol.style.top)
+                }))
+                .filter(s => s.top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1))
+                .sort((a, b) => a.top - b.top); // Sort by position to maintain order
             
-            symbolsToWrap.forEach(({ symbol, top }) => {
-                const newTop = top - SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                symbol.style.top = `${newTop}vh`;
+            // Wrap symbols and assign new images from queue
+            symbolsToWrap.forEach(({ element }) => {
+                const currentTop = parseFloat(element.style.top);
+                const newTop = currentTop - SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                element.style.top = `${newTop}vh`;
                 
-                // Assign next symbol from queue
+                // Assign next symbol from queue if available
                 if (globalQueueIndex < symbolQueue.length) {
-                    const img = symbol.querySelector('img');
+                    const img = element.querySelector('img');
                     img.src = symbolQueue[globalQueueIndex];
                     globalQueueIndex++;
+                    symbolsSpawned++;
                     
-                    // Check if we just placed the last winning symbol
-                    if (globalQueueIndex === symbolQueue.length) {
-                        hasSetWinningSymbols = true;
+                    // Check if we just placed all symbols including the winning ones
+                    if (symbolsSpawned === targetSymbolsToSpawn) {
+                        winningSymbolsPlaced = true;
                     }
                 }
             });
             
-            // Stop when winning symbols are in position
-            if (hasSetWinningSymbols) {
-                framesSinceWinningSymbols++;
+            // Check if we should stop
+            if (winningSymbolsPlaced) {
+                framesSinceWinningPlaced++;
                 
-                // Find symbols with winning images
-                const winningImages = [
-                    finalSymbols[reelIndex],
-                    finalSymbols[reelIndex + 3],
-                    finalSymbols[reelIndex + 6]
-                ];
+                // Find the three symbols that have the winning images
+                const symbolsWithPositions = symbols.map(symbol => ({
+                    element: symbol,
+                    top: parseFloat(symbol.style.top),
+                    src: symbol.querySelector('img').src
+                }));
                 
-                const winningSymbolElements = symbols.filter(symbol => {
-                    const imgSrc = symbol.querySelector('img').src;
-                    return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
+                // Find symbols matching our winning images
+                const matchingSymbols = [];
+                winningSymbols.forEach(winImg => {
+                    const match = symbolsWithPositions.find(s => {
+                        const imgName = winImg.split('/').pop();
+                        return s.src.includes(imgName) && !matchingSymbols.includes(s);
+                    });
+                    if (match) {
+                        matchingSymbols.push(match);
+                    }
                 });
                 
-                if (winningSymbolElements.length >= 3) {
-                    const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
+                if (matchingSymbols.length === 3) {
+                    // Sort by position to get top, middle, bottom
+                    matchingSymbols.sort((a, b) => a.top - b.top);
+                    
                     const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2];
                     
-                    const isAligned = positions.slice(0, 3).every((pos, idx) => 
-                        Math.abs(pos - targetPositions[idx]) < 3
+                    // Check if symbols are aligned to target positions
+                    const isAligned = matchingSymbols.every((symbol, idx) => 
+                        Math.abs(symbol.top - targetPositions[idx]) < 2
                     );
                     
-                    const forceStop = framesSinceWinningSymbols > 100;
+                    const forceStop = framesSinceWinningPlaced > 150;
                     
                     if (isAligned || forceStop) {
                         if (forceStop) {
-                            console.warn(`Reel ${reelIndex} force-stopped after ${framesSinceWinningSymbols} frames`);
+                            console.warn(`Reel ${reelIndex} force-stopped after ${framesSinceWinningPlaced} frames`);
                         }
                         
-                        // Snap to exact positions
+                        // Snap all symbols to their nearest target position
                         symbols.forEach(symbol => {
                             const top = parseFloat(symbol.style.top);
-                            const distances = targetPositions.map(target => Math.abs(top - target));
-                            const closestIndex = distances.indexOf(Math.min(...distances));
                             
-                            if (distances[closestIndex] < 10) {
-                                symbol.style.transition = 'top 0.2s ease-out';
-                                symbol.style.top = `${targetPositions[closestIndex]}vh`;
+                            // Find closest valid position (including negative positions for wrapped symbols)
+                            let closestPosition = targetPositions[0];
+                            let minDistance = Math.abs(top - closestPosition);
+                            
+                            // Check all possible positions in the visible area
+                            for (let i = -BUFFER_SYMBOLS; i <= VISIBLE_SYMBOLS + BUFFER_SYMBOLS; i++) {
+                                const pos = i * SYMBOL_HEIGHT;
+                                const distance = Math.abs(top - pos);
+                                if (distance < minDistance) {
+                                    minDistance = distance;
+                                    closestPosition = pos;
+                                }
                             }
+                            
+                            symbol.style.transition = 'top 0.2s ease-out';
+                            symbol.style.top = `${closestPosition}vh`;
                         });
                         
                         setTimeout(() => {
