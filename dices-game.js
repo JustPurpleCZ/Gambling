@@ -405,9 +405,7 @@ async function updateActivePlayerList() {
         }
 
         const snap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
-        const winnerId = snap.get();
-
-        if (winnerId) {
+        if (snap.exists) {
             playStuff.style.display = "none";
             errorMessage.textContent = "Game ended";
         }
