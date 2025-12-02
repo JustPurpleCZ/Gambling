@@ -568,113 +568,126 @@ let reel3stopIndex = 0;
 function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
-        let symbolsPassed = 0;
         const speed = 4; // vh per frame
+        let phase = 'spinning'; // 'spinning' or 'stopping'
+        let symbolsPassed = 0;
+        const targetSymbolsPassed = totalSymbolsToSpin;
         
-        // Create random symbols array + winning symbols at the end
-        const symbolQueue = [];
-        
-        // Add random symbols
-        for (let i = 0; i < totalSymbolsToSpin; i++) {
-            symbolQueue.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-        }
-        
-        // Add winning symbols at the end (top, middle, bottom for this reel)
-        symbolQueue.push(finalSymbols[reelIndex]); // top (0vh)
-        symbolQueue.push(finalSymbols[reelIndex + 3]); // middle (14vh)
-        symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
-        
-        let queueIndex = 0;
-        let hasSetWinningSymbols = false;
-        let winningSymbolsStartIndex = -1;
+        // Track which symbols need to be replaced with winning symbols
+        let winningSymbolsToPlace = [
+            finalSymbols[reelIndex],     // top (0vh)
+            finalSymbols[reelIndex + 3], // middle (14vh)
+            finalSymbols[reelIndex + 6]  // bottom (28vh)
+        ];
+        let winningSymbolsPlaced = 0;
         
         function animate() {
-            symbols.forEach(symbol => {
-                let top = parseFloat(symbol.style.top);
-                const previousTop = top;
-                top += speed;
-                
-                // Play tick sound when passing center
-                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
-                    (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
-                    playTickSound();
-                }
-                
-                // When symbol goes off screen, wrap it and assign next symbol from queue
-                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                    const img = symbol.querySelector('img');
+            if (phase === 'spinning') {
+                // Normal spinning phase - random symbols wrapping
+                symbols.forEach(symbol => {
+                    let top = parseFloat(symbol.style.top);
+                    const previousTop = top;
+                    top += speed;
                     
-                    if (queueIndex < symbolQueue.length) {
-                        img.src = symbolQueue[queueIndex];
-                        queueIndex++;
-                        symbolsPassed++;
-                        
-                        // Mark when we start placing winning symbols
-                        if (queueIndex === symbolQueue.length - 2) {
-                            winningSymbolsStartIndex = symbolsPassed;
-                        }
-                        
-                        // Check if we just placed the last winning symbol
-                        if (queueIndex === symbolQueue.length) {
-                            hasSetWinningSymbols = true;
-                        }
+                    // Play tick sound when passing center
+                    if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
+                        (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                        playTickSound();
                     }
-                }
-                
-                symbol.style.top = `${top}vh`;
-            });
-            
-            // Stop when winning symbols have been set AND all three are visible in correct positions
-            if (hasSetWinningSymbols) {
-                // Find symbols with winning images
-                const winningImages = [
-                    finalSymbols[reelIndex],
-                    finalSymbols[reelIndex + 3],
-                    finalSymbols[reelIndex + 6]
-                ];
-                
-                const winningSymbolElements = symbols.filter(symbol => {
-                    const imgSrc = symbol.querySelector('img').src;
-                    return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
+                    
+                    // When symbol goes off screen, wrap it with a random symbol
+                    if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                        top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                        const img = symbol.querySelector('img');
+                        img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
+                        symbolsPassed++;
+                    }
+                    
+                    symbol.style.top = `${top}vh`;
                 });
                 
-                // Check if all winning symbols are in their correct positions
-                if (winningSymbolElements.length >= 3) {
-                    const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
-                    const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
+                // Check if we've spun enough random symbols
+                if (symbolsPassed >= targetSymbolsPassed) {
+                    phase = 'stopping';
+                }
+                
+            } else if (phase === 'stopping') {
+                // Stopping phase - place winning symbols and slide them into position
+                
+                // Continue moving symbols
+                symbols.forEach(symbol => {
+                    let top = parseFloat(symbol.style.top);
+                    const previousTop = top;
+                    top += speed;
                     
-                    // Check if positions are close to target (within 2vh tolerance)
-                    const isAligned = positions.slice(0, 3).every((pos, idx) => 
-                        Math.abs(pos - targetPositions[idx]) < 2
-                    );
+                    // Play tick sound
+                    if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
+                        (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                        playTickSound();
+                    }
                     
-                    if (isAligned) {
-                        // Snap to exact positions
-                        symbols.forEach(symbol => {
-                            const top = parseFloat(symbol.style.top);
-                            let targetTop = top;
-                            
-                            // Find closest target position
-                            if (Math.abs(top - 0) < SYMBOL_HEIGHT / 2) {
-                                targetTop = 0;
-                            } else if (Math.abs(top - SYMBOL_HEIGHT) < SYMBOL_HEIGHT / 2) {
-                                targetTop = SYMBOL_HEIGHT;
-                            } else if (Math.abs(top - (SYMBOL_HEIGHT * 2)) < SYMBOL_HEIGHT / 2) {
-                                targetTop = SYMBOL_HEIGHT * 2;
-                            }
-                            
-                            symbol.style.transition = 'top 0.2s ease-out';
-                            symbol.style.top = `${targetTop}vh`;
-                        });
+                    // When symbol goes off screen, replace with winning symbol if we have any left
+                    if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1) && winningSymbolsPlaced < winningSymbolsToPlace.length) {
+                        top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                        const img = symbol.querySelector('img');
+                        img.src = winningSymbolsToPlace[winningSymbolsPlaced];
+                        winningSymbolsPlaced++;
+                    }
+                    
+                    symbol.style.top = `${top}vh`;
+                });
+                
+                // Once all winning symbols are placed, check if they're in position
+                if (winningSymbolsPlaced === winningSymbolsToPlace.length) {
+                    // Find the symbols with our winning images
+                    const winningSymbolElements = symbols.filter(symbol => {
+                        const imgSrc = symbol.querySelector('img').src;
+                        return winningSymbolsToPlace.some(winImg => 
+                            imgSrc.includes(winImg.split('/').pop())
+                        );
+                    });
+                    
+                    if (winningSymbolElements.length >= 3) {
+                        // Check if all winning symbols are roughly in the visible area
+                        const positions = winningSymbolElements.map(s => parseFloat(s.style.top));
+                        const allInRange = positions.every(pos => pos >= -SYMBOL_HEIGHT && pos <= SYMBOL_HEIGHT * 3);
                         
-                        setTimeout(() => {
-                            symbols.forEach(symbol => {
-                                symbol.style.transition = 'none';
+                        if (allInRange) {
+                            // Sort to find which symbol should go where
+                            const sortedSymbols = [...winningSymbolElements].sort((a, b) => 
+                                parseFloat(a.style.top) - parseFloat(b.style.top)
+                            );
+                            
+                            // Snap to exact positions with smooth transition
+                            sortedSymbols[0].style.transition = 'top 0.2s ease-out';
+                            sortedSymbols[0].style.top = '0vh';
+                            
+                            sortedSymbols[1].style.transition = 'top 0.2s ease-out';
+                            sortedSymbols[1].style.top = `${SYMBOL_HEIGHT}vh`;
+                            
+                            sortedSymbols[2].style.transition = 'top 0.2s ease-out';
+                            sortedSymbols[2].style.top = `${SYMBOL_HEIGHT * 2}vh`;
+                            
+                            // Position the other symbols to fill the gaps
+                            const otherSymbols = symbols.filter(s => !sortedSymbols.includes(s));
+                            otherSymbols.forEach(symbol => {
+                                let top = parseFloat(symbol.style.top);
+                                // Move them to positions outside the visible area
+                                if (top > SYMBOL_HEIGHT * 2) {
+                                    symbol.style.transition = 'top 0.2s ease-out';
+                                } else {
+                                    symbol.style.top = `${top - SYMBOL_HEIGHT * TOTAL_SYMBOLS}vh`;
+                                }
                             });
-                            resolve();
-                        }, 200);
-                        return;
+                            
+                            setTimeout(() => {
+                                symbols.forEach(symbol => {
+                                    symbol.style.transition = 'none';
+                                });
+                                resolve();
+                            }, 200);
+                            return;
+                        }
                     }
                 }
             }
@@ -1167,7 +1180,7 @@ const TUTORIAL_SEQUENCE = {
                 { gif: 'robot/talk2.gif', duration: 2300 },
                 { gif: 'robot/talk2end.gif', duration: 250 },
                 { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 5000 },
+                { gif: 'robot/talk.gif', duration: 5800 },
                 { gif: 'robot/talkend.gif', duration: 250 }
             ],
             waitFor: null
@@ -1202,7 +1215,7 @@ const TUTORIAL_SEQUENCE = {
                 { gif: 'robot/idle.gif', duration: 4500 }
             ],
             pointTo: null,
-            waitFor: null//'money_deposited'
+            waitFor: 'money_deposited'
         },
         {
             id: 'point_lever',
@@ -1210,17 +1223,19 @@ const TUTORIAL_SEQUENCE = {
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
                 { gif: 'robot/talk.gif', duration: 2000 },
-                { gif: 'robot/idle.gif', duration: 500 }
+                { gif: 'robot/talkend.gif', duration: 250 },
+                { gif: 'robot/pointswitch.gif', duration: 250 },
+                { gif: 'robot/point.gif', duration: 20 }
             ],
             pointTo: 'lever',
-            waitFor: null//'lever_pulled'
+            waitFor: 'lever_pulled'
         },
         {
             id: 'conclusion',
-            sound: 'robot/dialogue/tutorial_end.mp3',
+            sound: 'robot/dialogue/part6.mp3',
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 3000 },
+                { gif: 'robot/talk.gif', duration: 6000 },
                 { gif: 'robot/talkend.gif', duration: 600 }
             ],
             pointTo: null,
@@ -1703,7 +1718,7 @@ class RobotController {
         }
         
         // Special handling for lever step - exit right and return from left
-        if (step === 5) {
+        if (step === 4) {
             await this.exitRightAndReturnLeft();
         }
         
