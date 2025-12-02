@@ -1210,17 +1210,19 @@ const TUTORIAL_SEQUENCE = {
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
                 { gif: 'robot/talk.gif', duration: 2000 },
-                { gif: 'robot/idle.gif', duration: 500 }
+                { gif: 'robot/talkend.gif', duration: 250 },
+                { gif: 'robot/pointswitch.gif', duration: 250 },
+                { gif: 'robot/point.gif', duration: 20 }
             ],
             pointTo: 'lever',
             waitFor: 'lever_pulled'
         },
         {
             id: 'conclusion',
-            sound: 'robot/dialogue/tutorial_end.mp3',
+            sound: 'robot/dialogue/part6.mp3',
             animations: [
                 { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 3000 },
+                { gif: 'robot/talk.gif', duration: 6000 },
                 { gif: 'robot/talkend.gif', duration: 600 }
             ],
             pointTo: null,
@@ -1703,7 +1705,7 @@ class RobotController {
         }
         
         // Special handling for lever step - exit right and return from left
-        if (step === 5) {
+        if (step === 4) {
             await this.exitRightAndReturnLeft();
         }
         
