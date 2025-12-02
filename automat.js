@@ -1319,7 +1319,7 @@ const MANUAL_SEQUENCES = {
 const POINT_POSITIONS = {
     wallet: { rotation: '205',left: '-5vh', type: '-1'},
     cashout: { rotation: '340',left: '-25vh', type: '1'},
-    lever: { rotation: '130',left: '-5vh', type: '-1' }
+    lever: { rotation: '180',left: '-5vh', type: '-1' }
 };
 
 class RobotController {
