@@ -568,7 +568,7 @@ let reel3stopIndex = 0;
 function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
-        const speed = 4; // vh per frame
+        let speed = 4; // vh per frame
         
         // Create symbol queue
         const symbolQueue = [];
@@ -598,6 +598,25 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         let framesSinceAllPlaced = 0;
         
         function animate() {
+            // Calculate speed - slow down when winning symbols are placed and getting close
+            if (allSymbolsPlaced && winningSymbolElements.length === 3) {
+                // Find the maximum distance any winning symbol is from its target
+                const maxDistance = Math.max(...winningSymbolElements.map(el => {
+                    const currentTop = parseFloat(el.style.top);
+                    const targetTop = parseFloat(el.dataset.targetPosition);
+                    return Math.abs(currentTop - targetTop);
+                }));
+                
+                // Slow down as we get closer
+                if (maxDistance < 20) {
+                    speed = 1; // Slow speed when close
+                } else if (maxDistance < 40) {
+                    speed = 2; // Medium speed
+                } else {
+                    speed = 4; // Full speed
+                }
+            }
+            
             // Move all symbols down
             symbols.forEach(symbol => {
                 let top = parseFloat(symbol.style.top);
@@ -657,13 +676,15 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 if (winningSymbolElements.length === 3) {
                     const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2];
                     
+                    // Check alignment with tolerance based on current speed
+                    const tolerance = speed; // Use current speed as tolerance
                     const isAligned = winningSymbolElements.every((element) => {
                         const currentTop = parseFloat(element.style.top);
                         const targetTop = parseFloat(element.dataset.targetPosition);
-                        return Math.abs(currentTop - targetTop) < 1;
+                        return Math.abs(currentTop - targetTop) < tolerance;
                     });
                     
-                    const forceStop = framesSinceAllPlaced > 200;
+                    const forceStop = framesSinceAllPlaced > 500;
                     
                     if (isAligned || forceStop) {
                         if (forceStop) {
