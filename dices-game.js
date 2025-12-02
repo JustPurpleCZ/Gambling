@@ -270,6 +270,7 @@ let playing;
 
 const playStuff = document.getElementById("playStuff");
 const rolledDiceDiv = document.getElementById("rolledDice");
+const errorMessage = document.getElementById("errMessage");
 
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
@@ -370,6 +371,8 @@ async function updateActivePlayerList() {
                     }
 
                     diceBtn.addEventListener("click", () => {
+                        errorMessage.style.display = "none";
+
                         if (diceBtn.classList.contains("heldDice")) {
                             diceBtn.classList.remove("heldDice");
                             set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), false);
@@ -400,6 +403,14 @@ async function updateActivePlayerList() {
           activePlayerDiv.appendChild(connected);
           connected.textContent = "Disconnected";
         }
+
+        const snap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
+        const winnerId = snap.get();
+
+        if (winnerId) {
+            playStuff.style.display = "none";
+            errorMessage.textContent = "Game ended";
+        }
     }
 }
 
@@ -424,6 +435,13 @@ async function rollDice() {
 
         const response = await res.json();
         console.log("Roll response:", response);
+
+        if (response.success) {
+            errorMessage.style.display = "none";
+        } else {
+            errorMessage.style.display = "block";
+            errorMessage.textContent = response.reply;
+        }
     }
 }
 
@@ -443,4 +461,11 @@ async function submitMove() {
 
     const response = await res.json();
     console.log("Move response:", response);
+
+    if (response.success) {
+            errorMessage.style.display = "none";
+        } else {
+            errorMessage.style.display = "block";
+            errorMessage.textContent = response.reply;
+        }
 }
