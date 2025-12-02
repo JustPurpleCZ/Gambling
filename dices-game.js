@@ -404,11 +404,13 @@ async function updateActivePlayerList() {
           connected.textContent = "Disconnected";
         }
 
+        /*
         const snap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
         if (snap.exists) {
             playStuff.style.display = "none";
             errorMessage.textContent = "Game ended";
         }
+        */
     }
 }
 
