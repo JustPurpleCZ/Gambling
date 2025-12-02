@@ -631,42 +631,46 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 }
             });
             
-            // Find symbols that need wrapping (moved past bottom)
-            const symbolsToWrap = symbols
-                .map(symbol => ({
-                    element: symbol,
-                    top: parseFloat(symbol.style.top)
-                }))
-                .filter(s => s.top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1))
-                .sort((a, b) => a.top - b.top); // Sort by position to maintain order
-            
-            // Wrap symbols and assign new images from queue
-            symbolsToWrap.forEach(({ element }) => {
-                const currentTop = parseFloat(element.style.top);
-                const newTop = currentTop - SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                element.style.top = `${newTop}vh`;
+            // Only wrap symbols if we haven't placed all symbols yet
+            // Once winning symbols are placed, stop wrapping to prevent position changes
+            if (!allSymbolsPlaced) {
+                // Find symbols that need wrapping (moved past bottom)
+                const symbolsToWrap = symbols
+                    .map(symbol => ({
+                        element: symbol,
+                        top: parseFloat(symbol.style.top)
+                    }))
+                    .filter(s => s.top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1))
+                    .sort((a, b) => a.top - b.top); // Sort by position to maintain order
                 
-                // Assign next symbol from queue if available
-                if (globalQueueIndex < symbolQueue.length) {
-                    const img = element.querySelector('img');
-                    img.src = symbolQueue[globalQueueIndex];
+                // Wrap symbols and assign new images from queue
+                symbolsToWrap.forEach(({ element }) => {
+                    const currentTop = parseFloat(element.style.top);
+                    const newTop = currentTop - SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                    element.style.top = `${newTop}vh`;
                     
-                    // Mark this element if it's one of the final 3 winning symbols
-                    if (globalQueueIndex >= symbolQueue.length - 3) {
-                        element.dataset.winningSymbol = 'true';
-                        element.dataset.targetPosition = (globalQueueIndex - (symbolQueue.length - 3)) * SYMBOL_HEIGHT;
-                        winningSymbolElements.push(element);
+                    // Assign next symbol from queue if available
+                    if (globalQueueIndex < symbolQueue.length) {
+                        const img = element.querySelector('img');
+                        img.src = symbolQueue[globalQueueIndex];
+                        
+                        // Mark this element if it's one of the final 3 winning symbols
+                        if (globalQueueIndex >= symbolQueue.length - 3) {
+                            element.dataset.winningSymbol = 'true';
+                            element.dataset.targetPosition = (globalQueueIndex - (symbolQueue.length - 3)) * SYMBOL_HEIGHT;
+                            winningSymbolElements.push(element);
+                        }
+                        
+                        globalQueueIndex++;
+                        symbolsSpawned++;
+                        
+                        // Check if we just placed all symbols including the winning ones
+                        if (symbolsSpawned === targetSymbolsToSpawn) {
+                            allSymbolsPlaced = true;
+                        }
                     }
-                    
-                    globalQueueIndex++;
-                    symbolsSpawned++;
-                    
-                    // Check if we just placed all symbols including the winning ones
-                    if (symbolsSpawned === targetSymbolsToSpawn) {
-                        allSymbolsPlaced = true;
-                    }
-                }
-            });
+                });
+            }
             
             // Check if we should stop
             if (allSymbolsPlaced) {
@@ -676,19 +680,23 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 if (winningSymbolElements.length === 3) {
                     const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2];
                     
-                    // Check alignment with tolerance based on current speed
-                    const tolerance = speed; // Use current speed as tolerance
-                    const isAligned = winningSymbolElements.every((element) => {
+                    // Check each winning symbol's distance from target
+                    const distances = winningSymbolElements.map((element) => {
                         const currentTop = parseFloat(element.style.top);
                         const targetTop = parseFloat(element.dataset.targetPosition);
-                        return Math.abs(currentTop - targetTop) < tolerance;
+                        return Math.abs(currentTop - targetTop);
                     });
                     
+                    const maxDistance = Math.max(...distances);
+                    
+                    // Stop if all symbols are within tolerance or if we've been going too long
+                    const isAligned = maxDistance <= speed;
                     const forceStop = framesSinceAllPlaced > 500;
                     
                     if (isAligned || forceStop) {
-                        if (forceStop) {
+                        if (!isAligned && forceStop) {
                             console.warn(`Reel ${reelIndex} force-stopped after ${framesSinceAllPlaced} frames`);
+                            console.log('Max distance from target:', maxDistance);
                             console.log('Winning symbol positions:', winningSymbolElements.map(el => ({
                                 current: parseFloat(el.style.top),
                                 target: parseFloat(el.dataset.targetPosition),
