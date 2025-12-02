@@ -587,10 +587,14 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         let queueIndex = 0;
         let hasSetWinningSymbols = false;
         let winningSymbolsStartIndex = -1;
-        let framesSinceWinningSymbols = 0; // Safety counter
+        let framesSinceWinningSymbols = 0;
         
         function animate() {
-            symbols.forEach(symbol => {
+            // Create array to track which symbols wrapped this frame
+            const wrappedSymbols = [];
+            
+            // First pass: move all symbols and identify which ones wrapped
+            symbols.forEach((symbol, idx) => {
                 let top = parseFloat(symbol.style.top);
                 const previousTop = top;
                 top += speed;
@@ -601,29 +605,39 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                     playTickSound();
                 }
                 
-                // When symbol goes off screen, wrap it and assign next symbol from queue
+                // Check if symbol wrapped
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                    const img = symbol.querySelector('img');
+                    wrappedSymbols.push({ symbol, idx, top });
+                } else {
+                    symbol.style.top = `${top}vh`;
+                }
+            });
+            
+            // Second pass: assign new images to wrapped symbols in a consistent order
+            // Sort by their original top position to ensure consistent assignment
+            wrappedSymbols.sort((a, b) => parseFloat(a.symbol.style.top) - parseFloat(b.symbol.style.top));
+            
+            wrappedSymbols.forEach(({ symbol, top }) => {
+                const newTop = top - SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                const img = symbol.querySelector('img');
+                
+                if (queueIndex < symbolQueue.length) {
+                    img.src = symbolQueue[queueIndex];
+                    queueIndex++;
+                    symbolsPassed++;
                     
-                    if (queueIndex < symbolQueue.length) {
-                        img.src = symbolQueue[queueIndex];
-                        queueIndex++;
-                        symbolsPassed++;
-                        
-                        // Mark when we start placing winning symbols
-                        if (queueIndex === symbolQueue.length - 2) {
-                            winningSymbolsStartIndex = symbolsPassed;
-                        }
-                        
-                        // Check if we just placed the last winning symbol
-                        if (queueIndex === symbolQueue.length) {
-                            hasSetWinningSymbols = true;
-                        }
+                    // Mark when we start placing winning symbols
+                    if (queueIndex === symbolQueue.length - 2) {
+                        winningSymbolsStartIndex = symbolsPassed;
+                    }
+                    
+                    // Check if we just placed the last winning symbol
+                    if (queueIndex === symbolQueue.length) {
+                        hasSetWinningSymbols = true;
                     }
                 }
                 
-                symbol.style.top = `${top}vh`;
+                symbol.style.top = `${newTop}vh`;
             });
             
             // Stop when winning symbols have been set AND all three are visible in correct positions
@@ -647,7 +661,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                     const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
                     const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
                     
-                    // Check if positions are close to target (within 3vh tolerance - increased for reliability)
+                    // Check if positions are close to target (within 3vh tolerance)
                     const isAligned = positions.slice(0, 3).every((pos, idx) => 
                         Math.abs(pos - targetPositions[idx]) < 3
                     );
