@@ -20,6 +20,18 @@ const auth = getAuth(app);
 // Wait for auth
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+        });
+
+        const data = await res.json();
+        window.location.href = 'navigation.html';
+
         window.location.href = 'navigation.html';
         return;
     }
@@ -88,11 +100,6 @@ onAuthStateChanged(auth, async (user) => {
             if (isLogin) {
                 // Login with Firebase
                 try {
-                    if ((email && email == "test@test.com") && (password && password == "test123")) {
-                        localStorage.setItem('localMode', true);
-                        window.location.href = 'navigation.html';
-                    }
-
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
                     const token = await userCredential.user.accessToken;
 
@@ -106,7 +113,6 @@ onAuthStateChanged(auth, async (user) => {
                     });
 
                     const data = await res.json();
-                    localStorage.setItem('localMode', false);
                     window.location.href = 'navigation.html';
                 } catch (error) {
                     console.error('Login error:', error);
@@ -174,7 +180,6 @@ onAuthStateChanged(auth, async (user) => {
                     });
 
                     const data = await res.json();
-                    localStorage.setItem('localMode', false);
                     window.location.href = 'navigation.html';
 
                 } catch (error) {
