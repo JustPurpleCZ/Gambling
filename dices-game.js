@@ -405,13 +405,27 @@ async function updateActivePlayerList() {
           connected.textContent = "Disconnected";
         }
 
-        /*
-        const snap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
-        if (snap.exists) {
-            playStuff.style.display = "none";
-            errorMessage.textContent = "Game ended";
+        if (gameEnded) {
+            document.getElementById("gameEndDiv").style.display = "block";
+
+            const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
+            const winnerId = idSnap.val();
+
+            const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
+            const winnerInfo = infoSnap.val();
+
+            const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
+            const winAmount = winAmountSnap.val();
+
+            document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
+            document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
+
+            if (winnerId == uid) {
+                document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
+            } else {
+                document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
+            }
         }
-        */
     }
 }
 
