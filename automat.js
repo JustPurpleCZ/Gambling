@@ -39,7 +39,7 @@ async function checkAuth() {
     }
 
     try {
-    const token = await uid.getIdToken();
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
