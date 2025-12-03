@@ -108,7 +108,7 @@ setInitialState();
 
 //O - Firebase init and getting token
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -208,7 +208,7 @@ onAuthStateChanged(auth, async (user) => {
 
 window.addEventListener("keydown", (key) => {
     if (key.key === "l") {
-        localStorage.removeItem("localMode");
-        window.location.href = "index.html";
+        localStorage.clear();
+        signOut(auth);
     }
 })
