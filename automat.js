@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -1152,6 +1152,11 @@ let tutorialStep = 0;
 let tutorialWaitingForAction = false;
 let hasCompletedTutorial = false;
 
+const snap = await get(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`))
+if (snap.val() == true) {
+    hasCompletedTutorial = true;
+}
+
 const TUTORIAL_SEQUENCE = {
     STEPS: [
         {
@@ -1792,8 +1797,9 @@ class RobotController {
             
             // Save tutorial completion
             if (!localMode) {
-                localStorage.setItem('tutorialCompleted', 'true');
+                set(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`), true);
             }
+            
         } catch (error) {
             console.error('Tutorial failed:', error);
         } finally {
