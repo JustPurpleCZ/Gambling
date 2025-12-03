@@ -10,25 +10,6 @@ async function checkAuth() {
         window.location.href = 'index.html';
         return;
     }
-    
-    //O - validate token
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-
-    const tokenValid = await res.json();
-    console.log("Token validity response: ", tokenValid);
-    if (!tokenValid.tokenValid) {
-        console.log("Token valid: ", tokenValid.tokenValid);
-        setTimeout(() => {
-            localStorage.removeItem("userToken");
-            window.location.href = "index.html";
-        }, 20000);
-    }
 
     //DEBUG - TOKEN SHENANIGANS
     try {
