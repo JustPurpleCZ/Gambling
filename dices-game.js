@@ -145,7 +145,7 @@ async function updatePlayerList() {
                     kickBtn.textContent = "kick player";
 
                     kickBtn.addEventListener("click", () => {
-                        kick(snapshot.key);
+                        kick(player);
                     });
                 }
 
@@ -200,7 +200,8 @@ async function leaveLobby() {
 
     if (response.success) {
         onDisconnect(presenceRef).cancel();
-        localStorage.removeItem("dicesLobbyId", "dicesIsHost");
+        localStorage.removeItem("dicesLobbyId");
+        localStorage.removeItem("dicesIsHost");
         window.location.href = "dices-hub.html";
     } else {
         console.log("Failed to leave:", response.reply);
@@ -293,6 +294,10 @@ async function updateActivePlayerList() {
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
+        if (activePlayerDiv.children.contains(player)) {
+            continue;
+        }
+
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
