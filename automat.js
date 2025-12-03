@@ -1,42 +1,37 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+const token = localStorage.getItem('userToken');
 
-const firebaseConfig = {
-    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
-    authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
-    projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
-    messagingSenderId: "159900206701",
-    appId: "1:159900206701:web:01223c4665df6f7377a164"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-const localMode = JSON.parse(localStorage.getItem('localMode'));
-
+//Check for local mode (testing purporses)
+let localMode = false;
+if (token && token == 1) {
+    localMode = true;
+}
 async function checkAuth() {
-    const user = await new Promise(resolve => {
-        const unsub = onAuthStateChanged(auth, (u) => {
-            unsub();
-            resolve(u);
-        });
-    });
-
-    if (!user) {
-        //window.location.href = 'index.html';
+    if (!token) {
+        window.location.href = 'index.html';
         return;
     }
+    
+    //O - validate token
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/check_token", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
 
-    if (!localMode) {
-        onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
+    const tokenValid = await res.json();
+    console.log("Token validity response: ", tokenValid);
+    if (!tokenValid.tokenValid) {
+        console.log("Token valid: ", tokenValid.tokenValid);
+        setTimeout(() => {
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
+        }, 20000);
     }
 
+    //DEBUG - TOKEN SHENANIGANS
     try {
-    const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
@@ -50,7 +45,8 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            //window.location.href = "index.html";
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
         }, 5000);
         return;
     }
@@ -58,7 +54,8 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            //window.location.href = "index.html";
+            localStorage.removeItem("userToken");
+            window.location.href = "index.html";
         }, 5000);
         return;
     }
@@ -67,6 +64,22 @@ async function checkAuth() {
 // Get user data
 let localBalance;
 let userData;
+
+//Update online status every 1 minute
+if (!localMode) {
+    setInterval(() => {
+        console.log("Updating last online")
+        fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
+            method: "GET",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+    }, 60000);
+} else {
+    console.log("LOCAL MODE, SKIPPING ONLINE STATUS UPDATES")
+}
 
 // O - Exit function (formerly logout)
 function logout() {
@@ -134,7 +147,7 @@ document.addEventListener('click', () => {
 
 
 // Convert measurements to vh
-const SYMBOL_HEIGHT = 14;
+const SYMBOL_HEIGHT = 14; // 5vh to match CSS
 const VISIBLE_SYMBOLS = 3;
 const BUFFER_SYMBOLS = 2;
 const TOTAL_SYMBOLS = VISIBLE_SYMBOLS + BUFFER_SYMBOLS;
@@ -164,23 +177,28 @@ const displayDiv = document.querySelector('.credit-display');
 
 async function initializeWallet() {
     if (!localMode) {
-        await checkAuth();
+    await checkAuth();
 
-        if (!localBalance) {
-            console.log("NO LOCAL BALANCE, LOGGING OUT")
-            await localBalance;
-            console.log(localBalance)
-            setTimeout(() => {
-            //window.location.href = 'index.html';
-            return;
-            }, 10000);
-            
-        }
-        walletBalance = localBalance.walletBalance;
-        playerCredit = localBalance.creditBalance;
-        updateAvailableBills();
-        updateCreditDisplay();
+    if (!token) {
+        window.location.href = 'index.html';
+        return;
+    }
 
+    if (!localBalance) {
+        console.log("NO LOCAL BALANCE, LOGGING OUT")
+        await localBalance;
+        console.log(localBalance)
+        setTimeout(() => {
+        localStorage.removeItem('userToken');
+        window.location.href = 'index.html';
+        return;
+        }, 10000);
+        
+    }
+    walletBalance = localBalance.walletBalance;
+    playerCredit = localBalance.creditBalance;
+    updateAvailableBills();
+    updateCreditDisplay();
     } else {
         console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
         walletBalance = 500;
@@ -337,6 +355,9 @@ function checkSymbolPosition(top) {
     const centerPosition = SYMBOL_HEIGHT;
     return Math.abs(top - centerPosition) < 0.5;
 }
+
+//DEBUG - GETSYMBOLSATPOSITION HAS TO BE A CLOUDFUNCTION, RETURNS THE WINNING SYMBOLS (OR NULL), NEEDS: reels, 
+
 function getSymbolsAtPosition(position) {
     return Array.from(reels).map(reel => {
         const symbols = Array.from(reel.children);
@@ -386,8 +407,7 @@ function initializeReel(reel) {
         img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
         img.alt = 'Slot Symbol';
         symbol.appendChild(img);
-        symbol.style.top = `${i * SYMBOL_HEIGHT - 14}vh`;
-        symbol.style.transition = 'none';
+        symbol.style.top = `${i * SYMBOL_HEIGHT}vh`;
         reel.appendChild(symbol);
     }
 }
@@ -560,6 +580,50 @@ function checkWin() {
     updateCreditDisplay();
     return false;
 }
+
+function spinAnimation(reel, speed = 4, duration, index, finalSymbols) {
+    return new Promise(resolve =>{
+        let passed = 0;
+        let stopNow = false;
+        let currentSpeed = speed;
+        let slowingDown = false;
+        const symbols = Array.from(reel.children);
+
+
+        function move() {
+            if (passed >= duration && !slowingDown) {
+                slowingDown = true;
+            }
+
+            if (slowingDown) {
+                currentSpeed -= 0.25;
+            }
+
+            symbols.forEach(symbol => {
+                //Move the symbol
+                let top = parseFloat(symbol.style.top);
+                const previousTop = top;
+                top += currentSpeed;
+
+                //Check if symbol passed the center
+                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) || (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
+                    playTickSound();
+                }
+
+                //Check if symbol should snap back to the top
+                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
+                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
+                    const img = symbol.querySelector('img');
+                    passed ++;
+                    if (slowingDown) {
+                        currentSpeed = Math.max(0.05, currentSpeed -= 0.25);
+                    }
+                }
+            })
+        }
+    });
+}
+
 let canSpin, spinPositions, newCredit;
 let reel1stopIndex = 0;
 let reel2stopIndex = 0;
@@ -585,9 +649,8 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
         
         let queueIndex = 0;
-        let allWinningSymbolsPlaced = false;
-        let framesSinceAllPlaced = 0;
-        const ALIGNMENT_FRAMES = 20; // Number of frames to wait for natural alignment
+        let hasSetWinningSymbols = false;
+        let winningSymbolsStartIndex = -1;
         
         function animate() {
             symbols.forEach(symbol => {
@@ -611,9 +674,14 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                         queueIndex++;
                         symbolsPassed++;
                         
+                        // Mark when we start placing winning symbols
+                        if (queueIndex === symbolQueue.length - 2) {
+                            winningSymbolsStartIndex = symbolsPassed;
+                        }
+                        
                         // Check if we just placed the last winning symbol
                         if (queueIndex === symbolQueue.length) {
-                            allWinningSymbolsPlaced = true;
+                            hasSetWinningSymbols = true;
                         }
                     }
                 }
@@ -621,45 +689,47 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 symbol.style.top = `${top}vh`;
             });
             
-            // Once all winning symbols are placed, wait a few frames then stop
-            if (allWinningSymbolsPlaced) {
-                framesSinceAllPlaced++;
+            // Stop when winning symbols have been set AND all three are visible in correct positions
+            if (hasSetWinningSymbols) {
+                // Find symbols with winning images
+                const winningImages = [
+                    finalSymbols[reelIndex],
+                    finalSymbols[reelIndex + 3],
+                    finalSymbols[reelIndex + 6]
+                ];
                 
-                // After a short delay, check for alignment and force stop if needed
-                if (framesSinceAllPlaced >= ALIGNMENT_FRAMES) {
-                    // Find symbols with winning images
-                    const winningImages = [
-                        finalSymbols[reelIndex],
-                        finalSymbols[reelIndex + 3],
-                        finalSymbols[reelIndex + 6]
-                    ];
+                const winningSymbolElements = symbols.filter(symbol => {
+                    const imgSrc = symbol.querySelector('img').src;
+                    return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
+                });
+                
+                // Check if all winning symbols are in their correct positions
+                if (winningSymbolElements.length >= 3) {
+                    const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
+                    const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
                     
-                    const winningSymbolElements = symbols.filter(symbol => {
-                        const imgSrc = symbol.querySelector('img').src;
-                        return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
-                    });
+                    // Check if positions are close to target (within 2vh tolerance)
+                    const isAligned = positions.slice(0, 3).every((pos, idx) => 
+                        Math.abs(pos - targetPositions[idx]) < 2
+                    );
                     
-                    if (winningSymbolElements.length >= 3) {
-                        const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
-                        const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
-                        
+                    if (isAligned) {
                         // Snap to exact positions
                         symbols.forEach(symbol => {
                             const top = parseFloat(symbol.style.top);
+                            let targetTop = top;
                             
                             // Find closest target position
-                            const distances = targetPositions.map(target => Math.abs(top - target));
-                            const closestIndex = distances.indexOf(Math.min(...distances));
-                            
-                            // Snap if within reasonable range
-                            if (distances[closestIndex] < SYMBOL_HEIGHT * 0.6) {
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${targetPositions[closestIndex]}vh`;
-                            } else {
-                                // Position is too far, keep it where it is
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${top}vh`;
+                            if (Math.abs(top - 0) < SYMBOL_HEIGHT / 2) {
+                                targetTop = 0;
+                            } else if (Math.abs(top - SYMBOL_HEIGHT) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT;
+                            } else if (Math.abs(top - (SYMBOL_HEIGHT * 2)) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT * 2;
                             }
+                            
+                            symbol.style.transition = 'top 0.2s ease-out';
+                            symbol.style.top = `${targetTop}vh`;
                         });
                         
                         setTimeout(() => {
@@ -667,7 +737,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                                 symbol.style.transition = 'none';
                             });
                             resolve();
-                        }, 150);
+                        }, 200);
                         return;
                     }
                 }
@@ -685,9 +755,7 @@ async function spin() {
         shakeSound();
         return;
     }
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 4) {
-        robotController.tutorialActionCompleted();
-    }
+    
     if (playerCredit < betAmount) {
         shakeLever();
         shakeSound();
@@ -703,7 +771,6 @@ async function spin() {
     
     //Send cloud spin request
     if (!localMode) {
-        const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
             method: "POST",
             headers: {
@@ -752,6 +819,21 @@ async function spin() {
         });
 
         await Promise.all(spinPromises);
+
+        /* ANIMATION CODE - COMMENTED OUT FOR LATER USE
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
+        const spinPromises = Array.from(reels).map((reel, index) => {
+            const duration = 20 + (index * 10);
+            const speed = 4;
+            return animateReel(reel, speed, duration, index, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+        */
+
         checkWin()
         playerCredit += data.winAmount;
         updateCreditDisplay();
@@ -790,6 +872,21 @@ async function spin() {
         });
 
         await Promise.all(spinPromises);
+
+        /* ANIMATION CODE - COMMENTED OUT FOR LATER USE
+        reel1stopIndex = 0;
+        reel2stopIndex = 0;
+        reel3stopIndex = 0;
+
+        const spinPromises = Array.from(reels).map((reel, index) => {
+            const duration = 40 + (index * 20);
+            const speed = 4;
+            return animateReel(reel, speed, duration, index, finalSymbols);
+        });
+
+        await Promise.all(spinPromises);
+        */
+        
         checkWin();
 
         isSpinning = false;
@@ -836,7 +933,6 @@ async function pickupNote(note) {
 
     //DEBUG - CASH OUT
     if (!localMode) {
-        const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
             method: "POST",
             headers: {
@@ -919,9 +1015,6 @@ let isProcessingCashout = false;
 let isOutputting = false;
 
 async function cashout() {
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 2) {
-        robotController.tutorialActionCompleted();
-    }
     if (isSpinning || isProcessingCashout || isOutputting) return;
     isProcessingCashout = true;
 
@@ -955,7 +1048,6 @@ async function cashout() {
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
                 if (!localMode) {
-                    const token = await auth.currentUser.getIdToken();
                     const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
                         method: "POST",
                         headers: {
@@ -1105,12 +1197,6 @@ async function transferNoteFromWallet(bill) {
             resolve();
         }, { once: true });
     });
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
-        // Wait a bit to ensure the note animation completes
-        setTimeout(() => {
-            robotController.tutorialActionCompleted();
-        }, 600);
-    }
 }
 
 // Define the robot's states and animations
@@ -1131,14 +1217,6 @@ const ROBOT_STATES = {
         brightness: '100%',
         gif: 'robot/idle.gif'
     },
-    ACTIVE_RIGHT: {
-        position: '110vh',
-        size: '90vh',
-        top: '80vh',
-        blur: '0px',
-        brightness: '100%',
-        gif: 'robot/idle.gif'
-    },
     OFFSCREEN_LEFT: {
         position: '-80vh',
         size: '60vh',
@@ -1147,90 +1225,7 @@ const ROBOT_STATES = {
         brightness: '100%'
     }
 };
-let tutorialActive = false;
-let tutorialStep = 0;
-let tutorialWaitingForAction = false;
-let hasCompletedTutorial = false;
 
-const snap = await get(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`))
-if (snap.val() == true) {
-    hasCompletedTutorial = true;
-}
-
-const TUTORIAL_SEQUENCE = {
-    STEPS: [
-        {
-            id: 'intro',
-            sound: 'robot/dialogue/part1.mp3', // You'll need to add these audio files
-            animations: [
-                { gif: 'robot/talk2.gif', duration: 2300 },
-                { gif: 'robot/talk2end.gif', duration: 250 },
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 5800 },
-                { gif: 'robot/talkend.gif', duration: 250 }
-            ],
-            waitFor: null
-        },
-        {
-            id: 'point_wallet',
-            sound: 'robot/dialogue/part2.mp3',
-            animations: [
-                { gif: 'robot/pointswitchalt.gif', duration: 250 },
-                { gif: 'robot/pointalt.gif', duration: 20 }
-            ],
-            pointTo: 'wallet',
-            waitFor: 'wallet_hover'
-        },
-        {
-            id: 'point_cashout',
-            sound: 'robot/dialogue/part3.mp3',
-            animations: [
-                { gif: 'robot/pointendalt.gif', duration: 250 },
-                { gif: 'robot/idle.gif', duration: 4000 },
-                { gif: 'robot/pointswitch.gif', duration: 250 },
-                { gif: 'robot/point.gif', duration: 20 }
-            ],
-            pointTo: 'cashout',
-            waitFor: 'cashout_pressed'
-        },
-        {
-            id: 'wait_deposit',
-            sound: 'robot/dialogue/part4.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 2500 },
-                { gif: 'robot/talkend.gif', duration: 250 },
-                { gif: 'robot/idle.gif', duration: 20 }
-            ],
-            pointTo: null,
-            waitFor: 'money_deposited'
-        },
-        {
-            id: 'point_lever',
-            sound: 'robot/dialogue/part5.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 2000 },
-                { gif: 'robot/talkend.gif', duration: 250 },
-                { gif: 'robot/pointswitchalt.gif', duration: 250 },
-                { gif: 'robot/pointalt.gif', duration: 20 }
-            ],
-            pointTo: 'lever',
-            waitFor: 'lever_pulled'
-        },
-        {
-            id: 'conclusion',
-            sound: 'robot/dialogue/part6.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 6000 },
-                { gif: 'robot/talkend.gif', duration: 600 }
-            ],
-            pointTo: null,
-            waitFor: null
-        }
-    ]
-};
 // Define dialogue sequences with their corresponding animations
 const DIALOGUE_SEQUENCES = [
     {
@@ -1321,11 +1316,6 @@ const MANUAL_SEQUENCES = {
         ]
     }
 };
-const POINT_POSITIONS = {
-    wallet: { rotation: '205',left: '-5vh', type: '-1'},
-    cashout: { rotation: '340',left: '-25vh', type: '1'},
-    lever: { rotation: '165',left: '-5vh', type: '-1' }
-};
 
 class RobotController {
     constructor() {
@@ -1344,8 +1334,7 @@ class RobotController {
         this.idleTimer = 0;
         this.hasPlayedShortSound = false;
         this.hasPlayedLongSound = false;
-        this.hand = document.querySelector('.robot-hand');
-        this.tutorialResolve = null;
+        
         this.optionsMenu = document.querySelector('.options-menu');
         
         // Initialize robot
@@ -1667,148 +1656,6 @@ class RobotController {
             this.isInActiveState = false;
         }
     }
-    showHand(position) {
-        if (!position || !POINT_POSITIONS[position]) {
-            this.hideHand();
-            return;
-        }
-
-        const pos = POINT_POSITIONS[position];
-        this.hand.style.rotate = pos.rotation + 'deg';
-        this.hand.style.left = pos.left;
-        this.hand.style.transform = 'scaleY(' + pos.type + ')';
-        this.hand.classList.add('visible');
-    }
-
-    hideHand() {
-        this.hand.classList.remove('visible');
-    }
-
-    async playTutorialStep(step) {
-        const sequence = TUTORIAL_SEQUENCE.STEPS[step];
-        
-        // Play dialogue and animations
-        // Special handling for intro step - exit left and return from right
-        
-        this.dialogueAudio.src = sequence.sound;
-        this.robot.src = sequence.animations[0].gif;
-        await this.delay(200);
-        if (step === 2) {
-            await this.exitLeftAndReturnRight();
-        }
-        
-        // Special handling for lever step - exit right and return from left
-        if (step === 4) {
-            await this.exitRightAndReturnLeft();
-        }
-        const audioPromise = this.dialogueAudio.play()
-            .catch(err => console.error('Audio playback failed:', err));
-        
-        for (const animation of sequence.animations) {
-            this.robot.src = animation.gif;
-            await this.delay(animation.duration);
-        }
-        
-        await audioPromise;
-        
-        
-        
-        // Show hand if needed
-        if (sequence.pointTo) {
-            this.showHand(sequence.pointTo);
-        } else {
-            this.hideHand();
-        }
-        
-        // Wait for action if needed
-        if (sequence.waitFor) {
-            tutorialWaitingForAction = true;
-            await new Promise(resolve => {
-                this.tutorialResolve = resolve;
-            });
-            tutorialWaitingForAction = false;
-            this.hideHand();
-        }
-    }
-    async exitLeftAndReturnRight() {
-        // Slide out to the left
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '-80vh';
-        await this.delay(500);
-        
-        // Reposition offscreen to the right (no transition)
-        this.container.style.transition = 'none';
-        this.container.style.left = '100vw';
-        
-        // Force reflow
-        this.container.offsetHeight;
-        
-        // Slide in from the right to the right position
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.ACTIVE_RIGHT.position;
-        await this.delay(500);
-    }
-
-    async exitRightAndReturnLeft() {
-        // Slide out to the right
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '100vw';
-        await this.delay(500);
-        
-        // Reposition offscreen to the left (no transition)
-        this.container.style.transition = 'none';
-        this.container.style.left = '-80vh';
-        
-        // Force reflow
-        this.container.offsetHeight;
-        
-        // Slide in from the left to the left position
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.ACTIVE.position;
-        await this.delay(500);
-    }
-    tutorialActionCompleted() {
-        if (this.tutorialResolve) {
-            this.tutorialResolve();
-            this.tutorialResolve = null;
-        }
-    }
-
-    async startTutorial() {
-        if (tutorialActive || hasCompletedTutorial) return;
-        
-        tutorialActive = true;
-        this.isAnimating = true;
-        
-        try {
-            // Move robot to active position
-            await this.growthSequence();
-            await this.transformAndReturn();
-            
-            // Play through all tutorial steps
-            for (let i = 0; i < TUTORIAL_SEQUENCE.STEPS.length; i++) {
-                tutorialStep = i;
-                await this.playTutorialStep(i);
-            }
-            
-            // Return to idle
-            await this.returnToIdle();
-            hasCompletedTutorial = true;
-            
-            // Save tutorial completion
-            if (!localMode) {
-                set(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`), true);
-            }
-            
-        } catch (error) {
-            console.error('Tutorial failed:', error);
-        } finally {
-            tutorialActive = false;
-            this.isAnimating = false;
-            this.isInActiveState = false;
-            this.hideHand();
-        }
-    }
 }
 function updateWalletPosition(hasNotes = false) {
     const walletElement = document.querySelector('.wallet');
@@ -1904,26 +1751,13 @@ document.addEventListener('mousedown', (e) => {
         robotController.playSpecialSequence();
     }
 });
-wallet.addEventListener('mouseenter', () => {
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 1) {
-        robotController.tutorialActionCompleted();
-    }
-});
+
 cashoutButton.addEventListener('click', cashout);
 window.addEventListener('load', () => {
     initializeWallet();
     updateWalletPosition(false);
     updateCreditDisplay();
     updateAvailableBills();
-    if (!localMode) {
-        hasCompletedTutorial = localStorage.getItem('tutorialCompleted') === 'true';
-    }
-
-    if (!hasCompletedTutorial) {
-        setTimeout(() => {
-            robotController.startTutorial();
-        }, 1000);
-    }
 });
 lever.src = LEVER_STATIC;
 reels.forEach(initializeReel);
