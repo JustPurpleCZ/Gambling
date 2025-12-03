@@ -17,6 +17,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const localMode = JSON.parse(localStorage.getItem('localMode'));
+let uid;
 
 async function checkAuth() {
     const user = await new Promise(resolve => {
@@ -31,12 +32,14 @@ async function checkAuth() {
         return;
     }
 
+    uid = user.uid;
+
     if (!localMode) {
-        onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
+        onDisconnect(ref(db, `/users/${uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
     }
 
     try {
-    const token = await auth.currentUser.getIdToken();
+    const token = await uid.getIdToken();
     const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
