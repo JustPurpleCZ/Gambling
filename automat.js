@@ -34,7 +34,7 @@ async function checkAuth() {
     if (!localMode) {
         onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
 
-        const tutorialSnap = await get(ref(db, `users/${auth.currentUser.uid}/tutorialCompleted`));
+        const tutorialSnap = await get(ref(db, `users/${auth.currentUser.uid}/slotMachine/tutorialCompleted`));
         hasCompletedTutorial = tutorialSnap.val();
         console.log("Tutorial status:", hasCompletedTutorial);
 
@@ -1802,7 +1802,7 @@ class RobotController {
             
             // Save tutorial completion
             if (!localMode) {
-                set(ref(db, `users/${auth.currentUser.uid}/tutorialCompleted`), true);
+                set(ref(db, `users/${auth.currentUser.uid}/slotMachine/tutorialCompleted`), true);
             }
         } catch (error) {
             console.error('Tutorial failed:', error);
