@@ -944,6 +944,10 @@ async function cashout() {
 
     // Check if door is open (we're in deposit mode)
     if (isDoorOpen) {
+        if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
+            robotController.tutorialActionCompleted();
+        }
+
         isProcessingCashout = true;
         isOutputting = true;
         // Get all notes in the door and save their values before closing
@@ -965,10 +969,7 @@ async function cashout() {
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
                 if (!localMode) {
-                    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
-                        robotController.tutorialActionCompleted();
-                    }
-                    
+
                     const token = await auth.currentUser.getIdToken();
                     const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
                         method: "POST",
@@ -1726,10 +1727,17 @@ class RobotController {
         // Wait for action if needed
         if (sequence.waitFor) {
             tutorialWaitingForAction = true;
+            
+            const slotMachine = document.querySelector('.slot-machine-container');
+            slotMachine.style.filter = 'blur(0px)';
+
             await new Promise(resolve => {
                 this.tutorialResolve = resolve;
             });
             tutorialWaitingForAction = false;
+
+            slotMachine.style.filter = 'blur(2px)';
+
             this.hideHand();
         }
     }
