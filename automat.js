@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -17,7 +17,6 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 const localMode = JSON.parse(localStorage.getItem('localMode'));
-let uid;
 
 async function checkAuth() {
     const user = await new Promise(resolve => {
@@ -32,10 +31,8 @@ async function checkAuth() {
         return;
     }
 
-    uid = user.uid;
-
     if (!localMode) {
-        onDisconnect(ref(db, `/users/${uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
+        onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
     }
 
     try {
@@ -1155,11 +1152,6 @@ let tutorialStep = 0;
 let tutorialWaitingForAction = false;
 let hasCompletedTutorial = false;
 
-const snap = await get(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`))
-if (snap.val() == true) {
-    hasCompletedTutorial = true;
-}
-
 const TUTORIAL_SEQUENCE = {
     STEPS: [
         {
@@ -1800,9 +1792,8 @@ class RobotController {
             
             // Save tutorial completion
             if (!localMode) {
-                set(ref(db, `/users/${uid}/slotMachine/tutorialCompleted`), true);
+                localStorage.setItem('tutorialCompleted', 'true');
             }
-            
         } catch (error) {
             console.error('Tutorial failed:', error);
         } finally {
