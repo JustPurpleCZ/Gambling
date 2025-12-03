@@ -129,7 +129,7 @@ let unlocks = {};
 
 async function setUnlocks() {
     const token = await auth.currentUser.getIdToken();
-    
+    console.log(token);
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
         method: "GET",
         headers: {
