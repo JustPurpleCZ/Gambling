@@ -1792,7 +1792,7 @@ class RobotController {
             
             // Save tutorial completion
             if (!localMode) {
-                localStorage.setItem('tutorialCompleted', 'true');
+                set(ref(db, `users/${currentUser.uid}/tutorialCompleted`), true);
             }
         } catch (error) {
             console.error('Tutorial failed:', error);
@@ -1910,7 +1910,9 @@ window.addEventListener('load', () => {
     updateCreditDisplay();
     updateAvailableBills();
     if (!localMode) {
-        hasCompletedTutorial = localStorage.getItem('tutorialCompleted') === 'true';
+        const tutorialSnap = get(ref(db, `users/${currentUser.uid}/tutorialCompleted`));
+        hasCompletedTutorial = tutorialSnap.val();
+        console.log("Tutorial status:", hasCompletedTutorial);
     }
 
     if (!hasCompletedTutorial) {
