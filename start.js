@@ -21,12 +21,13 @@ const auth = getAuth(app);
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
+        const res = await fetch("https://account-init-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
             headers: {
                 "Authorization": token,
                 "Content-Type": "application/json"
             },
+            body: JSON.stringify({ username: null})
         });
 
         const data = await res.json();
@@ -108,11 +109,12 @@ onAuthStateChanged(auth, async (user) => {
                             "Authorization": token,
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ username: displayName})
+                        body: JSON.stringify({ username: null})
                     });
 
                     const data = await res.json();
-                    window.location.href = 'navigation.html';
+                    console.log("Account init data: ", data);
+                    //window.location.href = 'navigation.html';
                 } catch (error) {
                     console.error('Login error:', error);
                     switch (error.code) {
@@ -179,8 +181,9 @@ onAuthStateChanged(auth, async (user) => {
                     });
 
                     const data = await res.json();
-                    window.location.href = 'navigation.html';
-
+                    console.log("Account init data: ", data);
+                    //window.location.href = 'navigation.html';
+                    return;
                 } catch (error) {
                     console.error('Signup error:', error.code);
                     switch (error.code) {
