@@ -38,3 +38,7 @@ button {
 .heldDice {
     border: 2px solid yellow;
 }
+
+#gameEndDiv {
+    display: none;
+}
