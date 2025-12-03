@@ -73,8 +73,6 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     } else {
 
     presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
-
-    await checkRecovery();
     
     console.log("Setting presence for", uid);
     set(presenceRef, true);
@@ -105,33 +103,6 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     });
   }
 })();
-
-async function checkRecovery() {
-    const snapshot = await get(presenceRef);
-    if (snapshot.exists() && snapshot.val() === false) {
-        console.log("Recovering connection");
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "lobbyId": lobbyId,
-            })
-        });
-        
-        const response = await res.json();
-        console.log("Recovery response:", response);
-
-        if (response.success) {
-            return;
-        } else {
-            leaveLobby();
-        }
-    }
-}
 
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
@@ -257,6 +228,7 @@ async function startGame() {
     console.log(response);
 
     if (response.success) {
+        set(presenceRef, true);
         onDisconnect(presenceRef).cancel();
     } else {
         console.log("Failed to start game:", response.reply);
