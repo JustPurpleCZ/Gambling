@@ -425,6 +425,15 @@ async function updateActivePlayerList() {
             } else {
                 document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
             }
+
+            document.getElementById("exitBtn").addEventListener("click", () => {
+
+                localStorage.removeItem("dicesLobbyId");
+                localStorage.removeItem("dicesIsHost");
+                localStorage.removeItem("selfUID");
+
+                window.location.href = "dices-hub.html";
+            })
         }
     }
 }
