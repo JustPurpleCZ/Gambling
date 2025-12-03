@@ -266,7 +266,6 @@ async function startGame() {
 //Game start
 let activePresenceRef;
 let playerOrder;
-let playing;
 
 const playStuff = document.getElementById("playStuff");
 const rolledDiceDiv = document.getElementById("rolledDice");
@@ -318,6 +317,7 @@ async function gameStart() {
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
+    let gameEnded = true;
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
@@ -339,8 +339,9 @@ async function updateActivePlayerList() {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
           theirTurn.textContent = "Playing";
+          gameEnded = false;
 
-          if (player == uid) {
+          if (player == uid && !gameEnded) {
             playStuff.style.display = "block";
 
             const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
