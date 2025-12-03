@@ -52,18 +52,6 @@ let localBalance;
 const token = localStorage.getItem('userToken');
 const userData = checkAuth();
 
-//Update online status every 1 minute
-setInterval(() => {
-    console.log("Updating last online")
-    fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
-    });
-}, 60000);
-
 // Logout function
 function logout() {
     const currentUser = localStorage.getItem('currentUser');
@@ -678,7 +666,6 @@ async function spin() {
     playLeverAnimation();
     
     // 1. Clear any previous win text
-    winText.textContent = "";
     displayDiv.classList.remove('showing-win');
 
     try {
