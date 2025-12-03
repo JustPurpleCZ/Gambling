@@ -539,6 +539,7 @@ img {
     pointer-events: none;
     animation: bob 0.7s infinite alternate;
     transform-origin: center right;
+    transform: scaleY(-1);
 }
 @keyframes bob {
     from {
