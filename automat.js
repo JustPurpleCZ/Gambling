@@ -965,6 +965,10 @@ async function cashout() {
                 // Add to credit
                 //DEBUG - SEND CASH IN CLOUD REQUEST
                 if (!localMode) {
+                    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
+                        robotController.tutorialActionCompleted();
+                    }
+                    
                     const token = await auth.currentUser.getIdToken();
                     const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
                         method: "POST",
@@ -1115,12 +1119,6 @@ async function transferNoteFromWallet(bill) {
             resolve();
         }, { once: true });
     });
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
-        // Wait a bit to ensure the note animation completes
-        setTimeout(() => {
-            robotController.tutorialActionCompleted();
-        }, 600);
-    }
 }
 
 // Define the robot's states and animations
