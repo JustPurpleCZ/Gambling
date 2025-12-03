@@ -33,6 +33,16 @@ async function checkAuth() {
 
     if (!localMode) {
         onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
+
+        const tutorialSnap = await get(ref(db, `users/${auth.currentUser.uid}/tutorialCompleted`));
+        hasCompletedTutorial = tutorialSnap.val();
+        console.log("Tutorial status:", hasCompletedTutorial);
+
+        if (!hasCompletedTutorial) {
+        setTimeout(() => {
+            robotController.startTutorial();
+        }, 1000);
+    }
     }
 
     try {
@@ -1909,17 +1919,6 @@ window.addEventListener('load', () => {
     updateWalletPosition(false);
     updateCreditDisplay();
     updateAvailableBills();
-    if (!localMode) {
-        const tutorialSnap = get(ref(db, `users/${auth.currentUser.uid}/tutorialCompleted`));
-        hasCompletedTutorial = tutorialSnap.val();
-        console.log("Tutorial status:", hasCompletedTutorial);
-    }
-
-    if (!hasCompletedTutorial) {
-        setTimeout(() => {
-            robotController.startTutorial();
-        }, 1000);
-    }
 });
 lever.src = LEVER_STATIC;
 reels.forEach(initializeReel);
