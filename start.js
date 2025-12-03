@@ -30,9 +30,8 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         const data = await res.json();
-        window.location.href = 'navigation.html';
-
-        window.location.href = 'navigation.html';
+        console.log("accountInitData: ", data);
+        //window.location.href = 'navigation.html';
         return;
     }
 
