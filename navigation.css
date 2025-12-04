@@ -1,49 +1,51 @@
-/* achievements panel - hidden off-screen by default, slide in with .show */
+/* Achievement panel - slide from top center, use existing vars */
 #ach {
     position: fixed;
-    top: 10vh;
-    right: 1rem;
-    transform: translateX(110%); /* off-screen to the right */
-    transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -120%); /* hidden above the viewport by default */
+    transition: transform calc(var(--transition-speed) * 4) cubic-bezier(.2,.8,.2,1);
     display: flex;
     align-items: center;
     gap: 12px;
-    width: 340px;
-    max-width: calc(100% - 2rem);
-    padding: 10px;
-    background: rgba(0,0,0,0.78);
+    width: min(360px, 80vw);
+    padding: 10px 12px;
+    background-image: url("/main/achievements/bg-default.png");
     color: #fff;
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    z-index: 200;
+    z-index: 999;
     backdrop-filter: blur(4px);
+    pointer-events: auto;
 }
 
-/* add this class to slide it into view */
+/* show class slides it into view at the top center */
 #ach.show {
-    transform: translateX(0);
+    transform: translate(-50%, 6vh);
 }
 
-/* left: image */
+/* achievement image - size scaled relative to existing icon variable */
 #achImg {
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
+    width: calc(var(--base-icon-size) * 1.3333); /* 20 game px vs base 15 -> ~1.333 */
+    height: calc(var(--base-icon-size) * 1.3333);
+    flex: 0 0 calc(var(--base-icon-size) * 1.3333);
     object-fit: contain;
-    border-radius: 6px;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    -ms-interpolation-mode: nearest-neighbor; /* IE fallback */
+    border-radius: 4px;
 }
 
-/* right: text column */
+/* text column to the right of the image */
 #achTextDiv {
     display: flex;
     flex-direction: column;
     gap: 4px;
     overflow: hidden;
+    min-width: 0; /* allow text truncation inside flex */
 }
 
-/* paragraphs layout */
+/* lines inside text column */
 #achTextDiv p {
     margin: 0;
     padding: 0;
@@ -52,7 +54,7 @@
     white-space: nowrap;
 }
 
-/* individual styles */
+/* headline, subtitle, description & value */
 #achName {
     font-weight: 700;
     font-family: 'Roboto', sans-serif;
@@ -67,7 +69,6 @@
 #achDescription {
     font-size: 0.82rem;
     opacity: 0.85;
-    /* allow description to wrap to two lines */
     white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -79,24 +80,6 @@
     font-weight: 700;
     color: #ffd454;
     font-size: 0.95rem;
-}
-
-#logoutBtn {
-    position: absolute;
-    z-index: 100;
-    top: 1vh;
-    left: 1vh;
-
-    /* match icon size and use nearest-neighbor scaling for pixel art */
-    width: var(--base-icon-size);
-    height: var(--base-icon-size);
-    display: block;
-    object-fit: contain;
-
-    /* force pixel-perfect scaling */
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    -ms-interpolation-mode: nearest-neighbor; /* IE fallback */
 }
 
 #profileBtn {
