@@ -35,7 +35,7 @@ async function loadData() {
 
     //Set profile picture here
     document.getElementById("username").textContent = "Username: " + playerData["accountInfo"]["username"];
-    document.getElementById("money").textContent = "Net worth:" + playerData["credits"];
+    document.getElementById("money").textContent = "Net worth: $" + playerData["credits"];
 
     const createdSec = playerData.accountInfo.createDate;
     const createdDate = new Date(createdSec * 1000);
@@ -47,9 +47,15 @@ async function loadData() {
     const slotStatsList = document.getElementById("slotStats").children;
     for (const child of slotStatsList) {
         if (child.tagName == 'P') {
-            const noPrefix = child.id.replace("slot", "");
-            const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
-            child.textContent = child.textContent + playerData["slotMachine"][formatedName];
+            if (child.id == "slotMoneySpent") {
+                child.addEventListener("click", () => {
+                    child.textContent = "Money spent: $"+ playerData["slotMachine"][spins] * 5;
+                })
+            } else {
+                const noPrefix = child.id.replace("slot", "");
+                const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
+                child.textContent = child.textContent + playerData["slotMachine"][formatedName];
+            }
         }
     }
 
@@ -65,9 +71,13 @@ async function loadData() {
     const farkleStatsList = document.getElementById("farkleStats").children;
     for (const child of farkleStatsList) {
         if (child.tagName == 'P') {
-            const noPrefix = child.id.replace("farkle", "");
-            const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
-            child.textContent = child.textContent + playerData["farkle"][formatedName];
+            if (child.id == "farkleGamesPlayed") {
+                child.textContent = child.textContent + playerData["wins"] + playerData["losses"];
+            } else {
+                const noPrefix = child.id.replace("farkle", "");
+                const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
+                child.textContent = child.textContent + playerData["farkle"][formatedName];
+            }
         }
     }
 
