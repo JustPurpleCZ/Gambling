@@ -21,6 +21,7 @@
     z-index: 100;
     top: 1vh;
     right: 1vh;
+    transition: 0.2s;
 
     width: var(--base-icon-size);
     height: var(--base-icon-size);
@@ -30,6 +31,10 @@
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     -ms-interpolation-mode: nearest-neighbor;
+}
+
+#profileBtn:hover , #logoutBtn:hover {
+    scale: 1.2;
 }
 
 :root {
