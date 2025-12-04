@@ -1,22 +1,431 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background-color: black;
+    background-image: url(main/automat/bg-purple.png);
     color: white;
+    overflow: hidden;
+    height: 100vh;
+    background-size: cover;
+    overflow: hidden;
+    font-family: "Tiny5", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.main-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100vh;
+    padding: 0 5vw;
+}
+
+.kostkar-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.kostkar {
+    width: 60vh;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url(robot/kostkar.gif);
+}
+
+.buttons-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.button-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.game-button {
+    width: 50vh;
+    height: 16vh;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-button:hover {
+    opacity: 0.8;
+}
+
+.game-button:active {
+    opacity: 0.6;
+}
+
+.bet-toggles {
+    display: flex;
+    gap: 10px;
+}
+
+.bet-toggle {
+    width: 80px;
+    height: 50px;
+    background-color: #222;
+    border: 2px solid #444;
+    color: #666;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bet-toggle:hover {
+    opacity: 0.8;
+}
+
+.bet-toggle.active {
+    background-color: #444;
+    border-color: #888;
+    color: #fff;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-browse {
+    background-image: url('main/dice/lobbyboard.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 60px 40px 40px 40px;
+    width: 600px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-create {
+    width: 64vh;
+    height: 32vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.modal-create::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('main/dice/lobbysetup.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.create-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 6vh 0vh 6vh 3.4vh;
+    position: relative;
+    z-index: 0;
+}
+.modal-header {
+    display: none;
+}
+
+.close-btn {
+    display: none;
+}
+
+.lobbies-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 20px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .lobby {
     display: flex;
-    color: red;
-    border: solid 1px white;
+    align-items: center;
+    background-image: url('lobby-row.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 10px 15px;
+    gap: 20px;
+    transition: opacity 0.2s;
+    height: 50px;
+    position: relative;
 }
 
-.lobby * {
-    margin: 1vh;
+.lobby:hover {
+    opacity: 0.8;
 }
 
-form {
+.lobby-info {
+    flex: 1;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    position: absolute;
+    top: 5px;
+    left: 15px;
+    right: 120px;
+}
+
+.lobby-info > div {
+    min-width: 100px;
+}
+
+.lobby-label {
+    display: none;
+}
+
+.lobby-value {
+    color: #000;
+}
+
+.join-btn {
+    width: 100px;
+    height: 35px;
+    background-image: url('join-btn.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border: none;
+    color: transparent;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.join-btn:hover {
+    opacity: 0.8;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.form-group label {
+    color: #000;
+    min-width: 120px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 8px;
+    background-color: #fff;
+    border: 2px solid #333;
+    color: #000;
+    flex: 1;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #666;
+}
+
+.submit-btn:hover {
+    opacity: 0.8;
+}
+
+.password-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.password-input-row input {
+    flex: 1;
+    padding: 8px;
+    background-color: #fff;
+    border: 2px solid #333;
+    color: #000;
+}
+
+.refresh-btn {
+    display: none;
+}
+
+.tab-container {
+    display: none;
+}
+
+.tab-btn {
+    display: none;
+}
+
+.exit-btn {
+    position: absolute;
+    top: 2vh;
+    right: 2vh;
+    width: 30vh;
+    height: 10vh;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url(icon/exit.png);
+}
+
+.exit-btn:hover {
+    opacity: 0.8;
+}
+
+.no-lobbies {
+    text-align: center;
+    color: #666;
+    padding: 40px;
+}
+
+/* Image placeholder styling */
+div, .kostkar {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#quickJoinBtn {
+    background-image: url(main/dice/multiplayer_button.png);
+}
+#lobbiesBtn {
+    background-image: url(main/dice/private_button.png);
+}
+#dealerBtn {
+    background-image: url(main/dice/dealer_button.png);
+}
+#rulesBtn {
+    background-image: url(main/dice/rules_button.png);
+    width: 20vh;
+}
+#playerCountDisplay{
+    width: 20%;
+}
+
+.form-row {
+    display: flex;
+    flex: 1;
+}
+
+.form-column-left,
+.form-column-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+}
+
+.form-group {
     display: flex;
 }
 
-form * {
-    margin: 1vh;
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 1.5vh;
+    background-color: #fff;
+    border: 2px solid #333;
+    color: #000;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #666;
+}
+
+.form-group-counter {
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+}
+
+.counter-display {
+    flex: 1;
+    padding: 1.5vh;
+    background-color: #fff;
+    border: 2px solid #333;
+    color: #000;
+    text-align: center;
+}
+
+.counter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+}
+
+.counter-arrow {
+    width: 4vh;
+    height: 3vh;
+    background-color: #ddd;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.counter-arrow:hover {
+    opacity: 0.7;
+    background-color: #ccc;
+}
+
+.counter-arrow:active {
+    opacity: 0.5;
+}
+
+.submit-btn {
+    width: 100%;
+    height: 6vh;
+    background-image: url('main/dice/create_button_fix.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border: none;
+    color: transparent;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: auto;
+}
+
+.submit-btn:hover {
+    opacity: 0.8;
 }

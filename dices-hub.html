@@ -7,53 +7,105 @@
     <link rel="stylesheet" href="dices-hub.css">
 </head>
 <body>
-    <button id="exitBtn">Exit</button>
+    <div class="exit-btn" id="exitBtn"></div>
 
-    <p>Available lobbies:</p>
+    <div class="main-container">
+        <div class="kostkar-section">
+            <div class="kostkar"></div>
+        </div>
 
-    <div id="lobbies"></div>
-    <input id="inputJoinPassword">
-    <button id="refresh">Refresh</button>
+        <div class="buttons-section">
+            <!-- Quick Join Button -->
+            <div class="button-row">
+                <div class="game-button" id="quickJoinBtn"></div>
+                <div class="bet-toggles">
+                    <div class="bet-toggle active" data-bet="100">$100</div>
+                    <div class="bet-toggle" data-bet="350">$350</div>
+                    <div class="bet-toggle" data-bet="1000">$1000</div>
+                </div>
+            </div>
 
-    <p>Create lobby:</p>
-    <form id="createForm">
-        <p>Name:</p>
-        <input type="text" id="inputName" required>
+            <!-- Lobbies Button -->
+            <div class="button-row">
+                <div class="game-button" id="lobbiesBtn"></div>
+            </div>
 
-        <p>Password: (leave blank for no password)</p>
-        <input type="text" id="inputCreatePassword">
+            <!-- Settings Button -->
+            <div class="button-row">
+                <div class="game-button" id="dealerBtn"></div>
+            </div>
 
-        <select id="inputMaxPlayers" required>
-            <option value="">Maximum players</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-        </select>
+            <!-- Stats Button -->
+            <div class="button-row">
+                <div class="game-button" id="rulesBtn"></div>
+            </div>
+        </div>
+    </div>
 
-        <select id="inputCreateBetSize" required>
-            <option value="">Bet size</option>
-            <option value="100">Small ($100)</option>
-            <option value="350">Meduim ($350)</option>
-            <option value="1000">Large ($1000)</option>
-        </select>
+    <!-- Lobbies Modal -->
+    <div class="modal-overlay" id="lobbiesModal">
+        <!-- Browse Lobbies Panel -->
+        <div class="modal-browse">
+            <div class="password-input-row">
+                <input type="password" id="inputJoinPassword" placeholder="Password (if required)">
+            </div>
+            <div class="lobbies-container" id="lobbiesContainer">
+                <div class="no-lobbies">Loading lobbies...</div>
+            </div>
+        </div>
 
-        <button type="submit">Create</button>
-    </form>
+        <!-- Create Lobby Panel -->
+        <div class="modal-create">
+            <form class="create-form" id="createForm">
+                <div class="form-row">
+                    <!-- Left Column -->
+                    <div class="form-column-left">
+                        <div class="form-group">
+                            <input type="text" id="inputName" placeholder="Lobby name" required>
+                        </div>
 
-    <form id="quickJoinForm">
-        <select id="inputJoinBetSize" required>
-            <option value="">Bet size</option>
-            <option value="100">Small ($100)</option>
-            <option value="350">Meduim ($350)</option>
-            <option value="1000">Large ($1000)</option>
-        </select>
+                        <div class="form-group">
+                            <select id="inputCreateBetSize" required>
+                                <option value="">Bet size</option>
+                                <option value="100">$100</option>
+                                <option value="350">$350</option>
+                                <option value="1000">$1000</option>
+                            </select>
+                        </div>
 
-        <button id="quickJoinBtn" type="submit">Quick Join</button>
-    </form>
+                        <div class="form-group">
+                            <input type="password" id="inputCreatePassword" placeholder="Password (optional)">
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="form-column-right">
+                        <div class="form-group-counter">
+                            <div class="counter-display" id="targetScoreDisplay">10</div>
+                            <div class="counter-controls">
+                                <div class="counter-arrow counter-up" id="targetScoreUp">▲</div>
+                                <div class="counter-arrow counter-down" id="targetScoreDown">▼</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group-counter">
+                            <div class="counter-display" id="playerCountDisplay">2</div>
+                            <div class="counter-controls">
+                                <div class="counter-arrow counter-up" id="playerCountUp">▲</div>
+                                <div class="counter-arrow counter-down" id="playerCountDown">▼</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn"></button>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs to store values -->
+                <input type="hidden" id="inputTargetScore" value="10">
+                <input type="hidden" id="inputMaxPlayers" value="2">
+            </form>
+        </div>
+    </div>
 
     <script type="module" src="dices-hub.js"></script>
 </body>
