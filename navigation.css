@@ -1,3 +1,17 @@
+#logoutBtn {
+    position: absolute;
+    z-index: 100;
+    top: 1vh;
+    left: 1vh;
+}
+
+#profileBtn {
+    position: absolute;
+    z-index: 100;
+    top: 1vh;
+    right: 1vh;
+}
+
 :root {
             --background-parallax-x: 20vw;
             --background-parallax-y: 10vh;

@@ -42,26 +42,36 @@ async function loadData() {
     const dd = String(createdDate.getDate()).padStart(2, '0');
     const mm = String(createdDate.getMonth() + 1).padStart(2, '0');
     const yyyy = createdDate.getFullYear();
-    document.getElementById("createDate").textContent = "Account creation date: " + dd + "." + mm + "." + "." + yyyy;
+    document.getElementById("createDate").textContent = "Account creation date: " + dd + "." + mm + "." + yyyy;
 
     const slotStatsList = document.getElementById("slotStats").children;
     for (const child of slotStatsList) {
         if (child.tagName == 'P') {
-            child.textContent = child.textContent + playerData["slotMachine"][child.id];
+            const noPrefix = child.id.replace("slot", "");
+            const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
+            child.textContent = child.textContent + playerData["slotMachine"][formatedName];
         }
     }
 
     const wheelStatsList = document.getElementById("wheelStats").children;
     for (const child of wheelStatsList) {
         if (child.tagName == 'P') {
-            child.textContent = child.textContent + playerData["wheelOfFortune"][child.id];
+            const noPrefix = child.id.replace("wheel", "");
+            const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
+            child.textContent = child.textContent + playerData["wheelOfFortune"][formatedName];
         }
     }
 
     const farkleStatsList = document.getElementById("farkleStats").children;
     for (const child of farkleStatsList) {
         if (child.tagName == 'P') {
-            child.textContent = child.textContent + playerData["farkle"][child.id];
+            const noPrefix = child.id.replace("farkle", "");
+            const formatedName = noPrefix.charAt(0).toLocaleLowerCase() + noPrefix.slice(1);
+            child.textContent = child.textContent + playerData["farkle"][formatedName];
         }
     }
+
+    document.getElementById("exitBtn").addEventListener("click", () => {
+        window.location.href = "navigation.html";
+    })
 }
