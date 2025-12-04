@@ -49,7 +49,16 @@ async function loadLobbies() {
 
     displayLobbies();
 }
-
+const betSelector = document.querySelector('.bet-selector');
+document.querySelectorAll('.bet-option').forEach(option => {
+    option.addEventListener('click', () => {
+        // Update selected bet size
+        selectedBetSize = parseInt(option.dataset.bet);
+        
+        // Update the background image based on selected bet
+        betSelector.className = 'bet-selector bet-' + selectedBetSize;
+    });
+});
 // Display lobbies
 function displayLobbies() {
     const container = document.getElementById("lobbiesContainer");
@@ -66,27 +75,24 @@ function displayLobbies() {
         lobbyDiv.innerHTML = `
             <div class="lobby-info">
                 <div>
-                    <div class="lobby-label">Name</div>
-                    <div class="lobby-value">${lobby.name}</div>
+                    <div class="lobby-label">Players</div>
+                    <div class="lobby-value">${lobby.playerCount}/${lobby.maxPlayers}</div>
                 </div>
                 <div>
-                    <div class="lobby-label">Host</div>
-                    <div class="lobby-value">${lobby.hostNick}</div>
+                    <div class="lobby-label">Name</div>
+                    <div class="lobby-value">${lobby.name}</div>
                 </div>
                 <div>
                     <div class="lobby-label">Bet Size</div>
                     <div class="lobby-value">$${lobby.betSize}</div>
                 </div>
-                <div>
-                    <div class="lobby-label">Players</div>
-                    <div class="lobby-value">${lobby.playerCount}/${lobby.maxPlayers}</div>
-                </div>
+                
                 <div>
                     <div class="lobby-label">Status</div>
                     <div class="lobby-value">${lobby.isPrivate ? 'Private' : 'Public'}</div>
                 </div>
             </div>
-            <button class="join-btn"></button>
+            <div class="join-btn"></div>
         `;
 
         const joinBtn = lobbyDiv.querySelector('.join-btn');
@@ -186,12 +192,22 @@ async function quickJoin() {
 // UI Controls
 const lobbiesModal = document.getElementById('lobbiesModal');
 
-// Bet toggle buttons
-document.querySelectorAll('.bet-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.bet-toggle').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedBetSize = parseInt(btn.dataset.bet);
+// Bet selector - single component with three sections
+document.querySelectorAll('.bet-option').forEach(option => {
+    option.addEventListener('click', () => {
+        // Remove active class from all options
+        document.querySelectorAll('.bet-option').forEach(opt => opt.classList.remove('active'));
+        
+        // Add active class to clicked option
+        option.classList.add('active');
+        
+        // Update selected bet size
+        selectedBetSize = parseInt(option.dataset.bet);
+        
+        // Move indicator
+        const indicator = document.querySelector('.bet-selector-indicator');
+        indicator.className = 'bet-selector-indicator';
+        indicator.classList.add('pos-' + option.dataset.position);
     });
 });
 
@@ -231,6 +247,7 @@ document.getElementById('exitBtn').addEventListener('click', () => {
 document.getElementById('rulesBtn').addEventListener('click', () => {
     alert('Rules coming soon!');
 });
+
 let targetScore = 10;
 let maxPlayers = 2;
 
@@ -269,6 +286,7 @@ document.getElementById('playerCountDown').addEventListener('click', (e) => {
         document.getElementById('inputMaxPlayers').value = maxPlayers;
     }
 });
+
 // Initialize
 checkAuth();
 

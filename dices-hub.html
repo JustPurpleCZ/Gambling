@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dices: LOBBIES</title>
     <link rel="stylesheet" href="dices-hub.css">
+    <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="exit-btn" id="exitBtn"></div>
@@ -17,12 +21,18 @@
         <div class="buttons-section">
             <!-- Quick Join Button -->
             <div class="button-row">
-                <div class="game-button" id="quickJoinBtn"></div>
-                <div class="bet-toggles">
-                    <div class="bet-toggle active" data-bet="100">$100</div>
-                    <div class="bet-toggle" data-bet="350">$350</div>
-                    <div class="bet-toggle" data-bet="1000">$1000</div>
+                <div class="bros">
+                <div class="game-button" id="quickJoinBtn">
+                    
                 </div>
+                <div class="bet-selector bet-100">
+                    <div class="bet-option" data-bet="100" data-position="left"></div>
+                    <div class="bet-option" data-bet="350" data-position="middle"></div>
+                    <div class="bet-option" data-bet="1000" data-position="right"></div>
+                    <div class="bet-selector-indicator pos-left"></div>
+                </div>
+                </div>
+                
             </div>
 
             <!-- Lobbies Button -->
@@ -106,7 +116,7 @@
             </form>
         </div>
     </div>
-
+    <img src="main/dice/stul.png" alt="table" class="table">
     <script type="module" src="dices-hub.js"></script>
 </body>
 </html>
