@@ -72,24 +72,24 @@ function displayLobbies() {
     lobbies.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
+        
+        // Set background image based on privacy status
+        if (lobby.isPrivate) {
+            lobbyDiv.style.backgroundImage = "url('main/dice/joinlocked.png')";
+        } else {
+            lobbyDiv.style.backgroundImage = "url('main/dice/joinfree.png')";
+        }
+        
         lobbyDiv.innerHTML = `
             <div class="lobby-info">
                 <div>
-                    <div class="lobby-label">Players</div>
                     <div class="lobby-value">${lobby.playerCount}/${lobby.maxPlayers}</div>
                 </div>
                 <div>
-                    <div class="lobby-label">Name</div>
                     <div class="lobby-value">${lobby.name}</div>
                 </div>
                 <div>
-                    <div class="lobby-label">Bet Size</div>
                     <div class="lobby-value">$${lobby.betSize}</div>
-                </div>
-                
-                <div>
-                    <div class="lobby-label">Status</div>
-                    <div class="lobby-value">${lobby.isPrivate ? 'Private' : 'Public'}</div>
                 </div>
             </div>
             <div class="join-btn"></div>

@@ -2,6 +2,10 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: "Tiny5", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+    font-size: 5vh;
 }
 
 body {
@@ -10,9 +14,7 @@ body {
     color: white;
     overflow: hidden;
     height: 100vh;
-    font-family: "Tiny5", sans-serif;
-    font-weight: 400;
-    font-style: normal;
+
 }
 
 /* Common background styles */
@@ -180,11 +182,36 @@ div, .kostkar {
     background-image: url('main/dice/lobbyboard.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
-    padding: 60px 40px 40px 40px;
-    width: 600px;
-    height: 500px;
+    padding: 11.8vh 4.8vh;
+    width: 96vh;
+    height: 60vh;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+.modal-browse::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('main/dice/lobbyboard.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.password-input-row {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    left: 0.3%;
+}
+.password-input-row input{
+    width: 100%;
 }
 
 .modal-create {
@@ -214,43 +241,47 @@ div, .kostkar {
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin-bottom: 20px;
     overflow-y: auto;
     flex: 1;
+    position: relative;
+    z-index: 1;
 }
 
 .lobby {
     display: flex;
     align-items: center;
-    background-image: url('main/dice/lobby.png');
+    background-image: url('main/dice/joinfree.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
-    padding: 10px 15px;
-    gap: 20px;
     transition: opacity 0.2s;
-    height: 50px;
+    height: 8.36vh;
     position: relative;
 }
 
 .lobby-info {
     flex: 1;
     display: flex;
-    gap: 15px;
-    align-items: center;
+    justify-content: space-between;
     position: absolute;
-    top: 5px;
-    left: 15px;
-    right: 120px;
+    width: 76%;
+    left: 5%;
 }
 
-.lobby-info > div {
-    min-width: 100px;
-}
 
 .lobby-value {
     color: #000;
 }
+.lobby-info > div:nth-child(1) {
+    flex: 0 0 17%;
+}
 
+.lobby-info > div:nth-child(2) {
+    flex: 0 0 55%;
+}
+
+.lobby-info > div:nth-child(3) {
+    flex: 0 0 26%;
+}
 .join-btn {
     width: 100px;
     height: 35px;
@@ -386,7 +417,15 @@ div, .kostkar {
     position: absolute;
     bottom: -30.5vh;
     width: 100%;
+    left: -50%;
     height: auto;
     z-index: -1;
     transform: scale(1.15);
+}
+.block{
+    background-color: #ddd;
+    width: 90%;
+    height: 80%;
+    z-index: -1;
+    position: absolute;
 }
