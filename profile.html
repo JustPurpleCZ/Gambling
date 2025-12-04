@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <button id="exitBtn">Exit</button>
+    <h1>Your Profile</h1>
+    <div id="playerCard">
+        <img id="profilePicture">
+        <p id="username"></p>
+        <p id="money"></p>
+        <p id="createDate"></p>
+    </div>
+
+    <h2>Statistics</h2>
+    <div id="statsDiv">
+        <h2>Slot Machine</h2>
+        <div id="slotStats">
+            <p id="slotSpins">Number of spins: </p>
+            <p id="slotMoneyWon">Money won: $</p>
+            <p id="slotMoneySpent">Money spent: This is not important</p>
+            <p id="slotJackpots">Jackpots hit: </p>
+        </div>
+        <h2>Wheel of Fortune</h2>
+        <div id="wheelStats">
+            <p id="wheelSpins">Number of spins: </p>
+            <p id="wheelMoneyWon">Money won: $</p>
+            <p id="adsWatched">Number of ads watched: </p>
+        </div>
+        <h2>Farkle</h2>
+        <div id="farkleStats">
+            <h3>General</h3>
+            <p id="farkleGamesPlayed">Games played: </p>
+            <p id="farkleWins">Number of wins: </p>
+            <p id="farkleMoneyWon">Money won: $</p>
+            <p id="farkleLosses">Number of losses: </p>
+            <p id="farkleMoneyLost">Money lost: </p>
+
+            <h3>Dice combos count</h3>
+            <p id="farkleFarkles">Farkles: </p>
+            <p id="farkleStraights">Straights: </p>
+            <p id="farkleThreePairs">Three pairs: </p>
+            <p id="farkleYatzies">Yatzies: </p>
+            <p id="farkleQuintuples">5 of a kind: </p>
+            <p id="farkleQuadruples">4 of a kind: </p>
+            <p id="farkleTriples">3 of a kind: </p>
+
+            <h3>Other</h3>
+            <p id="farkleDiceRolls">Dice roll count: </p>
+            <p id="farkleTotalScore">Total score across all games: </p>
+            <p id="farkleLobbiesCreated">Number of lobbies created: </p>
+        </div>
+    </div>
+
+    <h2>Achievements</h2>
+    <div id="achievementsDiv">
+        <p>Coming soon!</p>
+    </div>
+    <script type="module" src="profile.js"></script>
+</body>
+</html>

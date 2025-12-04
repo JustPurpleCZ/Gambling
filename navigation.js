@@ -129,7 +129,6 @@ let unlocks = {};
 
 async function setUnlocks() {
     const token = await auth.currentUser.getIdToken();
-    console.log(token);
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
         method: "GET",
         headers: {
@@ -198,17 +197,19 @@ async function initUnlocks() {
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
+        localStorage.clear();
         window.location.href = 'index.html';
-        localStorage.removeItem("localMode");
         return;
     }
 
     await initUnlocks();
 });
 
-window.addEventListener("keydown", (key) => {
-    if (key.key === "l") {
-        localStorage.clear();
-        signOut(auth);
-    }
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.clear();
+    signOut(auth);
+})
+
+document.getElementById("profileBtn").addEventListener("click", () => {
+    window.location.href = "profile.html";
 })

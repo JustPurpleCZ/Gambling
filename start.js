@@ -32,7 +32,7 @@ onAuthStateChanged(auth, async (user) => {
 
         const data = await res.json();
         console.log("accountInitData: ", data);
-        //window.location.href = 'navigation.html';
+        window.location.href = 'navigation.html';
         return;
     }
 
@@ -114,7 +114,7 @@ onAuthStateChanged(auth, async (user) => {
 
                     const data = await res.json();
                     console.log("Account init data: ", data);
-                    //window.location.href = 'navigation.html';
+                    window.location.href = 'navigation.html';
                 } catch (error) {
                     console.error('Login error:', error);
                     switch (error.code) {
@@ -182,7 +182,7 @@ onAuthStateChanged(auth, async (user) => {
 
                     const data = await res.json();
                     console.log("Account init data: ", data);
-                    //window.location.href = 'navigation.html';
+                    window.location.href = 'navigation.html';
                     return;
                 } catch (error) {
                     console.error('Signup error:', error.code);
