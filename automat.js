@@ -595,9 +595,8 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
         
         let queueIndex = 0;
-        let allWinningSymbolsPlaced = false;
-        let framesSinceAllPlaced = 0;
-        const ALIGNMENT_FRAMES = 20; // Number of frames to wait for natural alignment
+        let hasSetWinningSymbols = false;
+        let winningSymbolsStartIndex = -1;
         
         function animate() {
             symbols.forEach(symbol => {
@@ -621,9 +620,14 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                         queueIndex++;
                         symbolsPassed++;
                         
+                        // Mark when we start placing winning symbols
+                        if (queueIndex === symbolQueue.length - 2) {
+                            winningSymbolsStartIndex = symbolsPassed;
+                        }
+                        
                         // Check if we just placed the last winning symbol
                         if (queueIndex === symbolQueue.length) {
-                            allWinningSymbolsPlaced = true;
+                            hasSetWinningSymbols = true;
                         }
                     }
                 }
@@ -631,45 +635,47 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 symbol.style.top = `${top}vh`;
             });
             
-            // Once all winning symbols are placed, wait a few frames then stop
-            if (allWinningSymbolsPlaced) {
-                framesSinceAllPlaced++;
+            // Stop when winning symbols have been set AND all three are visible in correct positions
+            if (hasSetWinningSymbols) {
+                // Find symbols with winning images
+                const winningImages = [
+                    finalSymbols[reelIndex],
+                    finalSymbols[reelIndex + 3],
+                    finalSymbols[reelIndex + 6]
+                ];
                 
-                // After a short delay, check for alignment and force stop if needed
-                if (framesSinceAllPlaced >= ALIGNMENT_FRAMES) {
-                    // Find symbols with winning images
-                    const winningImages = [
-                        finalSymbols[reelIndex],
-                        finalSymbols[reelIndex + 3],
-                        finalSymbols[reelIndex + 6]
-                    ];
+                const winningSymbolElements = symbols.filter(symbol => {
+                    const imgSrc = symbol.querySelector('img').src;
+                    return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
+                });
+                
+                // Check if all winning symbols are in their correct positions
+                if (winningSymbolElements.length >= 3) {
+                    const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
+                    const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
                     
-                    const winningSymbolElements = symbols.filter(symbol => {
-                        const imgSrc = symbol.querySelector('img').src;
-                        return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
-                    });
+                    // Check if positions are close to target (within 2vh tolerance)
+                    const isAligned = positions.slice(0, 3).every((pos, idx) => 
+                        Math.abs(pos - targetPositions[idx]) < 2
+                    );
                     
-                    if (winningSymbolElements.length >= 3) {
-                        const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
-                        const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
-                        
+                    if (isAligned) {
                         // Snap to exact positions
                         symbols.forEach(symbol => {
                             const top = parseFloat(symbol.style.top);
+                            let targetTop = top;
                             
                             // Find closest target position
-                            const distances = targetPositions.map(target => Math.abs(top - target));
-                            const closestIndex = distances.indexOf(Math.min(...distances));
-                            
-                            // Snap if within reasonable range
-                            if (distances[closestIndex] < SYMBOL_HEIGHT * 0.6) {
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${targetPositions[closestIndex]}vh`;
-                            } else {
-                                // Position is too far, keep it where it is
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${top}vh`;
+                            if (Math.abs(top - 0) < SYMBOL_HEIGHT / 2) {
+                                targetTop = 0;
+                            } else if (Math.abs(top - SYMBOL_HEIGHT) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT;
+                            } else if (Math.abs(top - (SYMBOL_HEIGHT * 2)) < SYMBOL_HEIGHT / 2) {
+                                targetTop = SYMBOL_HEIGHT * 2;
                             }
+                            
+                            symbol.style.transition = 'top 0.2s ease-out';
+                            symbol.style.top = `${targetTop}vh`;
                         });
                         
                         setTimeout(() => {
@@ -677,7 +683,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                                 symbol.style.transition = 'none';
                             });
                             resolve();
-                        }, 150);
+                        }, 200);
                         return;
                     }
                 }
@@ -689,6 +695,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         requestAnimationFrame(animate);
     });
 }
+
 async function spin() {
     if (isSpinning) {
         shakeLever();
@@ -1577,7 +1584,8 @@ class RobotController {
         this.container.style.top = ROBOT_STATES.ACTIVE.top;
         this.robot.style.filter = `blur(${ROBOT_STATES.ACTIVE.blur}) brightness(${ROBOT_STATES.ACTIVE.brightness})`;
         this.robot.src = ROBOT_STATES.ACTIVE.gif;
-        
+        this.robot.style.zIndex = "4";
+
         this.container.offsetHeight;
         
         this.container.style.transition = 'left 0.5s ease-out';
@@ -1630,6 +1638,7 @@ class RobotController {
         this.container.style.top = ROBOT_STATES.IDLE.top;
         this.robot.style.filter = `blur(${ROBOT_STATES.IDLE.blur}) brightness(${ROBOT_STATES.IDLE.brightness})`;
         this.robot.src = ROBOT_STATES.IDLE.gif;
+        this.robot.style.zIndex = "4";
         
         this.container.offsetHeight;
         
