@@ -597,7 +597,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         let queueIndex = 0;
         let allWinningSymbolsPlaced = false;
         let framesSinceAllPlaced = 0;
-        const ALIGNMENT_FRAMES = 20; // Number of frames to wait for natural alignment
+        const ALIGNMENT_FRAMES = 20;
         
         function animate() {
             symbols.forEach(symbol => {
@@ -613,15 +613,16 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 
                 // When symbol goes off screen, wrap it and assign next symbol from queue
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    top -= SYMBOL_HEIGHT * TOTAL_SYMBOLS;
-                    const img = symbol.querySelector('img');
+                    // KEY FIX: Properly normalize the position
+                    top = top - (SYMBOL_HEIGHT * TOTAL_SYMBOLS);
                     
+                    // Update the image
+                    const img = symbol.querySelector('img');
                     if (queueIndex < symbolQueue.length) {
                         img.src = symbolQueue[queueIndex];
                         queueIndex++;
                         symbolsPassed++;
                         
-                        // Check if we just placed the last winning symbol
                         if (queueIndex === symbolQueue.length) {
                             allWinningSymbolsPlaced = true;
                         }
@@ -631,13 +632,12 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 symbol.style.top = `${top}vh`;
             });
             
-            // Once all winning symbols are placed, wait a few frames then stop
+            // Once all winning symbols are placed, wait then align
             if (allWinningSymbolsPlaced) {
                 framesSinceAllPlaced++;
                 
-                // After a short delay, check for alignment and force stop if needed
                 if (framesSinceAllPlaced >= ALIGNMENT_FRAMES) {
-                    // Find symbols with winning images
+                    // Find winning symbols
                     const winningImages = [
                         finalSymbols[reelIndex],
                         finalSymbols[reelIndex + 3],
@@ -650,26 +650,33 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                     });
                     
                     if (winningSymbolElements.length >= 3) {
-                        const positions = winningSymbolElements.map(s => parseFloat(s.style.top)).sort((a, b) => a - b);
-                        const targetPositions = [0, SYMBOL_HEIGHT, SYMBOL_HEIGHT * 2]; // 0vh, 14vh, 28vh
+                        const targetPositions = [
+                            -SYMBOL_HEIGHT,           // -14vh (top buffer)
+                            0,                        // 0vh (visible top)
+                            SYMBOL_HEIGHT,            // 14vh (visible middle)
+                            SYMBOL_HEIGHT * 2,        // 28vh (visible bottom)
+                            SYMBOL_HEIGHT * 3         // 42vh (bottom buffer)
+                        ];
                         
-                        // Snap to exact positions
-                        symbols.forEach(symbol => {
-                            const top = parseFloat(symbol.style.top);
-                            
-                            // Find closest target position
-                            const distances = targetPositions.map(target => Math.abs(top - target));
-                            const closestIndex = distances.indexOf(Math.min(...distances));
-                            
-                            // Snap if within reasonable range
-                            if (distances[closestIndex] < SYMBOL_HEIGHT * 0.6) {
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${targetPositions[closestIndex]}vh`;
-                            } else {
-                                // Position is too far, keep it where it is
-                                symbol.style.transition = 'top 0.15s ease-out';
-                                symbol.style.top = `${top}vh`;
-                            }
+                        // Assign each winning symbol to its target position
+                        const sortedWinningSymbols = [...winningSymbolElements].sort((a, b) => 
+                            parseFloat(a.style.top) - parseFloat(b.style.top)
+                        );
+                        
+                        // The three winning symbols should be at positions 1, 2, 3 (0vh, 14vh, 28vh)
+                        sortedWinningSymbols.forEach((symbol, idx) => {
+                            symbol.style.transition = 'top 0.15s ease-out';
+                            symbol.style.top = `${targetPositions[idx + 1]}vh`;
+                        });
+                        
+                        // Position remaining symbols
+                        const nonWinningSymbols = symbols.filter(s => !winningSymbolElements.includes(s));
+                        const usedPositions = [1, 2, 3]; // Winning symbols use these
+                        const availablePositions = [0, 4]; // Buffer positions
+                        
+                        nonWinningSymbols.forEach((symbol, idx) => {
+                            symbol.style.transition = 'top 0.15s ease-out';
+                            symbol.style.top = `${targetPositions[availablePositions[idx]]}vh`;
                         });
                         
                         setTimeout(() => {
