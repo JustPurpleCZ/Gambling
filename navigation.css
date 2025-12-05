@@ -1,6 +1,40 @@
 #ach {
-    display: none;
+    background-image: url('/main/achievements/bg-default.png');
+    background-size: cover;
+    width: 125vh;
+    height: 30vh;
+    position: absolute;
+    top: 0;
+    transition: transform 1s;
+    transform: translateY(-120%);
 }
+
+.achActive {
+    transform: translateY(10%);
+}
+
+#achImg {
+    background-image: url('/main/achievements/slotSpin10000.png');
+    background-size: cover;
+    height: 25.05vh;
+    width: 25.05vh;
+    position: absolute;
+    left: 3.8vh;
+    top: 2.5vh;
+}
+
+#achTextDiv {
+    position: absolute;
+    width: 90vh;
+    left: 32vh;
+    top: 2vh;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: solid black 1px;
+} 
 
 #logoutBtn {
     position: absolute;
