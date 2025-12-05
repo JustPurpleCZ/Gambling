@@ -319,7 +319,6 @@ async function updateActivePlayerList() {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
           theirTurn.textContent = "Playing";
-          gameEnded = false;
 
           if (player == uid && !gameEnded) {
             playStuff.style.display = "block";
