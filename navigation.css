@@ -2,6 +2,24 @@
     display: none;
 }
 
+#logoutBtn {
+    position: absolute;
+    z-index: 100;
+    top: 1vh;
+    left: 1vh;
+
+    /* match icon size and use nearest-neighbor scaling for pixel art */
+    width: var(--base-icon-size);
+    height: var(--base-icon-size);
+    display: block;
+    object-fit: contain;
+
+    /* force pixel-perfect scaling */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: nearest-neighbor; /* IE fallback */
+}
+
 #profileBtn {
     position: absolute;
     z-index: 100;
