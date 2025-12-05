@@ -295,7 +295,9 @@ async function updateActivePlayerList() {
     console.log("Updating active player list");
     const playersInfo = await get(activePlayersRef);
     console.log("Player info success");
-    let gameEnded = true;
+
+    const gameStateSnap = await get(ref(db, `/games/active/dices/${lobbyId}/gameEnded`));
+    const gameEnded = gameStateSnap.val();
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
