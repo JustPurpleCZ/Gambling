@@ -216,6 +216,7 @@ async function displayAch() {
 
     const achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
+    console.log("Getting achievement info for: ", achievement);
 
     const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
     const achInfomation = snap.val();
@@ -262,8 +263,10 @@ onAuthStateChanged(auth, async (user) => {
     uid = user.uid;
     const snap = await get(ref(db, `/users/${uid}/achievements`));
     unlockedAchList = snap.val();
+    console.log("Unlocked achievements: ", unlockedAchList);
 
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
+        console.log("Child added: ", achievement);
         achWaitingList.push(achievement);
         displayAch();
     })
