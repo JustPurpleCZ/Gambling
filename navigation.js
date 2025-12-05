@@ -125,6 +125,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+let uid;
 const localMode = JSON.parse(localStorage.getItem("localMode"));
 const machines = document.querySelectorAll(".unavailable");
 let unlocks = {};
@@ -254,7 +255,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await initUnlocks();
-
+    uid = user.uid;
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
         achWaitingList.add(achievement);
         displayAch();
