@@ -256,6 +256,7 @@ async function gameStart() {
     console.log("Setting new presence:", uid);
     set(activePresenceRef, true);
     onDisconnect(activePresenceRef).set(false);
+    console.log("Active presence set");
 
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId) {
@@ -264,7 +265,9 @@ async function gameStart() {
         }
     });
 
+    console.log("Setting player list updates");
     onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
+        console.log("Player list info changed: ", snap.val());
         if (snap.val() != null) {
           playerOrder = snap.val();
           console.log("Player order: ", playerOrder);
