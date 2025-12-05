@@ -214,7 +214,7 @@ async function displayAch() {
         return;
     }
 
-    achievement = achWaitingList[0];
+    const achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
 
     const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
