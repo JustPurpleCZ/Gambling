@@ -207,6 +207,7 @@ const achDiv = document.getElementById("ach");
 let achWaitingList = [];
 let displayingAch = false;
 let unlockedAchList;
+let achDisplaying = false;
 
 async function displayAch() {
     if (achDisplaying || unlockedAchList[achievement[0]]) {
