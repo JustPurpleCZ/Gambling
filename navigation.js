@@ -265,9 +265,9 @@ onAuthStateChanged(auth, async (user) => {
     unlockedAchList = snap.val();
     console.log("Unlocked achievements: ", unlockedAchList);
 
-    onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
-        console.log("Child added: ", achievement.val());
-        achWaitingList.push(achievement.val());
+    onChildAdded(ref(db, `/users/${uid}/achievements`), achievement => {
+        console.log("Child added: ", achievement.key());
+        achWaitingList.push(achievement.key());
         displayAch();
     })
 });
