@@ -206,16 +206,17 @@ const achDiv = document.getElementById("ach");
 
 let achWaitingList = [];
 let displayingAch = false;
+let unlockedAchList;
 
 async function displayAch() {
-    if (achDisplaying) {
+    if (achDisplaying || unlockedAchList[achievement[0]]) {
         return;
     }
 
     achievement = achWaitingList[0];
-    achWaitingList.remove(achievement);
+    achWaitingList.shift(achievement);
 
-    const achInfomation = get(ref(db, `/achievementInformation/${achievement}/`));
+    const achInfomation = get(ref(db, `/achievementInformation/${achievement}/`)).val();
 
     achImg.style.backgroundImage = achievement + ".png";
     achName.textContent = achInformation["name"];
@@ -255,9 +256,13 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await initUnlocks();
+
     uid = user.uid;
+    const snap = get(ref(db, `/users/${uid}/achievements`));
+    const unlockedAchList = snap.val();
+
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
-        achWaitingList.add(achievement);
+        achWaitingList.push(achievement);
         displayAch();
     })
 });
