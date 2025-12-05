@@ -261,7 +261,7 @@ onAuthStateChanged(auth, async (user) => {
 
     uid = user.uid;
     const snap = await get(ref(db, `/users/${uid}/achievements`));
-    const unlockedAchList = snap.val();
+    unlockedAchList = snap.val();
 
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
         achWaitingList.push(achievement);
