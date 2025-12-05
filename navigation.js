@@ -210,7 +210,7 @@ let unlockedAchList;
 let achDisplaying = false;
 
 async function displayAch() {
-    if (achDisplaying || unlockedAchList[achievement[0]]) {
+    if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
         return;
     }
 
