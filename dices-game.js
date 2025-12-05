@@ -266,7 +266,8 @@ async function gameStart() {
 
     onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
         if (snap.val() != null) {
-          playerOrder = snap.val()
+          playerOrder = snap.val();
+          console.log("Player order: ", playerOrder);
 
           document.getElementById("preStart").style.display = "none";
           updateActivePlayerList();
@@ -288,8 +289,9 @@ async function gameStart() {
 }
 
 async function updateActivePlayerList() {
-    const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
+    const playersInfo = await get(activePlayersRef);
+    console.log("Player info success");
     let gameEnded = true;
 
     activePlayerList.replaceChildren();
