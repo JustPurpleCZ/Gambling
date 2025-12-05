@@ -216,7 +216,8 @@ async function displayAch() {
     achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
 
-    const achInfomation = get(ref(db, `/achievementInformation/${achievement}/`)).val();
+    const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
+    const achInfomation = snap.val();
 
     achImg.style.backgroundImage = achievement + ".png";
     achName.textContent = achInformation["name"];
@@ -258,7 +259,7 @@ onAuthStateChanged(auth, async (user) => {
     await initUnlocks();
 
     uid = user.uid;
-    const snap = get(ref(db, `/users/${uid}/achievements`));
+    const snap = await get(ref(db, `/users/${uid}/achievements`));
     const unlockedAchList = snap.val();
 
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
