@@ -109,6 +109,7 @@ setInitialState();
 //O - Firebase init and getting token
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getDatabase, ref, get, onChildAdded } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
@@ -122,7 +123,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
 
+let uid;
 const localMode = JSON.parse(localStorage.getItem("localMode"));
 const machines = document.querySelectorAll(".unavailable");
 let unlocks = {};
@@ -195,6 +198,59 @@ async function initUnlocks() {
     });
 }
 
+const achImg = document.getElementById("achImg");
+const achName = document.getElementById("achName");
+const achDescription = document.getElementById("achDescription");
+const achValue = document.getElementById("achValue");
+const achDiv = document.getElementById("ach");
+
+let achWaitingList = [];
+let displayingAch = false;
+let unlockedAchList;
+let achDisplaying = false;
+
+async function displayAch() {
+    if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
+        return;
+    }
+
+    const achievement = achWaitingList[0];
+    achWaitingList.shift(achievement);
+    console.log("Getting achievement info for: ", achievement);
+
+    const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
+    const achInfomation = snap.val();
+
+    achImg.style.backgroundImage = achievement + ".png";
+    achName.textContent = achInformation["name"];
+    achDescription.textContent = achInfomation["description"];
+
+    switch (achInfomation["value"]) {
+        case "bronze":
+            achValue.textContent = "$25";
+
+        case "silver":
+            achValue.textContent = "$125";
+
+        case "gold":
+            achValue.textContent = "$350";
+
+        default:
+            achValue.textContent = "";
+    }
+
+    achDiv.classList.add("achActive");
+    setTimeout(() => {
+        achDiv.classList.remove("achActive");
+        setTimeout(() => {
+            displayingAch = false;
+            if (achWaitingList[0]) {
+                displayAch();
+            }
+        }, 1000);
+    }, 5000);
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         localStorage.clear();
@@ -203,6 +259,17 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await initUnlocks();
+
+    uid = user.uid;
+    const snap = await get(ref(db, `/users/${uid}/achievements`));
+    unlockedAchList = snap.val();
+    console.log("Unlocked achievements: ", unlockedAchList);
+
+    onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
+        console.log("Child added: ", achievement.key);
+        achWaitingList.push(achievement.key);
+        displayAch();
+    })
 });
 
 document.getElementById("logoutBtn").addEventListener("click", () => {

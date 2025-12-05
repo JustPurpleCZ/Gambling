@@ -1,3 +1,41 @@
+#ach {
+    background-image: url('/main/achievements/bg-default.png');
+    background-size: cover;
+    width: 125vh;
+    height: 30vh;
+    position: absolute;
+    top: 0;
+    transition: transform 1s;
+    transform: translateY(-120%);
+}
+
+.achActive {
+    transform: translateY(10%);
+}
+
+#achImg {
+    background-image: url('/main/achievements/slotSpin10000.png');
+    background-size: cover;
+    height: 25.05vh;
+    width: 25.05vh;
+    position: absolute;
+    left: 3.8vh;
+    top: 2.5vh;
+}
+
+#achTextDiv {
+    position: absolute;
+    width: 90vh;
+    left: 32vh;
+    top: 2vh;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: solid black 1px;
+} 
+
 #logoutBtn {
     position: absolute;
     z-index: 100;
@@ -38,130 +76,130 @@
 }
 
 :root {
-            --background-parallax-x: 20vw;
-            --background-parallax-y: 10vh;
-            --row-parallax-x: 1000vw; /* Half the excess width of the row */
-            --row-parallax-y: 40vh;
-            --base-icon-size: 15vh;
-            --center-scale-multiplier: 1.5 ;
-            --transition-speed: 0.1s;
-        }
+    --background-parallax-x: 20vw;
+    --background-parallax-y: 10vh;
+    --row-parallax-x: 1000vw; /* Half the excess width of the row */
+    --row-parallax-y: 40vh;
+    --base-icon-size: 15vh;
+    --center-scale-multiplier: 1.5 ;
+    --transition-speed: 0.1s;
+}
 
-        body {
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
-            background-color: #0d0a1a;
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #0d0a1a;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
 
-        /* The subtle background that also moves */
-        .background {
-            position: absolute;
+/* The subtle background that also moves */
+.background {
+    position: absolute;
 
-            width: 110vw;
-            height: 110vh;
-            background-image: url(bigmoney.webp);
-            background-size: cover;
-            transition: transform var(--transition-speed) linear;
-            z-index: -1;
-            background-position: center;
-        }
+    width: 110vw;
+    height: 110vh;
+    background-image: url(bigmoney.webp);
+    background-size: cover;
+    transition: transform var(--transition-speed) linear;
+    z-index: -1;
+    background-position: center;
+}
 
-        /* Container for all the destinations, much wider than the screen */
-        .destinations-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            width: 120vw;
-            height: 20vh; /* Give it some height to move vertically in */
-            position: absolute;
-            left: -10vw; /* Center the 220vw element inside the 100vw viewport */
-            transition: transform var(--transition-speed) linear;
-            will-change: transform;
-        }
+/* Container for all the destinations, much wider than the screen */
+.destinations-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 120vw;
+    height: 20vh; /* Give it some height to move vertically in */
+    position: absolute;
+    left: -10vw; /* Center the 220vw element inside the 100vw viewport */
+    transition: transform var(--transition-speed) linear;
+    will-change: transform;
+}
 
-        /* Individual destination wrapper */
-        .destination-item {
-            position: relative;
-            width: var(--base-icon-size);
-            height: var(--base-icon-size);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform var(--transition-speed) ease-out;
-            will-change: transform;
-            transition: filter 0.3s ease;
-        }
-        img{
-            height: 100%;
-            width: auto;
-            padding: 0;
-            filter: drop-shadow(0 0 10px rgba(85, 85, 85, 0.4)) drop-shadow(0 0 20px rgba(199, 199, 199, 0.3));
+/* Individual destination wrapper */
+.destination-item {
+    position: relative;
+    width: var(--base-icon-size);
+    height: var(--base-icon-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-speed) ease-out;
+    will-change: transform;
+    transition: filter 0.3s ease;
+}
+img{
+    height: 100%;
+    width: auto;
+    padding: 0;
+    filter: drop-shadow(0 0 10px rgba(85, 85, 85, 0.4)) drop-shadow(0 0 20px rgba(199, 199, 199, 0.3));
 
-        }
-        
-        .destination-item:hover{
-             filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.6));
-        }
+}
 
-        /* Overlay for unavailable destinations */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(4px);
-        }
-        
-        .overlay svg {
-            width: 50%;
-            height: 50%;
-            filter: none; /* Remove shadow from lock icon */
-        }
+.destination-item:hover{
+        filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.6));
+}
 
-        /* Class to toggle visibility of the overlay */
-        .unavailable {
-            filter: opacity(0.3);
-            position: relative;
-            width: var(--base-icon-size);
-            height: var(--base-icon-size);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform var(--transition-speed) ease-out;
-            will-change: transform;
-            transition: filter 0.3s ease;
-        }
+/* Overlay for unavailable destinations */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(4px);
+}
 
-        /* Onboarding hint */
-        .hint {
-            position: absolute;
-            bottom: 5vh;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.6);
-            animation: fadeIn 2s ease-in-out;
-            pointer-events: none;
-        }
+.overlay svg {
+    width: 50%;
+    height: 50%;
+    filter: none; /* Remove shadow from lock icon */
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+/* Class to toggle visibility of the overlay */
+.unavailable {
+    filter: opacity(0.3);
+    position: relative;
+    width: var(--base-icon-size);
+    height: var(--base-icon-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-speed) ease-out;
+    will-change: transform;
+    transition: filter 0.3s ease;
+}
+
+/* Onboarding hint */
+.hint {
+    position: absolute;
+    bottom: 5vh;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    animation: fadeIn 2s ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
