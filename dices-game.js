@@ -267,7 +267,7 @@ async function gameStart() {
 
     console.log("Setting player list updates");
     onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
-        console.log("Player list info changed: ", snap.val());
+        console.log("Player order directory changed: ", snap.val());
         if (snap.val() != null) {
           playerOrder = snap.val();
           console.log("Player order: ", playerOrder);
@@ -299,7 +299,7 @@ async function updateActivePlayerList() {
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
-        if (activePlayerDiv.children.contains(player)) {
+        if (activePlayerList.children.contains(player)) {
             continue;
         }
 
