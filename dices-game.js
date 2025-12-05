@@ -299,10 +299,6 @@ async function updateActivePlayerList() {
 
     activePlayerList.replaceChildren();
      for (const player of playerOrder) {
-        if (activePlayerList.children.contains(player)) {
-            continue;
-        }
-
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
