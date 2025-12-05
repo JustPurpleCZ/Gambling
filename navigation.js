@@ -266,8 +266,8 @@ onAuthStateChanged(auth, async (user) => {
     console.log("Unlocked achievements: ", unlockedAchList);
 
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
-        console.log("Child added: ", achievement);
-        achWaitingList.push(achievement);
+        console.log("Child added: ", achievement.val());
+        achWaitingList.push(achievement.val());
         displayAch();
     })
 });
