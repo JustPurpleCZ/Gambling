@@ -252,8 +252,10 @@ async function displayAch() {
 }
 
 async function initWallet() {
+    const balanceSnap = await get(ref(`/users/${uid}/credits`));
+    const balance = balanceSnap.val();
     const walletDisplay = document.querySelector('.wallet-display');
-    walletDisplay.textContent = `Wallet: $6767`;
+    walletDisplay.textContent = `Wallet: $${balanceSnap}`;
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -262,11 +264,11 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = 'index.html';
         return;
     }
+    uid = user.uid;
 
     await initUnlocks();
     await initWallet();
-
-    uid = user.uid;
+    
     const snap = await get(ref(db, `/users/${uid}/achievements`));
     unlockedAchList = snap.val();
     console.log("Unlocked achievements: ", unlockedAchList);
