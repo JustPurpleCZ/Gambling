@@ -471,29 +471,6 @@ function updateMyPlayerInfo(playerData) {
 
 async function updateBottomControlPanel(isMyTurn) {
   let controlPanel = document.querySelector(".bottom-control-panel");
-  
-  if (!controlPanel) {
-    controlPanel = document.createElement("div");
-    controlPanel.className = "bottom-control-panel";
-    document.getElementById("game-container").appendChild(controlPanel);
-    
-    controlPanel.innerHTML = `
-      <div class="end-turn-button">
-        <img src="main/menu/optionbox1.png" alt="End Turn">
-        <div class="end-turn-text">End Turn</div>
-      </div>
-      <div class="score-display">
-        <div class="score-label">Your Turn Score</div>
-        <div class="score-value">0</div>
-      </div>
-    `;
-    
-    // Add click handler
-    controlPanel.querySelector(".end-turn-button").addEventListener("click", () => {
-      submitMove();
-    });
-  }
-  
   controlPanel.style.display = "flex";
   
   // Enable or disable the button based on turn
