@@ -148,8 +148,8 @@ body {
 }
 
 .current-player-pfp {
-  width: 60px;
-  height: 60px;
+  width: 10vh;
+  height: 10vh;
   background-position: center;
   background-size: contain;
 }
@@ -275,7 +275,7 @@ body {
   padding: 10px 15px;
   border-radius: 12px;
   border: 2px solid #555;
-  min-width: 180px;
+  width: 30vh;
   transition: border-color 0.3s;
 }
 
