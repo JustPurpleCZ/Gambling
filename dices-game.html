@@ -1,94 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="automat.css">
-    <title>Vlad's Gambling Paradise</title>
-    <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dices: GAME</title>
+    <link rel="stylesheet" href="dices-game.css">
 </head>
 <body>
-    <div class="orientation-overlay">
-        <img src="side.gif" alt="Please rotate your device">
-        <div class="overlay-text">Please rotate your device</div>
+    <div id="game-container">
+        <div class="ui-layer">
+            <p>Lobby name:</p>
+            <p id="lobbyName"></p>
+            <div id="preStart">
+        <button id="leaveBtn">Leave lobby</button>
+        <h3>Players:</h3>
+        <div id="playerList"></div>
+        <p id="playerCountPar"></p>
+        <button id="startBtn">Start game</button>
     </div>
-    <div>
-        <div class="exit" id="logoutButton">
-            <img src="icon/exit.png" alt="">
+
+    <div id="gameDiv">
+        <h2>Dices Game</h2>
+        <div id="activePlayerList"></div>
+
+        <div id="playStuff">
+            <p id="turnScorePar">Your score this turn: 0</p>
+            <button id="rollBtn">Roll the dice!</button>
+
+            <p>Click the dice you wish to keep!</p>
+            <div id="rolledDice"></div>
+            <button id="moveBtn">End your turn</button>
+
+            <p id="errMessage"></p>
         </div>
-        <div class="vlad">
-            <img src="robot/idlefull.gif" class="vlada">
-            <img src="robot/pointer.png" class="robot-hand" alt="">
+    </div>
+
+    <div id="gameEndDiv">
+        <h2>Game ended!</h2>
+        <p id="winnerName"></p>
+        <p id="winnerScore"></p>
+
+        <p id="winMessage"></p>
+        <button id="exit">Back to hub</button>
+    </div>
         </div>
-        <div class="slot-machine-container">
-            <div class="button">
-                <img src="main/automat/cash.png" alt="">
-            </div>
-            <div class="screen">
-                <img src="main/screen/screen.png" alt="">
-                <div class="credit-display">Loading...</div>
-            </div>
-            
-            <img src="main/automat/automat3.png" alt="Slot Machine" class="slot-machine-image">
-            <div class="reels-container">
-                <div class="reel"></div>
-                <div class="reel"></div>
-                <div class="reel"></div>
-            </div>
-            <div class="lever-container">
-                <img src="main/automat/paka.gif" alt="Lever" class="lever-image">
-            </div>
-            <div class="door">
-                <img src="main/automat/door.png" class="doorPart" alt="">
-            </div>
-            <div class="music-container">
-                <img src="main/radio/radio.png" alt="Music Toggle" class="music-toggle">
-            </div>
-        </div>
+
+        <canvas id="gameCanvas"></canvas>
         
+        <div class="locked-area"></div>
+        <div id="cup" class="cup"></div>
     </div>
-    <div class="wallet">
-        <div class="wallet-bills">
-            <img src="money/100.png" class="bill bill-100" data-value="100">
-            <img src="money/50.png" class="bill bill-50" data-value="50">
-            <img src="money/20.png" class="bill bill-20" data-value="20">
-            <img src="money/10.png" class="bill bill-10" data-value="10">
-            <img src="money/5.png" class="bill bill-5" data-value="5">
-            <img src="money/1.png" class="bill bill-1" data-value="1">
-        </div>
-        <img src="money/walletD.png" class="bottom">
-        <img src="money/walletU.png" class="top" alt="">
-        <img src="money/screen.png" class="wscreen" alt="">
-        <div class="wallet-display">Wallet: $1000</div>
-    </div>
-    <div class="options-menu">
-        <img src="main/menu/textbar1.png" alt="Menu Background" class="menu-bg">
-        <div class="menu-text-content" data-content="invest">
-            The chances are in your favor! You have a 6.4% to get your money back,
-             a 2.4% to multiply your bet amount tenfold 
-            and a generous probabilty of 0.068% to win the main jackpot of 10K dollars!
-        </div>
-        <div class="menu-text-content" data-content="rules">
-            
-        </div>
-        <div class="option-buttons">
-            <div class="option-button-container hideable">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="1">
-                <div class="option-text">My Chances</div>
-            </div>
-            <div class="option-button-container hideable">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="2">
-                <div class="option-text">My Stats</div>
-            </div>
-            <div class="option-button-container">
-                <img src="main/menu/optionbox1.png" class="option-btn" data-option="close">
-                <div class="option-text">Get Out</div>
-            </div>
-        </div>
-    </div>
-</div>
-    <script type="module" src="automat.js"></script>
+    <script src="dices-game.js" type="module"></script>
 </body>
 </html>
