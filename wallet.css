@@ -22,6 +22,10 @@
     z-index: 51;
 }
 
+.wallet * {
+    position: absolute;
+}
+
 .wallet:hover {
     bottom: -2vh;
 }
