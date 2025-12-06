@@ -1,7 +1,7 @@
 .wallet-display {
     position: absolute;
-    left: 15%;
-    top: 4.5vh;
+    left: 11%;
+    top: 11vh;
     width: 15vh;
     transform: translateY(-50%);
     color: #00ff00;
@@ -16,7 +16,7 @@
     position: absolute;
     width: 60vh;
     height: 25vh;
-    bottom: -23vh;
+    bottom: -15vh;
     right: 1.9vh;
     transition: bottom 0.5s ease-out;
     z-index: 51;

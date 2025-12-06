@@ -252,8 +252,9 @@ async function displayAch() {
 }
 
 async function initWallet() {
+    const balanceSnap = await get(ref(`/users/${uid}/credits`));
     const walletDisplay = document.querySelector('.wallet-display');
-    walletDisplay.textContent = `Wallet: $6767`;
+    walletDisplay.textContent = `Wallet: $${balanceSnap.val()}`;
 }
 
 onAuthStateChanged(auth, async (user) => {
