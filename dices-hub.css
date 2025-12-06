@@ -6,7 +6,6 @@
     transform: translateY(-50%);
     color: #00ff00;
     font-size: 4vh;
-    font-family: "Tiny5", sans-serif;
     text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     animation: flicker 0.2s infinite alternate;
     z-index: 52;

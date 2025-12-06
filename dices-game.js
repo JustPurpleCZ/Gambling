@@ -346,7 +346,7 @@ function updateMyPlayerInfo(playerData) {
     document.getElementById("game-container").appendChild(myInfoDiv);
   }
   myInfoDiv.innerHTML = `
-    <div class="my-player-pfp"></div>
+    <div class="my-player-pfp" style="background-image: url("main/profiles/${playerData.pfp}");"></div>
     <div class="my-player-details">
       <div class="my-player-name">${playerData.username}</div>
       <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
