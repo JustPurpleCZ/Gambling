@@ -253,7 +253,7 @@ async function displayAch() {
 
 async function initWallet() {
     const walletDisplay = document.querySelector('.wallet-display');
-    walletDisplay.textContent = `Wallet: $${walletBalance}`;
+    walletDisplay.textContent = `Wallet: $6767`;
 }
 
 onAuthStateChanged(auth, async (user) => {
