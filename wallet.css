@@ -1,0 +1,23 @@
+.wallet-display {
+    position: absolute;
+    left: 15%;
+    top: 4.5vh;
+    width: 15vh;
+    transform: translateY(-50%);
+    color: #00ff00;
+    font-size: 4vh;
+    font-family: "Tiny5", sans-serif;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    animation: flicker 0.2s infinite alternate;
+    z-index: 52;
+}
+
+.wallet {
+    position: absolute;
+    width: 60vh;
+    height: 25vh;
+    bottom: -23vh;
+    right: 1.9vh;
+    transition: bottom 0.5s ease-out;
+    z-index: 51;
+}
