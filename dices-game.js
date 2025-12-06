@@ -627,8 +627,10 @@ async function performRoll() {
           if (!die.permLocked) {
             die.permLocked = true;
             permLockedCount++;
-            // Add visual indicator for perm locked
+            // Remove the overlay and add perm-locked class
             if (die.element) {
+              const overlay = die.element.querySelector('.locked-overlay');
+              if (overlay) overlay.remove();
               die.element.classList.add('perm-locked');
             }
           }

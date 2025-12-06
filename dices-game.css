@@ -340,3 +340,6 @@ height: 100%;
 .my-player-info {
   display: none !important;
 }
+.die.perm-locked {
+  cursor: not-allowed !important;
+}
