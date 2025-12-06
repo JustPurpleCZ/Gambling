@@ -473,8 +473,9 @@ async function submitMove() {
 
     if (response.success) {
             errorMessage.style.display = "none";
-            // Collect all dice into the cup after the server processes the move
-            collectAllDiceIntoCup(); // <-- KEPT THIS LINE
+            setTimeout(() => {
+                collectAllDiceIntoCup();
+            }, 1000)
         } else {
             errorMessage.style.display = "block";
             errorMessage.textContent = response.reply;
