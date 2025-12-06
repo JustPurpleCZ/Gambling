@@ -996,7 +996,7 @@ async function lockDie(die) {
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
   const targetX = containerW * 0.032;
-  const targetY = (containerH * 0.17) + (lockedDice.length * (containerH * 0.1173));
+  const targetY = (containerH * 0.17) + (lockedDice.length * (containerH * 0.117)); //1173
   
   animateToPosition(die.element, targetX, targetY, () => {
     const overlay = document.createElement('div');
@@ -1130,8 +1130,8 @@ function moveCupToBottomRight() {
 }
 
 function collectAllDiceIntoCup() {
-  const targetXPercent = 80;
-  const targetYPercent = 90;
+  const targetXPercent = 85;
+  const targetYPercent = 100;
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
   const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
   
