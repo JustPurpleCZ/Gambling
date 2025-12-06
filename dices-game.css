@@ -106,8 +106,7 @@ body {
 /* Locked Dice Area - Left Side */
 .locked-area {
   position: absolute;
-  top: 49%;
-  transform: translateY(-50%);
+  top: 10vh;
   left: 4vh;
   width: 12.35vh;
   height: 70vh;
@@ -188,7 +187,7 @@ body {
 /* Bottom Control Panel - Below Locked Area */
 .bottom-control-panel {
   position: absolute;
-  bottom: 2%;
+  bottom: 2vh;
   left: 4vh;
   display: flex;
   flex-direction: row;
