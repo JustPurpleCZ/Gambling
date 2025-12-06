@@ -150,9 +150,8 @@ body {
 .current-player-pfp {
   width: 60px;
   height: 60px;
-  border-radius: 50%;
-  border: 2px solid #d4af37;
-  background: #333;
+  background-position: center;
+  background-size: contain;
 }
 
 .current-player-info {
@@ -292,14 +291,9 @@ body {
 .other-player-pfp {
   width: 45px;
   height: 45px;
-  border-radius: 50%;
-  border: 2px solid #666;
-  background: #333;
   flex-shrink: 0;
-}
-
-.other-player-card.is-current .other-player-pfp {
-  border-color: #d4af37;
+  background-position: center;
+  background-size: contain;
 }
 
 .other-player-details {
