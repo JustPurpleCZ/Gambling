@@ -193,15 +193,22 @@ body {
   filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
 }
 
-/* Bottom Control Panel */
+/* Bottom Control Panel - UPDATED POSITIONING */
 .bottom-control-panel {
+  /* position: absolute; - REMOVED */
+  /* bottom: 3%; - REMOVED */
+  /* left: 50%; - REMOVED */
+  /* transform: translateX(-50%); - REMOVED */
+  
+  /* New Positioning in UI Layer for Dices Game */
   position: absolute;
-  bottom: 3%;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 5%; /* Position it near the bottom */
+  left: 3%; /* Align with the locked dice area */
+  
   display: flex;
+  flex-direction: column; /* Stack score and button vertically */
   align-items: center;
-  gap: 20px;
+  gap: 10px; /* Reduced gap */
   z-index: 2500;
   pointer-events: auto;
 }
@@ -219,6 +226,7 @@ body {
   border: 3px solid #4a9eff;
   z-index: 2500;
   pointer-events: none;
+  display: none; /* Hiding my-player-info as bottom-control-panel now handles turn info */
 }
 
 .my-player-pfp {
@@ -267,6 +275,7 @@ body {
   height: 3.4vh;
   cursor: pointer;
   transition: transform 0.2s, filter 0.2s;
+  order: 2; /* Put the button after the score display */
 }
 
 .end-turn-button:hover {
@@ -300,18 +309,21 @@ body {
   padding: 15px 25px;
   border-radius: 10px;
   border: 2px solid #d4af37;
+  order: 1; /* Put the score display before the button */
 }
 
 .score-label {
   color: #d4af37;
   font-size: 14px;
   margin-bottom: 5px;
+  text-align: center;
 }
 
 .score-value {
   color: white;
   font-size: 28px;
   font-weight: bold;
+  text-align: center;
 }
 
 /* Hide old UI elements */
