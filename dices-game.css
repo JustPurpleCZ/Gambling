@@ -149,6 +149,10 @@ body {
   pointer-events: none;
 }
 
+.current-player-display.is-me {
+  display: none;
+}
+
 .current-player-pfp {
   width: 60px;
   height: 60px;
@@ -193,12 +197,68 @@ body {
 .bottom-control-panel {
   position: absolute;
   bottom: 3%;
-  left: 3%;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 20px;
   z-index: 2500;
   pointer-events: auto;
+}
+
+.my-player-info {
+  position: absolute;
+  bottom: 3%;
+  left: 3%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 3px solid #4a9eff;
+  z-index: 2500;
+  pointer-events: none;
+}
+
+.my-player-pfp {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #4a9eff;
+  background: #333;
+}
+
+.my-player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: white;
+}
+
+.my-player-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4a9eff;
+}
+
+.my-player-score {
+  font-size: 16px;
+  color: #fff;
+}
+
+.my-player-dice {
+  display: flex;
+  gap: 8px;
+}
+
+.my-player-dice-item {
+  width: 35px;
+  height: 35px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 0 5px rgba(74, 158, 255, 0.5));
 }
 
 .end-turn-button {
@@ -285,7 +345,7 @@ body {
   font-size: 14px;
 }
 
-/* Hide current player from left list */
+/* Hide current player and myself from left list */
 #activePlayerList > div.is-current-player {
   display: none;
 }

@@ -276,9 +276,18 @@ async function updateActivePlayerList() {
     activePlayerList.replaceChildren();
     let isMyTurnThisUpdate = false;
     let currentPlayerData = null;
+    let myPlayerData = null;
 
     for (const player of playerOrder) {
         const playerData = playersInfo.val()[player];
+        
+        // Track my own data
+        if (player === uid) {
+          myPlayerData = {
+            uid: player,
+            ...playerData
+          };
+        }
         
         // Check if this is the current player
         if (playerData.playersTurn === true) {
@@ -292,9 +301,9 @@ async function updateActivePlayerList() {
           }
         }
         
-        // Create player div for left sidebar (will be hidden if current player)
+        // Create player div for left sidebar (will be hidden if current player or is me)
         const activePlayerDiv = document.createElement("div");
-        if (playerData.playersTurn === true) {
+        if (playerData.playersTurn === true || player === uid) {
           activePlayerDiv.classList.add("is-current-player");
         }
         
@@ -316,12 +325,20 @@ async function updateActivePlayerList() {
         }
     }
 
-    // Update current player display at top
-    if (currentPlayerData) {
-      updateCurrentPlayerDisplay(currentPlayerData);
+    // Update current player display at top (only if it's not me)
+    if (currentPlayerData && currentPlayerData.uid !== uid) {
+      updateCurrentPlayerDisplay(currentPlayerData, false);
+    } else if (currentPlayerData && currentPlayerData.uid === uid) {
+      // Hide top display if I'm the current player
+      updateCurrentPlayerDisplay(currentPlayerData, true);
     }
 
-    // Update bottom control panel
+    // Always update my player info at bottom
+    if (myPlayerData) {
+      updateMyPlayerInfo(myPlayerData);
+    }
+
+    // Update bottom control panel (end turn button)
     if (isMyTurnThisUpdate) {
       updateBottomControlPanel();
     } else {
@@ -372,13 +389,21 @@ async function updateActivePlayerList() {
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
-function updateCurrentPlayerDisplay(playerData) {
+function updateCurrentPlayerDisplay(playerData, isMe) {
   let displayDiv = document.querySelector(".current-player-display");
   
   if (!displayDiv) {
     displayDiv = document.createElement("div");
     displayDiv.className = "current-player-display";
     document.getElementById("game-container").appendChild(displayDiv);
+  }
+  
+  // Add class if it's me to hide it
+  if (isMe) {
+    displayDiv.classList.add("is-me");
+    return;
+  } else {
+    displayDiv.classList.remove("is-me");
   }
   
   displayDiv.innerHTML = `
@@ -402,6 +427,43 @@ function updateCurrentPlayerDisplay(playerData) {
       if (playerData.heldDice && playerData.heldDice[index]) {
         dieDiv.style.border = "2px solid #d4af37";
         dieDiv.style.boxShadow = "0 0 10px #d4af37";
+      }
+      
+      diceContainer.appendChild(dieDiv);
+    });
+  }
+}
+
+function updateMyPlayerInfo(playerData) {
+  let myInfoDiv = document.querySelector(".my-player-info");
+  
+  if (!myInfoDiv) {
+    myInfoDiv = document.createElement("div");
+    myInfoDiv.className = "my-player-info";
+    document.getElementById("game-container").appendChild(myInfoDiv);
+  }
+  
+  myInfoDiv.innerHTML = `
+    <div class="my-player-pfp"></div>
+    <div class="my-player-details">
+      <div class="my-player-name">${playerData.username}</div>
+      <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
+    </div>
+    <div class="my-player-dice"></div>
+  `;
+  
+  // Add dice to display
+  const diceContainer = myInfoDiv.querySelector(".my-player-dice");
+  if (playerData.rolledDice && playerData.rolledDice.length > 0) {
+    playerData.rolledDice.forEach((dieValue, index) => {
+      const dieDiv = document.createElement("div");
+      dieDiv.className = "my-player-dice-item";
+      dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
+      
+      // Add visual indicator if held
+      if (playerData.heldDice && playerData.heldDice[index]) {
+        dieDiv.style.border = "2px solid #4a9eff";
+        dieDiv.style.boxShadow = "0 0 10px #4a9eff";
       }
       
       diceContainer.appendChild(dieDiv);
@@ -561,6 +623,7 @@ let isRolling = false;
 let pendingRollValues = null;
 let cupCanCollect = true;
 let wasMyTurnLastUpdate = false;
+let lastOtherPlayerData = null;
 
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
