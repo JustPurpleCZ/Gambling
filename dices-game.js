@@ -314,7 +314,7 @@ async function updateActivePlayerList() {
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
         parTurnScore.textContent = playersInfo.val()[player].turnScore;
-        
+
         if (playersInfo.val()[player].playersTurn == true) {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
@@ -468,6 +468,8 @@ async function submitMove() {
 
     if (response.success) {
             errorMessage.style.display = "none";
+            // Collect all dice into the cup before turn ends
+            collectAllDiceIntoCup();
         } else {
             errorMessage.style.display = "block";
             errorMessage.textContent = response.reply;
@@ -551,6 +553,7 @@ let cupVelocityY = 0;
 let cupState = 'normal';
 let isRolling = false;
 let pendingRollValues = null;
+let cupCanCollect = true;
 
 // Images
 const cupImg = 'main/dice/cup.png';
@@ -732,6 +735,7 @@ async function performRoll() {
 function spillDice() {
   cupState = 'spilling';
   cup.style.backgroundImage = `url(${cupSpillImg})`;
+  cupCanCollect = false;
   const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
   let angleDeg = angleRad * (180 / Math.PI);
 
@@ -787,10 +791,17 @@ function spillDice() {
   
   // Clear pending values
   pendingRollValues = null;
+  
+  // Wait 500ms, then move cup to bottom right
+  setTimeout(() => {
+    moveCupToBottomRight();
+  }, 500);
 }
 
 function collectDice() {
-  const cupSize = vhToPx(20); // Check collision in Pixels
+  if (!cupCanCollect) return; // Don't collect if disabled
+  
+  const cupSize = vhToPx(20);
   const diceSize = vhToPx(8);
   
   // Calculate cup center in Pixels
@@ -816,10 +827,37 @@ function collectDice() {
   }
 }
 
-function lockDie(die) {
+async function lockDie(die) {
   if (die.rolling) return;
   const index = dice.indexOf(die);
   if (index === -1) return;
+  
+  // Find the corresponding dice button in the UI and mark it as held in the server
+  const rolledDiceButtons = rolledDiceDiv.querySelectorAll('button');
+  
+  // Find which die this is based on its face value and position
+  // We need to match it to the rolledDice array
+  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+  const rolledDiceValues = snap.val();
+  
+  if (rolledDiceValues) {
+    // Find the first unheld die with matching face value
+    const heldSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    const heldDice = heldSnap.val() || [];
+    
+    for (let i = 0; i < rolledDiceValues.length; i++) {
+      if (rolledDiceValues[i] === die.face && !heldDice[i]) {
+        // Mark this die as held in the server
+        await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`), true);
+        
+        // Also update the UI button if it exists
+        if (rolledDiceButtons[i]) {
+          rolledDiceButtons[i].classList.add('heldDice');
+        }
+        break;
+      }
+    }
+  }
   
   dice.splice(index, 1);
   die.element.classList.add('locked');
@@ -874,10 +912,34 @@ function animateToPosition(element, targetX, targetY, callback) {
   animate();
 }
 
-function unlockDie(die) {
+async function unlockDie(die) {
   if (!die.locked) return;
   const index = lockedDice.indexOf(die);
   if (index === -1) return;
+  
+  // Unmark the die in the server
+  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+  const rolledDiceValues = snap.val();
+  
+  if (rolledDiceValues) {
+    // Find which die this is and unmark it
+    const heldSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    const heldDice = heldSnap.val() || [];
+    
+    for (let i = 0; i < rolledDiceValues.length; i++) {
+      if (rolledDiceValues[i] === die.face && heldDice[i]) {
+        // Unmark this die in the server
+        await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`), false);
+        
+        // Also update the UI button if it exists
+        const rolledDiceButtons = rolledDiceDiv.querySelectorAll('button');
+        if (rolledDiceButtons[i]) {
+          rolledDiceButtons[i].classList.remove('heldDice');
+        }
+        break;
+      }
+    }
+  }
   
   lockedDice.splice(index, 1);
   die.locked = false;
@@ -929,7 +991,108 @@ function repositionLockedDice() {
     }
   });
 }
-
+function moveCupToBottomRight() {
+  // Set target position to bottom right (relative to canvas)
+  const targetXPercent = 75; // 75% from left
+  const targetYPercent = 70; // 70% from top
+  
+  const startXPercent = cupXPercent;
+  const startYPercent = cupYPercent;
+  
+  const duration = 800; // Animation duration in ms
+  const startTime = Date.now();
+  
+  // Reset cup to normal state
+  cupState = 'normal';
+  cup.style.backgroundImage = `url(${cupImg})`;
+  cup.style.transform = 'scale(1) rotate(0deg)';
+  
+  function animateCup() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+    
+    cupXPercent = startXPercent + (targetXPercent - startXPercent) * eased;
+    cupYPercent = startYPercent + (targetYPercent - startYPercent) * eased;
+    
+    updateCupPosition();
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateCup);
+    } else {
+      // Re-enable collection after animation completes and another 500ms
+      setTimeout(() => {
+        cupCanCollect = true;
+      }, 500);
+    }
+  }
+  
+  animateCup();
+}
+function collectAllDiceIntoCup() {
+  // First, move cup to bottom right if not already there
+  const targetXPercent = 75;
+  const targetYPercent = 70;
+  
+  // Calculate cup target position in pixels
+  const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
+  const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
+  
+  let animationIndex = 0;
+  
+  // First, unlock and collect all locked dice
+  const lockedDiceCopy = [...lockedDice]; // Make a copy since we'll be modifying the array
+  lockedDiceCopy.forEach((die) => {
+    if (die.element) {
+      const delay = animationIndex * 100;
+      animationIndex++;
+      
+      setTimeout(() => {
+        // Remove the locked overlay
+        const overlay = die.element.querySelector('.locked-overlay');
+        if (overlay) overlay.remove();
+        die.element.classList.remove('locked');
+        
+        // Animate to cup
+        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+          if (die.element) {
+            die.element.remove();
+          }
+        });
+      }, delay);
+    }
+  });
+  
+  // Clear locked dice array
+  lockedDice.length = 0;
+  
+  // Then animate all dice on the table to slide into the cup
+  dice.forEach((die) => {
+    if (die.element && !die.rolling) {
+      const delay = animationIndex * 100;
+      animationIndex++;
+      
+      setTimeout(() => {
+        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+          // Remove the die element after it reaches the cup
+          if (die.element) {
+            die.element.remove();
+          }
+        });
+      }, delay);
+    }
+  });
+  
+  // Clear the dice array after all animations
+  setTimeout(() => {
+    dice.length = 0; // Clear all dice from the array
+  }, animationIndex * 100 + 500);
+  
+  // Move cup to bottom right
+  cupXPercent = targetXPercent;
+  cupYPercent = targetYPercent;
+  updateCupPosition();
+}
 function update() {
   let allStopped = true;
   const diceSize = vhToPx(16);

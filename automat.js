@@ -1,22 +1,22 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    storageBucket: "gambling-goldmine.firebasestorage.app",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-const localMode = JSON.parse(localStorage.getItem('localMode'));
+let presenceRef;
 
 async function checkAuth() {
     const user = await new Promise(resolve => {
@@ -27,1916 +27,1090 @@ async function checkAuth() {
     });
 
     if (!user) {
-        //window.location.href = 'index.html';
+        window.location.href = 'index.html';
         return;
     }
 
-    if (!localMode) {
-        onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
+    uid = user.uid;
+}
 
-        const tutorialSnap = await get(ref(db, `users/${auth.currentUser.uid}/slotMachine/tutorialCompleted`));
-        hasCompletedTutorial = tutorialSnap.val();
-        console.log("Tutorial status:", hasCompletedTutorial);
 
-        if (!hasCompletedTutorial) {
-        setTimeout(() => {
-            robotController.startTutorial();
-        }, 1000);
-    }
-    }
+const lobbyId = localStorage.getItem("dicesLobbyId");
+const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
+const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
+let uid;
 
+let lobbyInfo;
+async function getLobbyInfo() {
     try {
-    const token = await auth.currentUser.getIdToken();
-    const res = await fetch("https://get-balance-gtw5ppnvta-ey.a.run.app", {
-        method: "GET",
-        headers: {
-            "Authorization": token,
-            "Content-Type": "application/json"
+        const snapshot = await get(lobbyRef);
+        if (snapshot.exists()) {
+            lobbyInfo = snapshot.val();
+            console.log("Lobby data", lobbyInfo);
+            return;
+        } else {
+            console.log("Lobby data failed to load");
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+const playerList = document.getElementById("playerList");
+const isHost = JSON.parse(localStorage.getItem("dicesIsHost"));
+let gameStarted = false;
+const activeGameRef = ref(db, `/games/active/dices/${lobbyId}`);
+console.log("Host: ", isHost, "LobbyId: ", lobbyId);
+
+(async () => {
+    await checkAuth();
+    await getLobbyInfo();
+
+    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}`), );
+    if (snapshot.exists()) {
+      console.log("Game already active, skipping lobby");
+      gameStart();
+    } else {
+
+    presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
+    
+    console.log("Setting presence for", uid);
+    set(presenceRef, true);
+    onDisconnect(presenceRef).set(false);
+
+    onChildAdded(playersRef, () => {
+        updatePlayerList();
+    });
+
+    onChildRemoved(playersRef, () => {
+        updatePlayerList();
+    });
+
+    onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
+        if (removedLobby.key === lobbyId && !gameStarted) {
+            onDisconnect(presenceRef).cancel();
+            window.location.href = "dices-hub.html";
         }
     });
 
-    localBalance = await res.json();
-    console.log("Fetched balance:", localBalance);
-    } catch (e) {
-        console.log("Error fetching balance:", e);
-        setTimeout(() => {
-            //window.location.href = "index.html";
-        }, 5000);
-        return;
+    onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
+        if (addedLobby.key === lobbyId) {
+            gameStarted = true;
+            set(presenceRef, false);
+            onDisconnect(presenceRef).cancel();
+            gameStart();
+        }
+    });
+  }
+})();
+
+let startBtn = document.getElementById("startBtn");
+if (isHost) {
+    startBtn.style.display = "block";
+
+    startBtn.addEventListener("click", () => {
+        if (playerCount >= 2) {
+            startGame();
+        }
+    })
+}
+
+const playerCountPar = document.getElementById("playerCountPar");
+let playerCount;
+
+async function updatePlayerList() {
+    console.log("Updating player list");
+    let players;
+
+    get(playersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            players = snapshot.val();
+            console.log("Player list:", players);
+            playerCount = 0;
+
+            playerList.replaceChildren();
+
+            Object.values(players).forEach(player => {
+                console.log("Adding player:", player.username);
+                playerCount++;
+                const playerDiv = document.createElement("div");
+                const name = document.createElement("p");
+
+                playerList.appendChild(playerDiv);
+                playerDiv.appendChild(name);
+
+                if (isHost) {
+                    const kickBtn = document.createElement("button");
+                    playerDiv.appendChild(kickBtn);
+                    kickBtn.textContent = "kick player";
+
+                    kickBtn.addEventListener("click", () => {
+                        kick(player);
+                    });
+                }
+
+                name.textContent = player.username;
+            });
+
+            playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
+            
+        } else {
+            console.log("Not found");
+        }
+    }).catch(console.error);
+}
+
+async function kick(kickPlayer) {
+    /*
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://dices-kick-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "user": kickPlayer
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    */
+   console.log("Kicking disabled");
+}
+
+async function leaveLobby() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        onDisconnect(presenceRef).cancel();
+        localStorage.removeItem("dicesLobbyId");
+        localStorage.removeItem("dicesIsHost");
+        window.location.href = "dices-hub.html";
+    } else {
+        console.log("Failed to leave:", response.reply);
     }
+}
+
+document.getElementById("leaveBtn").addEventListener("click", () => {
+    leaveLobby();
+})
+
+async function startGame() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+            })
+    });
+
+    const response = await res.json();
+    console.log(response);
+
+    if (response.success) {
+        set(presenceRef, true);
+        onDisconnect(presenceRef).cancel();
+    } else {
+        console.log("Failed to start game:", response.reply);
+    }
+}
+
+//Game start
+let activePresenceRef;
+let playerOrder;
+
+const playStuff = document.getElementById("playStuff");
+const rolledDiceDiv = document.getElementById("rolledDice");
+const errorMessage = document.getElementById("errMessage");
+
+const activePlayerList = document.getElementById("activePlayerList");
+const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
+
+async function gameStart() {
+    console.log("Game is starting");
+    gameStarted = true;
+
+    activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
+
+    console.log("Setting new presence:", uid);
+    set(activePresenceRef, true);
+    onDisconnect(activePresenceRef).set(false);
+
+    onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
+        if (removedLobby.key === lobbyId) {
+            onDisconnect(activePresenceRef).cancel();
+            window.location.href = "dices-hub.html";
+        }
+    });
+
+    onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
+        if (snap.val() != null) {
+          playerOrder = snap.val()
+
+          document.getElementById("preStart").style.display = "none";
+          updateActivePlayerList();
+          document.getElementById("gameDiv").style.display = "block";
+
+          onValue(activePlayersRef, (snapshot) => {
+            updateActivePlayerList();
+          });
+
+          document.getElementById("moveBtn").addEventListener("click", () => {
+            submitMove();
+          })
+
+          document.getElementById("rollBtn").addEventListener("click", () => {
+            rollDice();
+          })
+        }
+    });
+}
+
+async function updateActivePlayerList() {
+    const playersInfo = await get(activePlayersRef);
+    console.log("Updating active player list");
+    let gameEnded = true;
+
+    activePlayerList.replaceChildren();
     
-    if (!localBalance) {
-        console.log("NO BALANCE, LOGGING OUT");
-        setTimeout(() => {
-            //window.location.href = "index.html";
-        }, 5000);
-        return;
+    for (const player of playerOrder) {
+        // Create the div FIRST
+        const activePlayerDiv = document.createElement("div");
+        const name = document.createElement("p");
+        const score = document.createElement("p");
+        const parTurnScore = document.createElement("p");
+        
+        // Now check if needed (though this check might not be necessary)
+        // if (activePlayerList.contains(activePlayerDiv)) {
+        //     continue;
+        // }
+        
+        activePlayerList.appendChild(activePlayerDiv);
+        activePlayerDiv.appendChild(name);
+        activePlayerDiv.appendChild(score);
+        activePlayerDiv.appendChild(parTurnScore);
+        
+        name.textContent = playersInfo.val()[player].username;
+        score.textContent = playersInfo.val()[player].score;
+        parTurnScore.textContent = playersInfo.val()[player].turnScore;
+        
+        if (playersInfo.val()[player].playersTurn == true) {
+          const theirTurn = document.createElement("p");
+          activePlayerDiv.appendChild(theirTurn);
+          theirTurn.textContent = "Playing";
+          gameEnded = false;
+
+          if (player == uid && !gameEnded) {
+            isMyTurn = true; // Set turn flag
+            playStuff.style.display = "block";
+
+            const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
+            const turnScore = turnScoreSnap.val();
+            document.getElementById("turnScorePar").textContent = "Your score this turn: " + turnScore;
+
+            rolledDiceDiv.replaceChildren();
+            const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+            const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+
+            const rolledDice = snap.val();
+            const heldDice = snapshot.val();
+
+            console.log("Rolls:", rolledDice, heldDice);
+
+            rolledDiceDiv.replaceChildren();
+
+            if (rolledDice) {
+                for (let i = 0; i < rolledDice.length; i++) {
+                    console.log("Adding dice button");
+                    const diceBtn = document.createElement("button");
+                    rolledDiceDiv.appendChild(diceBtn);
+                    diceBtn.textContent = rolledDice[i];
+                    const rollIndex = i;
+
+                    if (heldDice[i]) {
+                        diceBtn.classList.add("heldDice");
+                        // Lock the corresponding visual die
+                        lockDieByValue(rolledDice[i], rollIndex);
+                    }
+
+                    diceBtn.addEventListener("click", () => {
+                        errorMessage.style.display = "none";
+
+                        if (diceBtn.classList.contains("heldDice")) {
+                            diceBtn.classList.remove("heldDice");
+                            set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), false);
+                            // Unlock the corresponding visual die
+                            unlockDieByValue(rolledDice[i], rollIndex);
+                        } else {
+                            diceBtn.classList.add("heldDice");
+                            set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${rollIndex}`), true);
+                            // Lock the corresponding visual die
+                            lockDieByValue(rolledDice[i], rollIndex);
+                        }
+                    })
+                }
+            }
+
+          } else {
+            isMyTurn = false; // Not my turn
+            playStuff.style.display = "none";
+            
+            // Move cup to bottom right when it's not your turn
+            if (player == uid) {
+                moveCupToBottomRight();
+            }
+
+            const rolledDice = document.createElement("p");
+            const heldDice = document.createElement("p");
+
+            activePlayerDiv.appendChild(rolledDice);
+            activePlayerDiv.appendChild(heldDice);
+
+            rolledDice.textContent = playersInfo.val()[player].rolledDice;
+            heldDice.textContent = playersInfo.val()[player].heldDice;
+          }
+        }
+
+        if (playersInfo.val()[player].connected == false) {
+          const connected = document.createElement("p");
+          activePlayerDiv.appendChild(connected);
+          connected.textContent = "Disconnected";
+        }
+
+        if (gameEnded) {
+            document.getElementById("gameEndDiv").style.display = "block";
+
+            const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
+            const winnerId = idSnap.val();
+
+            const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
+            const winnerInfo = infoSnap.val();
+
+            const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
+            const winAmount = winAmountSnap.val();
+
+            document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
+            document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
+
+            if (winnerId == uid) {
+                document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
+            } else {
+                document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
+            }
+
+            document.getElementById("exitBtn").addEventListener("click", () => {
+
+                localStorage.removeItem("dicesLobbyId");
+                localStorage.removeItem("dicesIsHost");
+                localStorage.removeItem("selfUID");
+
+                window.location.href = "dices-hub.html";
+            })
+        }
     }
 }
 
-// Get user data
-let localBalance;
-let userData;
+async function rollDice() {
+    console.log("Rolling dice");
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+    const rollCount = snap.val();
 
-// O - Exit function (formerly logout)
-function logout() {
-    window.location.href = "navigation.html";
+    if (rollCount < 3) {
+
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
+                method: "POST",
+                headers: {
+                    "Authorization": token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "lobbyId": lobbyId,
+                })
+        });
+
+        const response = await res.json();
+        console.log("Roll response:", response);
+
+        if (response.success) {
+            errorMessage.style.display = "none";
+        } else {
+            errorMessage.style.display = "block";
+            errorMessage.textContent = response.reply;
+        }
+    }
 }
-const symbolImages = [
-    'icon/1.png',
-    'icon/raiden.png',
-    'icon/3.png',
-    'icon/4.png',
-    'icon/1.png'
-];
-const symbolWinAmounts = {
-    'icon/1.png': 'main/screen/low.png',
-    'icon/raiden.png': 'main/screen/mid.png',
-    'icon/3.png': 'main/screen/mid.png',
-    'icon/4.png': 'main/screen/big.png'
-};
 
-const reels = document.querySelectorAll('.reel');
-const lever = document.querySelector('.lever-image');
-const winText = document.querySelector('#text');
-const musicToggle = document.querySelector('.music-toggle');
-const AVAILABLE_NOTES = [100, 50, 20, 10, 5, 1];
-const cashoutButton = document.querySelector('.button');
-const doorStack = document.querySelector('.door img');
-const door = document.querySelector('.door');
-const cashoutSound = new Audio('sound/cashout.mp3');
-const pickupSound = new Audio('sound/note.mp3');
-const wallet = document.querySelector('.wallet');
-let notesAwaitingPickup = 0;
-let isSpinning = false;
+async function submitMove() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
+            method: "POST",
+            headers: {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "lobbyId": lobbyId,
+                "move": "skip"
+            })
+    });
+
+    const response = await res.json();
+    console.log("Move response:", response);
+
+    if (response.success) {
+            errorMessage.style.display = "none";
+        } else {
+            errorMessage.style.display = "block";
+            errorMessage.textContent = response.reply;
+        }
+}
+const nameP = document.getElementById("lobbyName");
+if(localStorage.getItem("lobbyName")) {
+    nameP.textContent = localStorage.getItem("lobbyName");
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const cup = document.getElementById('cup');
+const gameContainer = document.getElementById('game-container');
+
+// --- RESIZING & COORDINATE SYSTEMS ---
+
+// Update internal resolution to match CSS display size
+function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
+
+// Convert Percentages (0-100 relative to CANVAS) to Pixels
+function vhToPx(percent) {
+  return (percent * canvas.height) / 100;
+}
+
+function vwToPx(percent) {
+  return (percent * canvas.width) / 100;
+}
+
+// Convert Pixels to Percentages
+function pxToVw(px) {
+  return (px / canvas.width) * 100;
+}
+
+function pxToVh(px) {
+  return (px / canvas.height) * 100;
+}
+
+// Helper: Applies the visual position to the DOM element based on current canvas size
+function renderDiePosition(die) {
+    if (!die.element) return;
+    
+    // Calculate position: Canvas Offset + (Canvas Width * Percent)
+    const pixelX = canvas.offsetLeft + vwToPx(die.xPercent);
+    const pixelY = canvas.offsetTop + vhToPx(die.yPercent);
+    
+    die.element.style.left = pixelX + 'px';
+    die.element.style.top = pixelY + 'px';
+    die.element.style.transform = `rotate(${die.rotation}deg)`;
+}
+
+// Helper: Get mouse position relative to the Canvas
+function getRelativeMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    };
+}
+
+// --- GAME STATE ---
+
+let dice = [];
+let lockedDice = [];
+let isDraggingCup = false;
+// Cup state stored as raw Pixels relative to Canvas initially to prevent jumping, 
+// but we will track percentages for consistency.
+let cupXPercent = 20; 
+let cupYPercent = 20; 
 let mouseX = 0;
 let mouseY = 0;
-let screenClickCount = 0;
-let lastScreenClickTime = 0;
-const SCREEN_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
-const SCREEN_CLICK_TARGET = 10;
-const screenClickSound = new Audio('sound/screentap.mp3');
+let prevMouseX = 0;
+let prevMouseY = 0;
+let shakeIntensity = 0;
+let cupVelocityX = 0;
+let cupVelocityY = 0;
+let cupState = 'normal';
+let isRolling = false;
+let pendingRollValues = null;
+let isMyTurn = false;
 
-// Track mouse position
+// Images
+const cupImg = 'main/dice/cup.png';
+const cupSpillImg = 'main/dice/cup_spillF.gif';
+const diceImages = [];
+for (let i = 1; i <= 6; i++) {
+  diceImages.push(`main/dice/dice_${i}.png`);
+}
+const lockedOverlay = 'main/dice/dice_lock_1.gif';
+
+cup.style.backgroundImage = `url(main/dice/cup.png)`;
+cup.style.backgroundSize = 'contain';
+
+// --- INITIAL POSITIONING ---
+
+function moveCupToBottomRight() {
+    cupXPercent = 75; // Bottom right position
+    cupYPercent = 70;
+    updateCupPosition();
+}
+
+function updateCupPosition() {
+    // Canvas Offset + (Percent converted to Px)
+    const xPx = canvas.offsetLeft + vwToPx(cupXPercent);
+    const yPx = canvas.offsetTop + vhToPx(cupYPercent);
+    
+    cup.style.left = xPx + 'px';
+    cup.style.top = yPx + 'px';
+}
+updateCupPosition();
+
+// --- AUDIO ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playShakeSound() {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.frequency.value = 100 + Math.random() * 50;
+  oscillator.type = 'sine';
+  gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + 0.1);
+}
+
+// --- CONTROLS ---
+
+cup.addEventListener('mousedown', (e) => {
+  if (isRolling || !isMyTurn) return; // Prevent dragging if not your turn
+  isDraggingCup = true;
+  cup.classList.add('dragging');
+  cupState = 'normal';
+  cup.style.backgroundImage = `url(${cupImg})`;
+  cup.style.transform = 'scale(1.1) rotate(0deg)';
+  
+  const rect = cup.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  
+  prevMouseX = e.clientX;
+  prevMouseY = e.clientY;
+  e.preventDefault();
+});
+
 document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+  if (!isDraggingCup) return;
+  
+  // Logic: We want to move the cup based on mouse, but store position as % of canvas
+  
+  // 1. Get Mouse relative to the Game Container's top-left
+  // (We subtract the container's offset, though getBoundingClientRect is easier)
+  const containerRect = gameContainer.getBoundingClientRect();
+  
+  // 2. Position of cup top-left relative to screen
+  const targetScreenX = e.clientX - mouseX;
+  const targetScreenY = e.clientY - mouseY;
+  
+  // 3. Convert that to Position relative to Canvas
+  const canvasRect = canvas.getBoundingClientRect();
+  const relX = targetScreenX - canvasRect.left;
+  const relY = targetScreenY - canvasRect.top;
+  
+  // 4. Save as Percent
+  cupXPercent = pxToVw(relX);
+  cupYPercent = pxToVh(relY);
+  
+  updateCupPosition();
+  
+  // Velocity Calc
+  const dx = e.clientX - prevMouseX;
+  const dy = e.clientY - prevMouseY;
+  const speed = Math.sqrt(dx*dx + dy*dy);
+  cupVelocityX = dx * 0.5;
+  cupVelocityY = dy * 0.5;
+  
+  if (speed > 10) {
+    shakeIntensity += speed;
+    if (shakeIntensity > 50) {
+      playShakeSound();
+      shakeIntensity = 0;
+    }
+  } else {
+    shakeIntensity *= 0.8;
+  }
+  
+  prevMouseX = e.clientX;
+  prevMouseY = e.clientY;
+  
+  collectDice();
 });
-document.addEventListener('click', () => {
-    if (!isDoorOpen) return; // Only allow note pickup when door is open
-    //CLOUDFUNCTIONHERE
+
+document.addEventListener('mouseup', async () => {
+  if (!isDraggingCup) return;
+  isDraggingCup = false;
+  cup.classList.remove('dragging');
+  
+  // Check if ALL dice are collected (cup is full)
+  // All dice collected = dice.length is 0 (they're in the cup, not on table)
+  if (dice.length === 0 && cupState === 'normal' && isMyTurn) {
+    // Call the roll function first
+    const rollSuccess = await performRoll();
     
-    const notes = Array.from(document.querySelectorAll('.banknote'));
-    if (notes.length === 0) return;
-    
-    // Find notes under cursor
-    const hoveredNotes = notes.filter(note => {
-        const rect = note.getBoundingClientRect();
-        return mouseX >= rect.left && mouseX <= rect.right &&
-               mouseY >= rect.top && mouseY <= rect.bottom;
-    });
-    
-    // If any notes are hovered, pick up the last one (topmost in DOM)
-    if (hoveredNotes.length > 0) {
-        pickupNote(hoveredNotes[hoveredNotes.length - 1]);
+    // Then spill dice with the returned values if roll succeeded
+    if (rollSuccess && pendingRollValues) {
+      spillDice();
+      // Move cup to bottom right after rolling
+      setTimeout(() => {
+        moveCupToBottomRight();
+      }, 500);
     }
+  }
 });
 
+async function performRoll() {
+  console.log("Performing roll via cup");
+  
+  try {
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+    const rollCount = snap.val();
 
-// Convert measurements to vh
-const SYMBOL_HEIGHT = 14;
-const VISIBLE_SYMBOLS = 3;
-const BUFFER_SYMBOLS = 2;
-const TOTAL_SYMBOLS = VISIBLE_SYMBOLS + BUFFER_SYMBOLS;
+    if (rollCount < 3) {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
+        method: "POST",
+        headers: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "lobbyId": lobbyId,
+        })
+      });
 
+      const response = await res.json();
+      console.log("Roll response:", response);
 
-const LEVER_GIF = 'main/automat/paka.gif';
-const LEVER_STATIC = 'main/automat/paka.png';
-
-// Music states
-const MUSIC_STATES = {
-    STATIC: 'main/radio/radio.png',
-    PLAYING_START: 'main/radio/ni.gif'
-};
-
-// Add note sprites
-const NOTE_SPRITES = [
-    'main/radio/notes/note1.png',
-    'main/radio/notes/note2.png',
-    'main/radio/notes/note3.png',
-    'main/radio/notes/note4.png'
-];
-let walletBalance = 0;
-let playerCredit = 0;
-let betAmount = 5;
-const displayDiv = document.querySelector('.credit-display');
-
-
-async function initializeWallet() {
-    if (!localMode) {
-        await checkAuth();
-
-        if (!localBalance) {
-            console.log("NO LOCAL BALANCE, LOGGING OUT")
-            await localBalance;
-            console.log(localBalance)
-            setTimeout(() => {
-            //window.location.href = 'index.html';
-            return;
-            }, 10000);
-            
-        }
-        walletBalance = localBalance.walletBalance;
-        playerCredit = localBalance.creditBalance;
-        updateAvailableBills();
-        updateCreditDisplay();
-
-    } else {
-        console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
-        walletBalance = 500;
-        playerCredit = 100;
-        updateAvailableBills();
-        updateCreditDisplay();
-    }
-}
-
-function updateCreditDisplay() {
-    if (!displayDiv.classList.contains('showing-win')) {
-        displayDiv.textContent = `Credit:$${playerCredit}`;
-    }
-}
-async function openDoor() {
-    doorStack.style.transition = 'transform 1s ease-out';
-    doorStack.style.transform = 'translateY(-100%)';
-    
-    // Move wallet up as door opens
-    updateWalletPosition(true);
-    
-    return new Promise(resolve => {
-        setTimeout(() => {
-            doorStack.style.visibility = 'hidden';
-            doorStack.style.transform = 'translateY(0)';
-            doorStack.style.transition = 'none';
-            doorStack.style.bottom = '5vh';
-            resolve();
-        }, 1000);
-    });
-}
-
-function closeDoor() {
-    doorStack.style.visibility = 'visible';
-    doorStack.style.transition = 'bottom 0.5s ease-out';
-    doorStack.style.bottom = '0';
-    isDoorOpen = false;
-    
-    // Move wallet back down after door closes
-    updateWalletPosition(false);
-    
-    // Clean up any remaining notes in the door
-
-    
-    // Reset states
-    enableWalletNoteTransfer(false);
-    isProcessingCashout = false;
-    
-    setTimeout(() => {
-        cashoutButton.style.pointerEvents = 'auto';
-    }, 500);
-}
-
-function calculateNotes(amount) {
-    const notes = [];
-    let remaining = amount;
-    
-    for (const note of AVAILABLE_NOTES) {
-        while (remaining >= note) {
-            notes.push(note);
-            remaining -= note;
-        }
-    }
-    
-    return notes;
-}
-function clearCreditDisplay() {
-    // Remove any existing credit display
-    const existingDisplay = document.querySelector('.credit-display');
-    if (existingDisplay) {
-        existingDisplay.remove();
-    }
-}
-
-class MusicNote {
-    constructor(container) {
-        this.element = document.createElement('img');
-        this.element.className = 'music-note';
-        this.element.src = NOTE_SPRITES[Math.floor(Math.random() * NOTE_SPRITES.length)];
+      if (response.success) {
+        errorMessage.style.display = "none";
         
-        // Random starting position near the radio
-        this.x = -20; // -10 to 10vh
-        this.y = -26;
-        
-        // Random movement parameters
-        this.speedX = (Math.random() - 0.5) * 0.2; // -1 to 1
-        this.speedY = -Math.random() * 0.1 - 0.2; // -3 to -1
-        this.rotation = Math.random() * 360;
-        this.rotationSpeed = (Math.random() - 0.5) * 4;
-        
-        // Random hue rotation
-        const hue = Math.random() * 360;
-        this.element.style.filter = `hue-rotate(${hue}deg) blur(1px)`;
-        
-        // Set initial position
-        this.updatePosition();
-        
-        container.appendChild(this.element);
-    }
-    
-    updatePosition() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.rotation += this.rotationSpeed;
-        
-        this.element.style.transform = `translate(${this.x}vh, ${this.y}vh) rotate(${this.rotation}deg)`;
-        
-        // Check if note should be removed (out of view)
-        if (this.y < -100) {
-            this.element.remove();
-            return false;
-        }
-        return true;
-    }
-}
-
-let musicNotes = [];
-let noteInterval = null;
-
-// Create audio elements
-const leverSound = new Audio('sound/lever.mp3');
-const backgroundMusic = new Audio('sound/background_music.mp3');
-const yaySound = new Audio('sound/yay.mp3');
-const winSound = new Audio('sound/win.mp3');
-const bigWinSound = new Audio('sound/bigwin.mp3');
-const squeakSound = new Audio('sound/squeak.mp3');
-const reelTickSound = new Audio('sound/tick2.mp3');
-const wrong = new Audio('sound/wrong.mp3');
-const clickSound = new Audio('sound/button.mp3');
-const radioSound = new Audio('sound/radio.mp3');
-wrong.volume = 0.2;
-yaySound.volume = 0.3;
-reelTickSound.volume = 0.3;
-backgroundMusic.loop = true;
-
-let isMusicPlaying = false;
-
-const tickSoundPool = Array.from({ length: 5 }, () => {
-    const audio = new Audio('sound/tick2.mp3');
-    audio.volume = 0.3;
-    return audio;
-});
-let currentTickIndex = 0;
-
-function playTickSound() {
-    tickSoundPool[currentTickIndex].currentTime = 0;
-    tickSoundPool[currentTickIndex].play().catch(error => {
-        console.log('Tick sound failed:', error);
-    });
-    currentTickIndex = (currentTickIndex + 1) % tickSoundPool.length;
-}
-
-function checkSymbolPosition(top) {
-    const centerPosition = SYMBOL_HEIGHT;
-    return Math.abs(top - centerPosition) < 0.5;
-}
-function getSymbolsAtPosition(position) {
-    return Array.from(reels).map(reel => {
-        const symbols = Array.from(reel.children);
-        const symbol = symbols.find(s => {
-            const top = parseFloat(s.style.top);
-            return Math.abs(top - (SYMBOL_HEIGHT * position)) < SYMBOL_HEIGHT * 0.1;
-        });
-        return symbol ? symbol.querySelector('img').src : null;
-    });
-}
-function playWinSound(win_type) {
-    let soundToPlay;
-    
-    switch(win_type) {
-        case 'low':
-        case 'mid':
-            soundToPlay = yaySound;
-            break;
-        case 'big':
-            soundToPlay = winSound;
-            break;
-        case 'giant':
-            soundToPlay = bigWinSound;
-            break;
-    }
-    
-    if (soundToPlay) {
-        soundToPlay.currentTime = 0;
-        soundToPlay.play().catch(error => {
-            console.log('Win sound failed:', error);
-        });
-    }
-}
-
-// Helper function to convert vh to pixels
-function vhToPx(vh) {
-    return (window.innerWidth * vh) / 100;
-}
-
-function initializeReel(reel) {
-    reel.innerHTML = '';
-    
-    for (let i = 0; i < TOTAL_SYMBOLS; i++) {
-        const symbol = document.createElement('div');
-        symbol.className = 'symbol';
-        const img = document.createElement('img');
-        img.src = symbolImages[Math.floor(Math.random() * symbolImages.length)];
-        img.alt = 'Slot Symbol';
-        symbol.appendChild(img);
-        symbol.style.top = `${i * SYMBOL_HEIGHT - 14}vh`;
-        symbol.style.transition = 'none';
-        reel.appendChild(symbol);
-    }
-}
-
-function shakeLever() {
-    lever.classList.add('shake');
-    setTimeout(() => {
-        lever.classList.remove('shake');
-    }, 200);
-}
-
-function playLeverAnimation() {
-    lever.src = LEVER_GIF;
-    setTimeout(() => {
-        lever.src = LEVER_STATIC;
-    }, 500);
-}
-function shakeSound() {
-    squeakSound.currentTime = 0;
-    squeakSound.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-}
-function noSound() {
-    wrong.currentTime = 0;
-    wrong.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-}
-
-function playLeverSound() {
-    leverSound.currentTime = 0;
-    leverSound.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-}
-let radioClickCount = 0;
-let lastRadioClickTime = 0;
-const RADIO_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
-const RADIO_CLICK_TARGET = 10;
-
-async function toggleMusic() {
-    const noteContainer = document.querySelector('.music-container');
-    const currentTime = Date.now();
-    
-    // Check if it's a rapid click
-    if (currentTime - lastRadioClickTime > RADIO_CLICK_RESET_TIME) {
-        radioClickCount = 0;
-    }
-    
-    radioClickCount++;
-    lastRadioClickTime = currentTime;
-    
-    // Check if we've reached the target number of clicks
-    if (radioClickCount === RADIO_CLICK_TARGET) {
-        radioClickCount = 0;
-        // Stop any playing music first
-        if (isMusicPlaying) {
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0;
-            musicToggle.src = MUSIC_STATES.STATIC;
-            isMusicPlaying = false;
-            if (noteInterval) {
-                clearInterval(noteInterval);
-                noteInterval = null;
-            }
-        }
-        // Trigger robot's special sequence
-        await robotController.playRadioSpecialSequence();
-        return;
-    }
-
-    // Normal music toggle behavior
-    radioSound.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-    if (!isMusicPlaying) {
-        musicToggle.src = MUSIC_STATES.PLAYING_START;
-        
-        try {
-            await backgroundMusic.play();
-            isMusicPlaying = true;
-            
-            // Start spawning notes
-            if (!noteInterval) {
-                noteInterval = setInterval(() => {
-                    if (isMusicPlaying) {
-                        const note = new MusicNote(noteContainer);
-                        musicNotes.push(note);
-                    }
-                }, 300);
-            }
-            
-            // Start animation loop if not already running
-            if (!window.musicAnimationFrame) {
-                function animateNotes() {
-                    musicNotes = musicNotes.filter(note => note.updatePosition());
-                    window.musicAnimationFrame = requestAnimationFrame(animateNotes);
-                }
-                window.musicAnimationFrame = requestAnimationFrame(animateNotes);
-            }
-            
-        } catch (error) {
-            console.log('Music playback failed:', error);
-            musicToggle.src = MUSIC_STATES.STATIC;
-        }
-    } else {
-        musicToggle.src = MUSIC_STATES.PLAYING_START;
-        backgroundMusic.pause();
-        backgroundMusic.currentTime = 0;
-        
-        // Stop spawning new notes
-        if (noteInterval) {
-            clearInterval(noteInterval);
-            noteInterval = null;
-        }
-        
-        // Let existing notes continue moving until they're off screen
-        // The animation loop will continue until all notes are gone
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        musicToggle.src = MUSIC_STATES.STATIC;
-        isMusicPlaying = false;
-    }
-}
-
-//DEBUG - NOW ONLY VISUAL, WIN CHECKING IS A CLOUDFUNCTION
-function checkWin() {
-    const middleRow = getSymbolsAtPosition(1);
-    if (middleRow.every(symbol => symbol === middleRow[0])) {
-        const winningSymbol = middleRow[0].split('/').pop();
-        const baseSymbol = `icon/${winningSymbol}`;
-        
-        const topRow = getSymbolsAtPosition(0);
-        const bottomRow = getSymbolsAtPosition(2);
-        
-        let winAmount;
-        
-        if (topRow.every(symbol => symbol === topRow[0]) && 
-            bottomRow.every(symbol => symbol === bottomRow[0])) {
-            winAmount = 9999;
-            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
-            playWinSound('giant');
-        } else {
-            if (baseSymbol === 'icon/4.png') {
-                winAmount = 250;
-                displayDiv.textContent = `BIG WIN: $${winAmount}!`;
-                playWinSound('big');
-            } else if (baseSymbol === 'icon/raiden.png' || baseSymbol === 'icon/3.png') {
-                winAmount = 50;
-                displayDiv.textContent = `WIN: $${winAmount}!`;
-                playWinSound('mid');
-            } else {
-                winAmount = 5;
-                displayDiv.textContent = `WIN: $${winAmount}!`;
-                playWinSound('low');
-            }
-        }
-        
-        displayDiv.classList.add('showing-win');
-        
-        // Reset display after 5 seconds
-        setTimeout(() => {
-            displayDiv.classList.remove('showing-win');
-            updateCreditDisplay();
-        }, 5000);
+        // Get the rolled dice values from Firebase
+        const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+        pendingRollValues = rolledSnap.val();
+        console.log("Dice values from server:", pendingRollValues);
         
         return true;
+      } else {
+        errorMessage.style.display = "block";
+        errorMessage.textContent = response.reply;
+        pendingRollValues = null;
+        return false;
+      }
+    } else {
+      errorMessage.style.display = "block";
+      errorMessage.textContent = "Maximum rolls reached!";
+      pendingRollValues = null;
+      return false;
     }
-    updateCreditDisplay();
+  } catch (error) {
+    console.error("Roll error:", error);
+    errorMessage.style.display = "block";
+    errorMessage.textContent = "Roll failed. Please try again.";
+    pendingRollValues = null;
     return false;
+  }
 }
-let canSpin, spinPositions, newCredit;
-let reel1stopIndex = 0;
-let reel2stopIndex = 0;
-let reel3stopIndex = 0;
+// --- GAME LOGIC ---
 
-function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
-    return new Promise(resolve => {
-        const symbols = Array.from(reel.children);
-        let symbolsPassed = 0;
-        const speed = 4; // vh per frame
-        
-        // Create random symbols array + winning symbols at the end
-        const symbolQueue = [];
-        
-        // Add random symbols
-        for (let i = 0; i < totalSymbolsToSpin; i++) {
-            symbolQueue.push(symbolImages[Math.floor(Math.random() * symbolImages.length)]);
-        }
-        
-        // Add winning symbols at the end (top, middle, bottom for this reel)
-        symbolQueue.push(finalSymbols[reelIndex]); // top (0vh)
-        symbolQueue.push(finalSymbols[reelIndex + 3]); // middle (14vh)
-        symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
-        
-        let queueIndex = 0;
-        let allWinningSymbolsPlaced = false;
-        let framesSinceAllPlaced = 0;
-        const ALIGNMENT_FRAMES = 20;
-        
-        function animate() {
-            symbols.forEach(symbol => {
-                let top = parseFloat(symbol.style.top);
-                const previousTop = top;
-                top += speed;
-                
-                // Play tick sound when passing center
-                if ((previousTop < SYMBOL_HEIGHT && top >= SYMBOL_HEIGHT) ||
-                    (previousTop > SYMBOL_HEIGHT && top <= SYMBOL_HEIGHT)) {
-                    playTickSound();
-                }
-                
-                // When symbol goes off screen, wrap it and assign next symbol from queue
-                if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    // KEY FIX: Properly normalize the position
-                    top = top - (SYMBOL_HEIGHT * TOTAL_SYMBOLS);
-                    
-                    // Update the image
-                    const img = symbol.querySelector('img');
-                    if (queueIndex < symbolQueue.length) {
-                        img.src = symbolQueue[queueIndex];
-                        queueIndex++;
-                        symbolsPassed++;
-                        
-                        if (queueIndex === symbolQueue.length) {
-                            allWinningSymbolsPlaced = true;
-                        }
-                    }
-                }
-                
-                symbol.style.top = `${top}vh`;
-            });
-            
-            // Once all winning symbols are placed, wait then align
-            if (allWinningSymbolsPlaced) {
-                framesSinceAllPlaced++;
-                
-                if (framesSinceAllPlaced >= ALIGNMENT_FRAMES) {
-                    // Find winning symbols
-                    const winningImages = [
-                        finalSymbols[reelIndex],
-                        finalSymbols[reelIndex + 3],
-                        finalSymbols[reelIndex + 6]
-                    ];
-                    
-                    const winningSymbolElements = symbols.filter(symbol => {
-                        const imgSrc = symbol.querySelector('img').src;
-                        return winningImages.some(winImg => imgSrc.includes(winImg.split('/').pop()));
-                    });
-                    
-                    if (winningSymbolElements.length >= 3) {
-                        const targetPositions = [
-                            -SYMBOL_HEIGHT,           // -14vh (top buffer)
-                            0,                        // 0vh (visible top)
-                            SYMBOL_HEIGHT,            // 14vh (visible middle)
-                            SYMBOL_HEIGHT * 2,        // 28vh (visible bottom)
-                            SYMBOL_HEIGHT * 3         // 42vh (bottom buffer)
-                        ];
-                        
-                        // Assign each winning symbol to its target position
-                        const sortedWinningSymbols = [...winningSymbolElements].sort((a, b) => 
-                            parseFloat(a.style.top) - parseFloat(b.style.top)
-                        );
-                        
-                        // The three winning symbols should be at positions 1, 2, 3 (0vh, 14vh, 28vh)
-                        sortedWinningSymbols.forEach((symbol, idx) => {
-                            symbol.style.transition = 'top 0.15s ease-out';
-                            symbol.style.top = `${targetPositions[idx + 1]}vh`;
-                        });
-                        
-                        // Position remaining symbols
-                        const nonWinningSymbols = symbols.filter(s => !winningSymbolElements.includes(s));
-                        const usedPositions = [1, 2, 3]; // Winning symbols use these
-                        const availablePositions = [0, 4]; // Buffer positions
-                        
-                        nonWinningSymbols.forEach((symbol, idx) => {
-                            symbol.style.transition = 'top 0.15s ease-out';
-                            symbol.style.top = `${targetPositions[availablePositions[idx]]}vh`;
-                        });
-                        
-                        setTimeout(() => {
-                            symbols.forEach(symbol => {
-                                symbol.style.transition = 'none';
-                            });
-                            resolve();
-                        }, 150);
-                        return;
-                    }
-                }
-            }
-            
-            requestAnimationFrame(animate);
-        }
-        
-        requestAnimationFrame(animate);
+function spillDice() {
+  cupState = 'spilling';
+  cup.style.backgroundImage = `url(${cupSpillImg})`;
+  const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
+  let angleDeg = angleRad * (180 / Math.PI);
+
+  cup.style.transform = `rotate(${angleDeg+90}deg) scale(1.1)`;
+  
+  // Use server values if available, otherwise generate random
+  const diceValues = pendingRollValues || [];
+  const numDice = diceValues.length || (6 - lockedDice.length);
+  
+  const launchSpeedMultiplier = 4;
+  const baseVx = cupVelocityX !== 0 ? cupVelocityX * launchSpeedMultiplier : 5;
+  const baseVy = cupVelocityY !== 0 ? cupVelocityY * launchSpeedMultiplier : 0;
+  
+  for (let i = 0; i < numDice; i++) {
+    const spread = (Math.random() - 0.5) * 50;
+    
+    // Use server value if available, otherwise random
+    const faceValue = diceValues[i] || (Math.floor(Math.random() * 6) + 1);
+    
+    dice.push({
+      xPercent: cupXPercent + 5, 
+      yPercent: cupYPercent + 30, 
+      vx: baseVx + spread,
+      vy: baseVy + spread,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 20,
+      face: faceValue,
+      finalFace: faceValue, // Store the final face value
+      rolling: true,
+      rollTime: 0,
+      element: null
     });
+  }
+  
+  dice.forEach(die => {
+    const el = document.createElement('div');
+    el.className = 'die rolling';
+    el.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+    el.style.backgroundSize = 'contain';
+    
+    gameContainer.appendChild(el); 
+    die.element = el;
+    
+    renderDiePosition(die);
+    
+    die.clickHandler = () => lockDie(die);
+    el.addEventListener('click', die.clickHandler);
+  });
+  
+  isRolling = true;
+  cupVelocityX = 0;
+  cupVelocityY = 0;
+  
+  // Clear pending values
+  pendingRollValues = null;
 }
-async function spin() {
-    if (isSpinning) {
-        shakeLever();
-        shakeSound();
-        return;
-    }
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 4) {
-        robotController.tutorialActionCompleted();
-    }
-    if (playerCredit < betAmount) {
-        shakeLever();
-        shakeSound();
-        noSound();
-        return;
-    }
-    
-    isSpinning = true;
-    playerCredit -= betAmount;
-    updateCreditDisplay();
-    playLeverSound();
-    playLeverAnimation();
-    
-    //Send cloud spin request
-    if (!localMode) {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-        });
 
-        const data = await res.json();
-        console.log("Spin result:", data)
+function collectDice() {
+  const cupSize = vhToPx(20); // Check collision in Pixels
+  const diceSize = vhToPx(8);
+  
+  // Calculate cup center in Pixels
+  const cupCenterX = vwToPx(cupXPercent) + cupSize * 1.2;
+  const cupCenterY = vhToPx(cupYPercent) + cupSize * 2.45;
+  const collectRadius = vhToPx(10);
+  
+  for (let i = dice.length - 1; i >= 0; i--) {
+    const die = dice[i];
+    if (die.rolling) continue;
+    
+    const diePxX = vwToPx(die.xPercent);
+    const diePxY = vhToPx(die.yPercent);
+    
+    const dx = diePxX + diceSize * 2 - cupCenterX;
+    const dy = diePxY + diceSize * 2 - cupCenterY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if (dist < collectRadius) {
+      if (die.element) die.element.remove();
+      dice.splice(i, 1);
+    }
+  }
+}
 
-        if (!data.valid) {
-            initializeWallet();
-            isSpinning = false;
-            return;
+function lockDie(die) {
+  if (die.rolling) return;
+  const index = dice.indexOf(die);
+  if (index === -1) return;
+  
+  dice.splice(index, 1);
+  die.element.classList.add('locked');
+  die.locked = true;
+  
+  // Calculate target relative to container
+  const containerW = gameContainer.clientWidth;
+  const containerH = gameContainer.clientHeight;
+  
+  const targetX = (containerW * 0.06) + (lockedDice.length % 3) * (containerW * 0.05);
+  const targetY = (containerH * 0.85) + Math.floor(lockedDice.length / 3) * (containerH * 0.06);
+  
+  animateToPosition(die.element, targetX, targetY, () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'locked-overlay';
+    die.element.appendChild(overlay);
+    
+    die.element.style.pointerEvents = 'auto';
+    die.element.style.cursor = 'pointer';
+  });
+  
+  die.element.removeEventListener('click', die.clickHandler);
+  die.clickHandler = () => unlockDie(die);
+  die.element.addEventListener('click', die.clickHandler);
+  
+  lockedDice.push(die);
+}
+
+// Helper to lock a die by its value and index (synced with button clicks)
+function lockDieByValue(value, targetIndex) {
+  // Find the die with matching value that's not already locked
+  let foundIndex = 0;
+  for (let i = 0; i < dice.length; i++) {
+    const die = dice[i];
+    if (die.face === value && !die.rolling) {
+      if (foundIndex === targetIndex) {
+        lockDie(die);
+        return;
+      }
+      foundIndex++;
+    }
+  }
+}
+
+// Helper to unlock a die by its value and index (synced with button clicks)
+function unlockDieByValue(value, targetIndex) {
+  // Find the locked die with matching value
+  let foundIndex = 0;
+  for (let i = 0; i < lockedDice.length; i++) {
+    const die = lockedDice[i];
+    if (die.face === value) {
+      if (foundIndex === targetIndex) {
+        unlockDie(die);
+        return;
+      }
+      foundIndex++;
+    }
+  }
+}
+
+function animateToPosition(element, targetX, targetY, callback) {
+  const startX = parseFloat(element.style.left);
+  const startY = parseFloat(element.style.top);
+  const duration = 500;
+  const startTime = Date.now();
+  
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    
+    const currentX = startX + (targetX - startX) * eased;
+    const currentY = startY + (targetY - startY) * eased;
+    
+    element.style.left = currentX + 'px';
+    element.style.top = currentY + 'px';
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else if (callback) {
+      callback();
+    }
+  }
+  animate();
+}
+
+function unlockDie(die) {
+  if (!die.locked) return;
+  const index = lockedDice.indexOf(die);
+  if (index === -1) return;
+  
+  lockedDice.splice(index, 1);
+  die.locked = false;
+  
+  const overlay = die.element.querySelector('.locked-overlay');
+  if (overlay) overlay.remove();
+  
+  die.element.classList.remove('locked');
+  
+  // Unlock to a random position on the canvas
+  const randomXPercent = Math.random() * 80 + 10;
+  const randomYPercent = Math.random() * 80 + 10;
+  
+  die.vx = 0;
+  die.vy = 0;
+  die.rolling = false;
+  
+  // Calculate Target (Canvas Offset + Percent->Px)
+  const targetX = canvas.offsetLeft + vwToPx(randomXPercent);
+  const targetY = canvas.offsetTop + vhToPx(randomYPercent);
+  
+  animateToPosition(die.element, targetX, targetY, () => {
+    die.xPercent = randomXPercent;
+    die.yPercent = randomYPercent;
+    
+    die.element.removeEventListener('click', die.clickHandler);
+    die.clickHandler = () => lockDie(die);
+    die.element.addEventListener('click', die.clickHandler);
+    
+    die.element.style.cursor = 'pointer';
+  });
+  
+  dice.push(die);
+  repositionLockedDice();
+}
+
+function repositionLockedDice() {
+  const containerW = gameContainer.clientWidth;
+  const containerH = gameContainer.clientHeight;
+  
+  lockedDice.forEach((die, i) => {
+    const targetX = (containerW * 0.06) + (i % 3) * (containerW * 0.05);
+    const targetY = (containerH * 0.85) + Math.floor(i / 3) * (containerH * 0.06);
+    
+    // If not animating, just set it
+    if(die.element) {
+        die.element.style.left = targetX + 'px';
+        die.element.style.top = targetY + 'px';
+    }
+  });
+}
+
+function update() {
+  let allStopped = true;
+  const diceSize = vhToPx(16);
+  
+  dice.forEach(die => {
+    if (die.rolling) {
+      die.rollTime += 16;
+      
+      // 1. Convert State (%) to Physics (Px)
+      let diePxX = vwToPx(die.xPercent);
+      let diePxY = vhToPx(die.yPercent);
+      
+      // 2. Physics Math
+      diePxX += die.vx;
+      diePxY += die.vy;
+      die.vx *= 0.92;
+      die.vy *= 0.92;
+      
+      // 3. Walls (Canvas Boundaries)
+      if (diePxX > canvas.width - diceSize) {
+        diePxX = canvas.width - diceSize;
+        die.vx *= -0.6;
+      }
+      if (diePxX < 0) {
+        diePxX = 0;
+        die.vx *= -0.6;
+      }
+      if (diePxY > canvas.height - diceSize) {
+        diePxY = canvas.height - diceSize;
+        die.vy *= -0.6;
+        die.vx *= 0.9;
+      }
+      if (diePxY < 0) {
+         diePxY = 0;
+         die.vy *= -0.6;
+      }
+      
+      // 4. Update State (%) from Physics (Px)
+      die.xPercent = pxToVw(diePxX);
+      die.yPercent = pxToVh(diePxY);
+      
+      // 5. Collision (Simplified)
+      dice.forEach(other => {
+        if (die === other) return;
+        const otherPxX = vwToPx(other.xPercent);
+        const otherPxY = vhToPx(other.yPercent);
+        const dx = otherPxX - diePxX;
+        const dy = otherPxY - diePxY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < diceSize && dist > 0) {
+           const nx = dx/dist; const ny = dy/dist;
+           const overlap = diceSize - dist;
+           diePxX -= nx * overlap * 0.5;
+           diePxY -= ny * overlap * 0.5;
+           other.xPercent = pxToVw(vwToPx(other.xPercent) + nx*overlap*0.5);
+           other.yPercent = pxToVh(vhToPx(other.yPercent) + ny*overlap*0.5);
+           die.xPercent = pxToVw(diePxX);
+           die.yPercent = pxToVh(diePxY);
+           // Bounce
+           const relVx = die.vx - other.vx; const relVy = die.vy - other.vy;
+           const impulse = (relVx*nx + relVy*ny);
+           die.vx -= impulse*nx; die.vy -= impulse*ny;
+           other.vx += impulse*nx; other.vy += impulse*ny;
         }
-
-        let finalSymbols = [];
-        let finalNumbers = Object.values(data.winSlots);
-
-        finalNumbers.forEach(number => {
-            switch (number) {
-                case 1:
-                    finalSymbols.push('icon/3.png');
-                    break;
-                case 2:
-                    finalSymbols.push('icon/raiden.png');
-                    break;
-                case 3:
-                    finalSymbols.push('icon/4.png');
-                    break;
-                case 4:
-                    finalSymbols.push('icon/1.png');
-                    break;
-            }
-        });
-
-        // Create spinning animation with winning symbols at the end
-        const spinPromises = Array.from(reels).map((reel, reelIndex) => {
-            // Reel 1: base amount, Reel 2: +10, Reel 3: +25 (10+15)
-            const extraSymbols = reelIndex * 10 + (reelIndex === 2 ? 15 : 0);
-            const totalSymbols = 20 + extraSymbols;
-            // Add 1 extra symbol for reel 3 to compensate
-            const adjustedTotal = reelIndex === 2 ? totalSymbols + 1 : totalSymbols;
-            return animateReelSimple(reel, reelIndex, adjustedTotal, finalSymbols);
-        });
-
-        await Promise.all(spinPromises);
-        checkWin()
-        playerCredit += data.winAmount;
-        updateCreditDisplay();
-        
-        isSpinning = false;
+      });
+      
+      die.rotation += die.rotationSpeed;
+      die.rotationSpeed *= 0.98;
+      
+      if (Math.random() < 0.1) {
+        die.face = Math.floor(Math.random() * 6) + 1;
+        if (die.element) die.element.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+      }
+      
+      const speed = Math.sqrt(die.vx*die.vx + die.vy*die.vy);
+    if (speed < 0.1 && die.rollTime > 1000) {
+    die.rolling = false;
+    die.vx = 0; die.vy = 0; die.rotationSpeed = 0;
+    
+    // Use finalFace if it exists (from server), otherwise random
+    die.face = die.finalFace || Math.floor(Math.random() * 6) + 1;
+    
+    if (die.element) {
+        die.element.classList.remove('rolling');
+        die.element.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+    }
     } else {
-        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
-        console.log("Spin result: none")
-
-        let finalSymbols = [];
-        let finalNumbers = [1, 1, 1, 1, 1, 1, 1, 1, 1];
-
-        finalNumbers.forEach(number => {
-            switch (number) {
-                case 1:
-                    finalSymbols.push('icon/3.png');
-                    break;
-                case 2:
-                    finalSymbols.push('icon/raiden.png');
-                    break;
-                case 3:
-                    finalSymbols.push('icon/4.png');
-                    break;
-                case 4:
-                    finalSymbols.push('icon/1.png');
-                    break;
-            }
-        });
-
-        // Create spinning animation with winning symbols at the end
-        const spinPromises = Array.from(reels).map((reel, reelIndex) => {
-            // Reel 1: base amount, Reel 2: +10, Reel 3: +25 (10+15)
-            const extraSymbols = reelIndex * 10 + (reelIndex === 2 ? 15 : 0);
-            const totalSymbols = 20 + extraSymbols;
-            return animateReelSimple(reel, reelIndex, totalSymbols, finalSymbols);
-        });
-
-        await Promise.all(spinPromises);
-        checkWin();
-
-        isSpinning = false;
+    allStopped = false;
     }
-}
-async function spawnNote(noteValue) {
-    return new Promise(resolve => {
-        const note = document.createElement('img');
-        note.src = `money/${noteValue}.png`;
-        note.style.position = 'absolute';
-        note.style.width = '65%';
-        note.style.left = '15%';
-        note.style.bottom = '2vh';
-        note.style.zIndex = '1';
-        note.style.transition = 'transform 0.5s ease-out';
-        note.className = 'banknote';
-        
-        // Add an index to track stacking order
-        
-        door.appendChild(note);
-
-        cashoutSound.currentTime = 0;
-        cashoutSound.play().catch(error => {
-            console.log('Sound play failed:', error);
-        });
-
-        setTimeout(() => {
-            resolve();
-        }, 100);
-    });
-}
-async function pickupNote(note) {
-    if (note.dataset.isAnimating) return;
-    note.dataset.isAnimating = 'true';
-    
-    // Play sound
-    pickupSound.currentTime = 0;
-    pickupSound.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-    
-    // Get the value of the note and add it to wallet balance
-    const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-
-    //DEBUG - CASH OUT
-    if (!localMode) {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ Amount: noteValue })
-        });
-                    
-        const data = await res.json();
-
-        if (!data.valid) {
-            console.log("CASH OUT FAILED");
-        } else {
-            walletBalance += noteValue;
-        }
-        updateAvailableBills();
-    } else {
-        console.log("LOCAL MODE, SIMULATING CASH OUT")
-        walletBalance += noteValue;
-        updateAvailableBills();
+      
+      // 6. RENDER
+      renderDiePosition(die);
     }
-    
-    // Get the current position and size of the note
-    const noteRect = note.getBoundingClientRect();
-    const walletRect = wallet.getBoundingClientRect();
-    
-    // Create a new note element at the body level
-    const flyingNote = document.createElement('img');
-    flyingNote.src = note.src;
-    flyingNote.style.position = 'fixed';
-    flyingNote.style.width = note.offsetWidth + 'px';
-    flyingNote.style.height = note.offsetHeight + 'px';
-    flyingNote.style.left = noteRect.left + 'px';
-    flyingNote.style.top = noteRect.top + 'px';
-    flyingNote.style.zIndex = '49';
-    flyingNote.style.transform = 'translate(0, 0)';
-    
-    // Remove the original note
-    note.remove();
-    
-    // Add the new note to the body
-    document.body.appendChild(flyingNote);
-    
-    // Calculate positions
-    const targetX = walletRect.left - noteRect.left + (walletRect.width / 5);
-    const aboveWalletY = walletRect.top - noteRect.top - 300;
-    const finalY = walletRect.top - noteRect.top * 1.01;
-    
-    flyingNote.offsetHeight;
-    
-    requestAnimationFrame(() => {
-        flyingNote.style.transition = 'transform 0.3s ease-out';
-        flyingNote.style.transform = `translate(${targetX}px, ${aboveWalletY}px)`;
-        
-        flyingNote.addEventListener('transitionend', function dropDown() {
-            flyingNote.removeEventListener('transitionend', dropDown);
-            
-            flyingNote.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out';
-            flyingNote.style.transform = `translate(${targetX}px, ${finalY}px)`;
-            flyingNote.style.opacity = '0.6';
-            
-            setTimeout(() => {
-                flyingNote.remove();
-                notesAwaitingPickup--;
-                
-                if (notesAwaitingPickup === 0) {
-                    closeDoor();
-                }
-            }, 200);
-        }, { once: true });
-    });
-}
-const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
-const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
-const buttonImage = document.querySelector('.button img')
-
-let isDoorOpen = false;
-let isProcessingCashout = false;
-let isOutputting = false;
-
-async function cashout() {
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 2) {
-        robotController.tutorialActionCompleted();
-    }
-    if (isSpinning || isProcessingCashout || isOutputting) return;
-    isProcessingCashout = true;
-
-    buttonImage.src = BUTTON_PRESSED;
-    clickSound.play().catch(error => {
-        console.log('Sound play failed:', error);
-    });
-    await new Promise(resolve => setTimeout(resolve, 200));
-    buttonImage.src = BUTTON_NORMAL;
-
-    // Check if door is open (we're in deposit mode)
-    if (isDoorOpen) {
-        if (tutorialActive && tutorialWaitingForAction && tutorialStep === 3 && isDoorOpen) {
-            robotController.tutorialActionCompleted();
-        }
-
-        isProcessingCashout = true;
-        isOutputting = true;
-        // Get all notes in the door and save their values before closing
-        const notes = Array.from(door.querySelectorAll('.banknote'));
-        const noteValues = notes.map(note => parseInt(note.src.match(/\/(\d+)\.png/)[1]));
-        
-        // Close the door first
-
-        closeDoor();
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for door close animation
-        // Now process the saved note values - isProcessingCashout still true during this
-        if (noteValues.length > 0) {
-            for (const value of noteValues) {
-                // Play collection sound
-                const pickupSound = new Audio('sound/cashout.mp3');
-                pickupSound.play().catch(error => {
-                    console.log('Sound play failed:', error);
-                });
-                // Add to credit
-                //DEBUG - SEND CASH IN CLOUD REQUEST
-                if (!localMode) {
-
-                    const token = await auth.currentUser.getIdToken();
-                    const res = await fetch("https://cash-in-gtw5ppnvta-ey.a.run.app", {
-                        method: "POST",
-                        headers: {
-                            "Authorization": token,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ amount: value })
-                    });
-                    
-                    const data = await res.json();
-                    if (!data.valid) {
-                        console.log("CASH IN FAILED");
-                    } else {
-                        playerCredit += value;
-                        updateCreditDisplay();
-                    }
-                } else {
-                    console.log("LOCAL MODE, SIMULATING CASH IN")
-                    playerCredit += value;
-                    updateCreditDisplay();
-                }
-                // Wait before next note
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-        }
-        
-        enableWalletNoteTransfer(false);
-        // Only set isProcessingCashout to false after all notes are processed
-        notes.forEach(note => note.remove());
-        isProcessingCashout = false;
-        isOutputting = false;
-        return;
-    }
-    else if (playerCredit === 0) {
-        await openDoor();
-        isDoorOpen = true;
-        enableWalletNoteTransfer(true);
-        isProcessingCashout = false;
-        return;
-    }
-    else if(playerCredit > 0 && !isDoorOpen && !isOutputting){
-    // Normal cashout process remains the same
-    const notesToDispense = calculateNotes(playerCredit);
-    playerCredit = 0;
-    updateCreditDisplay();
-    
-    updateWalletPosition(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    notesAwaitingPickup = notesToDispense.length;
-    for (let i = 0; i < notesToDispense.length; i++) {
-        await spawnNote(notesToDispense[i]);
-        await new Promise(resolve => setTimeout(resolve, 540));
-    }
-    
-    await openDoor();
-    isDoorOpen = true;
-    }
-}
-async function collectNote(note) {
-    return new Promise(resolve => {
-        const value = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-        
-        // Play collection sound
-        const pickupSound = new Audio('sound/cashout.mp3');
-        pickupSound.volume = 0.6;
-        pickupSound.play().catch(error => {
-            console.log('Sound play failed:', error);
-        });
-        
-        // Add to credit
-        playerCredit += value;
-        updateCreditDisplay();
-        
-        // Remove the note
-        note.remove();
-        
-        setTimeout(resolve, 300); // Delay before next note
-    });
-}
-function enableWalletNoteTransfer(enable) {
-    const bills = document.querySelectorAll('.bill');
-    bills.forEach(bill => {
-        if (!bill.classList.contains('unavailable')) {
-            bill.classList.toggle('transferrable', enable);
-        }
-    });
-}
-async function transferNoteFromWallet(bill) {
-    if (!isDoorOpen) return;
-    
-    const value = parseInt(bill.dataset.value);
-    if (value > walletBalance) return;
-    
-    // Deduct from wallet and update database
-    walletBalance -= value;
-    updateAvailableBills();
-    
-    // Rest of your existing animation code
-    const billRect = bill.getBoundingClientRect();
-    const doorRect = door.getBoundingClientRect();
-    
-    // Create flying bill element
-    const flyingBill = document.createElement('img');
-    flyingBill.src = `money/${value}.png`;
-    flyingBill.style.position = 'fixed';
-    flyingBill.style.width = bill.offsetWidth + 'px';
-    flyingBill.style.height = bill.offsetHeight + 'px';
-    flyingBill.style.left = `${billRect.left}px`;
-    flyingBill.style.top = `${billRect.top}px`;
-    flyingBill.style.zIndex = '100';
-    flyingBill.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-    
-    // Add to body for the animation
-    document.body.appendChild(flyingBill);
-    
-    // Calculate target position
-    const targetX = doorRect.left + (doorRect.width * 0.15); // 17.5% from left to match door position
-    const targetY = doorRect.top + (doorRect.height * 0.21); // 10% from top
-    
-    // Force reflow
-    flyingBill.offsetHeight;
-    
-    // Start animation to door position
-    flyingBill.style.transform = `translate(${targetX - billRect.left}px, ${targetY - billRect.top}px)`;
-
-    
-    // Wait for animation to complete then create the final note in the door
-    await new Promise(resolve => {
-        flyingBill.addEventListener('transitionend', () => {
-            // Remove the flying bill
-            flyingBill.remove();
-            
-            // Create the final note in the door
-            const note = document.createElement('img');
-            note.src = `money/${value}.png`;
-            note.className = 'banknote';
-            note.style.position = 'absolute';
-            note.style.width = '65%';
-            note.style.left = '15%';
-            note.style.bottom = '2vh';
-            note.style.zIndex = '1';
-            
-            door.appendChild(note);
-            
-            notesAwaitingPickup++;
-            resolve();
-        }, { once: true });
-    });
+  });
+  
+  if (allStopped && isRolling) {
+    isRolling = false;
+  }
+  
+  requestAnimationFrame(update);
 }
 
-// Define the robot's states and animations
-const ROBOT_STATES = {
-    IDLE: {
-        position: '2vh',
-        size: '40vh',
-        top: '60vh',
-        blur: '2px',
-        brightness: '70%',
-        gif: 'robot/idlefull.gif'
-    },
-    ACTIVE: {
-        position: '2vh',
-        size: '90vh',
-        top: '80vh',
-        blur: '0px',
-        brightness: '100%',
-        gif: 'robot/idle.gif'
-    },
-    ACTIVE_RIGHT: {
-        position: '110vh',
-        size: '90vh',
-        top: '80vh',
-        blur: '0px',
-        brightness: '100%',
-        gif: 'robot/idle.gif'
-    },
-    OFFSCREEN_LEFT: {
-        position: '-80vh',
-        size: '60vh',
-        top: '90vh',
-        blur: '1px',
-        brightness: '100%'
-    }
-};
-let tutorialActive = false;
-let tutorialStep = 0;
-let tutorialWaitingForAction = false;
-let hasCompletedTutorial = false;
+update();
 
-const TUTORIAL_SEQUENCE = {
-    STEPS: [
-        {
-            id: 'intro',
-            sound: 'robot/dialogue/part1.mp3', // You'll need to add these audio files
-            animations: [
-                { gif: 'robot/talk2.gif', duration: 2300 },
-                { gif: 'robot/talk2end.gif', duration: 250 },
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 5800 },
-                { gif: 'robot/talkend.gif', duration: 250 }
-            ],
-            waitFor: null
-        },
-        {
-            id: 'point_wallet',
-            sound: 'robot/dialogue/part2.mp3',
-            animations: [
-                { gif: 'robot/pointswitchalt.gif', duration: 250 },
-                { gif: 'robot/pointalt.gif', duration: 20 }
-            ],
-            pointTo: 'wallet',
-            waitFor: 'wallet_hover'
-        },
-        {
-            id: 'point_cashout',
-            sound: 'robot/dialogue/part3.mp3',
-            animations: [
-                { gif: 'robot/pointendalt.gif', duration: 250 },
-                { gif: 'robot/idle.gif', duration: 4000 },
-                { gif: 'robot/pointswitch.gif', duration: 250 },
-                { gif: 'robot/point.gif', duration: 20 }
-            ],
-            pointTo: 'cashout',
-            waitFor: 'cashout_pressed'
-        },
-        {
-            id: 'wait_deposit',
-            sound: 'robot/dialogue/part4.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 2500 },
-                { gif: 'robot/talkend.gif', duration: 250 },
-                { gif: 'robot/idle.gif', duration: 20 }
-            ],
-            pointTo: null,
-            waitFor: 'money_deposited'
-        },
-        {
-            id: 'point_lever',
-            sound: 'robot/dialogue/part5.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 2000 },
-                { gif: 'robot/talkend.gif', duration: 250 },
-                { gif: 'robot/pointswitchalt.gif', duration: 250 },
-                { gif: 'robot/pointalt.gif', duration: 20 }
-            ],
-            pointTo: 'lever',
-            waitFor: 'lever_pulled'
-        },
-        {
-            id: 'conclusion',
-            sound: 'robot/dialogue/part6.mp3',
-            animations: [
-                { gif: 'robot/speakstart.gif', duration: 250 },
-                { gif: 'robot/talk.gif', duration: 6000 },
-                { gif: 'robot/talkend.gif', duration: 600 }
-            ],
-            pointTo: null,
-            waitFor: null
-        }
-    ]
-};
-// Define dialogue sequences with their corresponding animations
-const DIALOGUE_SEQUENCES = [
-    {
-        id: 'motivation',
-        sound: 'robot/dialogue/motivace.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 4500 },
-            { gif: 'robot/talkswitch.gif', duration: 290 },
-            { gif: 'robot/talk2.gif', duration: 3000 },
-            { gif: 'robot/talk2end.gif', duration: 500 },
-        ]
-    },
-    {
-        id: 'wise',
-        sound: 'robot/dialogue/moudro.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 2000 },
-            { gif: 'robot/talkswitch2.gif', duration: 250 },
-            { gif: 'robot/sing.gif', duration: 4500 },
-            { gif: 'robot/singend.gif', duration: 600 }
-        ]
-    },
-    {
-        id: 'ninety_nine',
-        sound: 'robot/dialogue/99.wav',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 4000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
-    {
-        id: 'investment',
-        sound: 'robot/dialogue/investice.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 2000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    }
-];
-
-// Sequences that are triggered by specific actions
-const MANUAL_SEQUENCES = {
-    chances: {
-        id: 'chances_info',
-        sound: 'robot/dialogue/chances.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 1500 },
-            { gif: 'robot/idle.gif', duration: 1100 },
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 3500 },
-            { gif: 'robot/talkswitch.gif', duration: 300 },
-            { gif: 'robot/talk2.gif', duration: 3000 },
-            { gif: 'robot/speakstart.gif', duration: 300 },
-            { gif: 'robot/talk.gif', duration: 1600 },
-            { gif: 'robot/talkend.gif', duration: 300 },
-            { gif: 'robot/idle.gif', duration: 3000 }
-        ]
-    },
-    stats: {
-        id: 'stats_info',
-        sound: 'robot/dialogue/stats_info.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 3000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
-    screen_special: {
-        id: 'special',
-        sound: 'robot/dialogue/do not the glass.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 2500 },
-            { gif: 'robot/talkend.gif', duration: 600 },
-            { gif: 'robot/idle.gif', duration: 2000 }
-        ]
-    },
-    radio_special: {
-        id: 'radio_special',
-        sound: 'robot/dialogue/stop.mp3',
-        animations: [
-            { gif: 'robot/idle.gif', duration: 1000 }
-        ]
-    }
-};
-const POINT_POSITIONS = {
-    wallet: { rotation: '205',left: '-5vh', type: '-1'},
-    cashout: { rotation: '340',left: '-25vh', type: '1'},
-    lever: { rotation: '165',left: '-5vh', type: '-1' }
-};
-
-class RobotController {
-    constructor() {
-        this.robot = document.querySelector('.vlad img');
-        this.container = document.querySelector('.vlad');
-        this.isAnimating = false;
-        this.currentState = 'IDLE';
-        this.isInActiveState = false;
-        this.dialogueAudio = new Audio();
-        this.squeakSound = new Audio('sound/slab.mp3');
-        this.idleSound = new Audio('robot/dialogue/anyways.mp3');
-        this.squeakSound.volume = 0.15;
-        this.shortIdleSound = new Audio('robot/dialogue/doporuceni.mp3');
-        this.longIdleSound = new Audio('robot/dialogue/HATE.mp3');
-        this.idleCheckInterval = null;
-        this.idleTimer = 0;
-        this.hasPlayedShortSound = false;
-        this.hasPlayedLongSound = false;
-        this.hand = document.querySelector('.robot-hand');
-        this.tutorialResolve = null;
-        this.optionsMenu = document.querySelector('.options-menu');
-        
-        // Initialize robot
-        this.updateRobotState(ROBOT_STATES.IDLE);
-        this.setupEventListeners();
-        this.setupOptionListeners();
-        
-    }
-
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    setupEventListeners() {
-        this.container.addEventListener('click', () => this.handleClick());
-    }
-
-    setupOptionListeners() {
-        const optionButtons = document.querySelectorAll('.option-btn');
-        optionButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent event bubbling
-                const option = e.target.dataset.option;
-                
-                if (option === 'close') {
-                    await this.closeOptionsAndReturn();
-                    return;
-                }
-                
-                // Handle first two buttons
-                if (option === '1') {
-                    await this.handleOptionSequence('invest');
-                } else if (option === '2') {
-                    await this.handleOptionSequence('rules');
-                }
-            });
-        });
-    }
-
-    updateRobotState(state, transition = true) {
-        this.container.style.transition = transition ? 'all 0.5s ease-out' : 'none';
-        this.container.style.left = state.position;
-        this.container.style.width = state.size;
-        this.container.style.top = state.top;
-        this.robot.style.filter = `blur(${state.blur}) brightness(${state.brightness})`;
-        if (state.gif) {
-            this.robot.src = state.gif;
-        }
-    }
-
-    showOptions() {
-        this.optionsMenu.classList.add('active');
-        this.startIdleTimer();
-    }
-    
-    async handleOptionSequence(option) {
-        const menu = this.optionsMenu;
-        const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
-        const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
-        
-        // Hide menu first
-        menu.style.bottom = '-50vh';
-        await this.delay(500);
-        
-        // Hide only the first two buttons
-        hideableButtons.forEach(button => button.classList.add('hidden'));
-        textContent.classList.add('active');
-        
-        // Show menu again
-        menu.style.bottom = '0vh';
-        
-        // Play appropriate robot sequence
-        const sequence = option === 'invest' ? 
-            MANUAL_SEQUENCES.chances : 
-            MANUAL_SEQUENCES.stats;
-        
-        await this.playDialogueSequence(sequence);
-    }
-    async closeOptionsAndReturn() {
-        this.stopIdleTimer();
-        
-        // Reset menu to original state
-        const menu = this.optionsMenu;
-        const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
-        const textContents = menu.querySelectorAll('.menu-text-content');
-        
-        menu.classList.remove('active');
-        hideableButtons.forEach(button => button.classList.remove('hidden'));
-        textContents.forEach(content => content.classList.remove('active'));
-        
-        await this.returnToIdle();
-        this.isInActiveState = false;
-    
-        // Make sure the menu is visually hidden
-        menu.style.bottom = '-50vh';
-    }
-
-    async handleClick() {
-        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
-        this.isAnimating = true;
-    
-        try {
-            await this.growthSequence();
-            await this.transformAndReturn();
-            // Get random sequence from DIALOGUE_SEQUENCES
-            const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
-            await this.playDialogueSequence(sequence);
-            
-            this.showOptions();
-            this.isInActiveState = true;
-        } catch (error) {
-            console.error('Animation sequence failed:', error);
-        } finally {
-            this.isAnimating = false;
-        }
-    }
-    startIdleTimer() {
-        this.idleTimer = 0;
-        this.hasPlayedShortSound = false;
-        this.hasPlayedLongSound = false;
-        
-        // Clear any existing interval
-        if (this.idleCheckInterval) {
-            clearInterval(this.idleCheckInterval);
-        }
-        
-        // Start new interval
-        this.idleCheckInterval = setInterval(() => {
-            this.idleTimer++;
-            
-            // Check for 30 seconds
-            if (this.idleTimer === 30 && !this.hasPlayedShortSound) {
-                this.shortIdleSound.play().catch(err => console.error('Short idle sound failed:', err));
-                this.hasPlayedShortSound = true;
-            }
-            
-            // Check for 120 seconds
-            if (this.idleTimer === 120 && !this.hasPlayedLongSound) {
-                this.longIdleSound.play().catch(err => console.error('Long idle sound failed:', err));
-                this.hasPlayedLongSound = true;
-            }
-        }, 1000); // Check every second
-    }
-    stopIdleTimer() {
-        if (this.idleCheckInterval) {
-            clearInterval(this.idleCheckInterval);
-            this.idleCheckInterval = null;
-        }
-        this.idleTimer = 0;
-        this.hasPlayedShortSound = false;
-        this.hasPlayedLongSound = false;
-    }
-
-    async growthSequence() {
-        const startTime = Date.now();
-        const duration = 4200;
-        const initialSize = 40;
-        const targetSize = 50;
-        const initialTop = 60;
-        const targetTop = 76;
-
-        this.squeakSound.currentTime = 0;
-        this.squeakSound.play().catch(err => console.error('Squeak failed:', err));
-
-        this.container.style.transition = 'none';
-
-        return new Promise(resolve => {
-            const animate = () => {
-                const currentTime = Date.now();
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-
-                const currentSize = initialSize + (targetSize - initialSize) * progress;
-                const currentTop = initialTop + (targetTop - initialTop) * progress;
-
-                this.container.style.width = `${currentSize}vh`;
-                this.container.style.top = `${currentTop}vh`;
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    this.container.style.transition = 'all 0.5s ease-out';
-                    resolve();
-                }
-            };
-
-            requestAnimationFrame(animate);
-        });
-    }
-
-    async playIdleSequence() {
-        let totalIdleTime = 0;
-        let hasPlayedShortSound = false;
-        let hasPlayedLongSound = false;
-    
-        while (this.isInActiveState && !this.isAnimating) {
-            await this.delay(1000); // Check every second
-            totalIdleTime += 1;
-    
-            // Play sound at 30 seconds
-            if (totalIdleTime === 30 && !hasPlayedShortSound) {
-                hasPlayedShortSound = true;
-                IDLE_SOUNDS.SHORT.play().catch(err => console.error('Short idle sound failed:', err));
-            }
-    
-            // Play sound at 120 seconds
-            if (totalIdleTime === 120 && !hasPlayedLongSound) {
-                hasPlayedLongSound = true;
-                IDLE_SOUNDS.LONG.play().catch(err => console.error('Long idle sound failed:', err));
-            }
-        }
-    }
-
-    async transformAndReturn() {
-        this.updateRobotState({
-            ...ROBOT_STATES.OFFSCREEN_LEFT,
-            size: this.container.style.width,
-            top: this.container.style.top
-        });
-        await this.delay(500);
-    
-        this.container.style.transition = 'none';
-        
-        this.container.style.width = ROBOT_STATES.ACTIVE.size;
-        this.container.style.top = ROBOT_STATES.ACTIVE.top;
-        this.robot.style.filter = `blur(${ROBOT_STATES.ACTIVE.blur}) brightness(${ROBOT_STATES.ACTIVE.brightness})`;
-        this.robot.src = ROBOT_STATES.ACTIVE.gif;
-        
-        this.container.offsetHeight;
-        
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.ACTIVE.position;
-    
-        const slotMachine = document.querySelector('.slot-machine-container');
-        slotMachine.style.transition = 'filter 0.5s ease-out';
-        slotMachine.style.filter = 'blur(2px)';
-        
-        await this.delay(500);
-    }
-
-    async playDialogueSequence(sequence) {
-        this.dialogueAudio.src = sequence.sound;
-        this.robot.src = sequence.animations[0].gif;
-        await this.delay(200);
-        
-        const audioPromise = this.dialogueAudio.play()
-            .catch(err => console.error('Audio playback failed:', err));
-        
-        for (const animation of sequence.animations) {
-            this.robot.src = animation.gif;
-            await this.delay(animation.duration);
-        }
-    
-        await audioPromise;
-        
-        // Only play idle sound if it's a random dialogue sequence
-        const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
-        if (isRandomDialogue) {
-            this.idleSound.currentTime = 0;
-            await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
-        }
-        
-        this.robot.src = 'robot/idle.gif';
-    }
-
-    async returnToIdle() {
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '-80vh';
-        
-        const slotMachine = document.querySelector('.slot-machine-container');
-        slotMachine.style.transition = 'filter 0.5s ease-out';
-        slotMachine.style.filter = 'blur(0px)';
-        
-        await this.delay(500);
-    
-        this.container.style.transition = 'none';
-        this.container.style.width = ROBOT_STATES.IDLE.size;
-        this.container.style.top = ROBOT_STATES.IDLE.top;
-        this.robot.style.filter = `blur(${ROBOT_STATES.IDLE.blur}) brightness(${ROBOT_STATES.IDLE.brightness})`;
-        this.robot.src = ROBOT_STATES.IDLE.gif;
-        
-        this.container.offsetHeight;
-        
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.IDLE.position;
-    
-        await this.delay(500);
-    }
-
-    async playSpecialSequence() {
-        if (this.isAnimating) return;
-        this.isAnimating = true;
-    
-        try {
-            await this.growthSequence();
-            await this.transformAndReturn();
-            await this.playDialogueSequence(MANUAL_SEQUENCES.screen_special);
-            await this.returnToIdle();
-        } catch (error) {
-            console.error('Special sequence failed:', error);
-        } finally {
-            this.isAnimating = false;
-            this.isInActiveState = false;
-        }
-    }
-    async playRadioSpecialSequence() {
-        if (this.isAnimating) return;
-        this.isAnimating = true;
-    
-        try {
-            await this.growthSequence();
-            await this.transformAndReturn();
-            await this.playDialogueSequence(MANUAL_SEQUENCES.radio_special);
-            await this.returnToIdle();
-        } catch (error) {
-            console.error('Radio special sequence failed:', error);
-        } finally {
-            this.isAnimating = false;
-            this.isInActiveState = false;
-        }
-    }
-    showHand(position) {
-        if (!position || !POINT_POSITIONS[position]) {
-            this.hideHand();
-            return;
-        }
-
-        const pos = POINT_POSITIONS[position];
-        this.hand.style.rotate = pos.rotation + 'deg';
-        this.hand.style.left = pos.left;
-        this.hand.style.transform = 'scaleY(' + pos.type + ')';
-        this.hand.classList.add('visible');
-    }
-
-    hideHand() {
-        this.hand.classList.remove('visible');
-    }
-
-    async playTutorialStep(step) {
-        const sequence = TUTORIAL_SEQUENCE.STEPS[step];
-        
-        // Play dialogue and animations
-        // Special handling for intro step - exit left and return from right
-        
-        this.dialogueAudio.src = sequence.sound;
-        this.robot.src = sequence.animations[0].gif;
-        await this.delay(200);
-        if (step === 2) {
-            await this.exitLeftAndReturnRight();
-        }
-        
-        // Special handling for lever step - exit right and return from left
-        if (step === 4) {
-            await this.exitRightAndReturnLeft();
-        }
-        const audioPromise = this.dialogueAudio.play()
-            .catch(err => console.error('Audio playback failed:', err));
-        
-        for (const animation of sequence.animations) {
-            this.robot.src = animation.gif;
-            await this.delay(animation.duration);
-        }
-        
-        await audioPromise;
-        
-        
-        
-        // Show hand if needed
-        if (sequence.pointTo) {
-            this.showHand(sequence.pointTo);
-        } else {
-            this.hideHand();
-        }
-        
-        // Wait for action if needed
-        if (sequence.waitFor) {
-            tutorialWaitingForAction = true;
-            
-            const slotMachine = document.querySelector('.slot-machine-container');
-            slotMachine.style.filter = 'blur(0px)';
-
-            await new Promise(resolve => {
-                this.tutorialResolve = resolve;
-            });
-            tutorialWaitingForAction = false;
-
-            slotMachine.style.filter = 'blur(2px)';
-
-            this.hideHand();
-        }
-    }
-    async exitLeftAndReturnRight() {
-        // Slide out to the left
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '-80vh';
-        await this.delay(500);
-        
-        // Reposition offscreen to the right (no transition)
-        this.container.style.transition = 'none';
-        this.container.style.left = '100vw';
-        
-        // Force reflow
-        this.container.offsetHeight;
-        
-        // Slide in from the right to the right position
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.ACTIVE_RIGHT.position;
-        await this.delay(500);
-    }
-
-    async exitRightAndReturnLeft() {
-        // Slide out to the right
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = '100vw';
-        await this.delay(500);
-        
-        // Reposition offscreen to the left (no transition)
-        this.container.style.transition = 'none';
-        this.container.style.left = '-80vh';
-        
-        // Force reflow
-        this.container.offsetHeight;
-        
-        // Slide in from the left to the left position
-        this.container.style.transition = 'left 0.5s ease-out';
-        this.container.style.left = ROBOT_STATES.ACTIVE.position;
-        await this.delay(500);
-    }
-    tutorialActionCompleted() {
-        if (this.tutorialResolve) {
-            this.tutorialResolve();
-            this.tutorialResolve = null;
-        }
-    }
-
-    async startTutorial() {
-        if (tutorialActive || hasCompletedTutorial) return;
-        
-        tutorialActive = true;
-        this.isAnimating = true;
-        
-        try {
-            // Move robot to active position
-            await this.growthSequence();
-            await this.transformAndReturn();
-            
-            // Play through all tutorial steps
-            for (let i = 0; i < TUTORIAL_SEQUENCE.STEPS.length; i++) {
-                tutorialStep = i;
-                await this.playTutorialStep(i);
-            }
-            
-            // Return to idle
-            await this.returnToIdle();
-            hasCompletedTutorial = true;
-            
-            // Save tutorial completion
-            if (!localMode) {
-                set(ref(db, `users/${auth.currentUser.uid}/slotMachine/tutorialCompleted`), true);
-            }
-        } catch (error) {
-            console.error('Tutorial failed:', error);
-        } finally {
-            tutorialActive = false;
-            this.isAnimating = false;
-            this.isInActiveState = false;
-            this.hideHand();
-        }
-    }
-}
-function updateWalletPosition(hasNotes = false) {
-    const walletElement = document.querySelector('.wallet');
-    // Add the has-notes class if there are notes OR we're in deposit mode
-    if (hasNotes || isDoorOpen) {
-        walletElement.classList.add('has-notes');
-    } else {
-        walletElement.classList.remove('has-notes');
-    }
-}
-function updateAvailableBills() {
-    const bills = document.querySelectorAll('.bill');
-    const walletDisplay = document.querySelector('.wallet-display');
-    
-    // Update wallet display
-    walletDisplay.textContent = `Wallet: $${walletBalance}`;
-    
-    bills.forEach(bill => {
-        const value = parseInt(bill.dataset.value);
-        if (value <= walletBalance) {
-            bill.classList.remove('unavailable');
-        } else {
-            bill.classList.add('unavailable');
-        }
-    });
-}
-document.querySelectorAll('.bill').forEach(bill => {
-    bill.addEventListener('click', () => {
-        const value = parseInt(bill.dataset.value);
-        
-        // Only allow transfer if bill is available and we're in deposit mode (door open)
-        if (bill.classList.contains('transferrable') && value <= walletBalance && isDoorOpen) {
-            transferNoteFromWallet(bill);
-            
-            // Play money sound
-            const pickupSound = new Audio('sound/note.mp3');
-            pickupSound.play().catch(error => {
-                console.log('Sound play failed:', error);
-            });
-        } else if (!isDoorOpen) {
-            // If door is closed, play wrong sound to indicate invalid action
-            wrong.currentTime = 0;
-            wrong.play().catch(error => {
-                console.log('Sound play failed:', error);
-            });
-        }
-    });
+// --- RESIZE HANDLER ---
+// This is the key fix for responsiveness
+window.addEventListener('resize', () => {
+  // 1. Update global canvas width/height variables
+  resizeCanvas();
+  
+  // 2. Update Cup Position
+  updateCupPosition();
+  
+  // 3. Force re-render of ALL active dice based on their % coordinates
+  dice.forEach(die => {
+    renderDiePosition(die);
+  });
+  
+  // 4. Force re-render of Locked dice
+  repositionLockedDice();
 });
 
-// Initialize the robot controller
-const robotController = new RobotController();
-
-let isMouseOverScreen = false;
-
-// Function to check if coordinates are within screen bounds
-function isWithinScreenBounds(x, y) {
-    const screen = document.querySelector('.screen');
-    const rect = screen.getBoundingClientRect();
-    return (
-        x >= rect.left &&
-        x <= rect.right &&
-        y >= rect.top &&
-        y <= rect.bottom
-    );
-}
-document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    const screen = document.querySelector('.screen');
-    const rect = screen.getBoundingClientRect();
-    isMouseOverScreen = isWithinScreenBounds(mouseX, mouseY);
-    
-    // Log these values to see what's happening:
-    
+window.addEventListener("keydown", (key) => {
+  if (key.key === "l") {
+    localStorage.removeItem("lobbyName");
+    window.location.href = "dices-hub.html";
+  }
 });
-document.addEventListener('mousedown', (e) => {
-    if (!isMouseOverScreen) return;
-    console.log("screen clicked");
-    const currentTime = Date.now();
-    
-    if (currentTime - lastScreenClickTime > SCREEN_CLICK_RESET_TIME) {
-        screenClickCount = 0;
-    }
-    
-    screenClickSound.currentTime = 0;
-    screenClickSound.play().catch(err => console.error('Screen sound failed:', err));
-    
-    screenClickCount++;
-    lastScreenClickTime = currentTime;
-    
-    if (screenClickCount === SCREEN_CLICK_TARGET) {
-        screenClickCount = 0;
-        robotController.playSpecialSequence();
-    }
-});
-wallet.addEventListener('mouseenter', () => {
-    if (tutorialActive && tutorialWaitingForAction && tutorialStep === 1) {
-        robotController.tutorialActionCompleted();
-    }
-});
-cashoutButton.addEventListener('click', cashout);
-window.addEventListener('load', () => {
-    initializeWallet();
-    updateWalletPosition(false);
-    updateCreditDisplay();
-    updateAvailableBills();
-});
-lever.src = LEVER_STATIC;
-reels.forEach(initializeReel);
-
-// Event listeners
-document.querySelector('.lever-container').addEventListener('click', spin);
-musicToggle.addEventListener('click', toggleMusic);
-document.getElementById('logoutButton').addEventListener('click', logout);
