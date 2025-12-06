@@ -990,8 +990,8 @@ function repositionLockedDice() {
   
   lockedDice.forEach((die, i) => {
     // Exact same math as lockDie, but using index 'i'
-    const targetX = containerW * 0.035; 
-    const targetY = (containerH * 0.20) + (i * (containerH * 0.10));
+    const targetX = containerW * 0.035;
+    const targetY = (containerH * 0.17) + (lockedDice.length * (containerH * 0.118));
     
     // If not animating, just set it
     if(die.element) {
