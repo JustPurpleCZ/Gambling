@@ -1135,8 +1135,8 @@ function collectAllDiceIntoCup() {
   const finalCupYPercent = 70;
   
   // Animate dice to an off-screen collection point first
-  const collectXPercent = 85;
-  const collectYPercent = 120;
+  const collectXPercent = 80;
+  const collectYPercent = 110;
   const collectTargetX = canvas.offsetLeft + vwToPx(collectXPercent);
   const collectTargetY = canvas.offsetTop + vhToPx(collectYPercent);
   
