@@ -467,6 +467,7 @@ let rollResponse = null;
 let previousDiceValues = [];
 let waitingForRelease = false;
 let allDiceLockedRollPending = false;
+let permLockedCount = 0; // Track how many dice are permanently locked
 
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
@@ -620,6 +621,20 @@ async function performRoll() {
 
       if (response.success) {
         if (errorMessage) errorMessage.style.display = "none";
+        
+        // Mark all currently locked dice as permanently locked
+        lockedDice.forEach(die => {
+          if (!die.permLocked) {
+            die.permLocked = true;
+            permLockedCount++;
+            // Add visual indicator for perm locked
+            if (die.element) {
+              die.element.classList.add('perm-locked');
+            }
+          }
+        });
+        console.log("Perm locked count after roll:", permLockedCount);
+        
         const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
         pendingRollValues = rolledSnap.val();
         console.log("Dice values from server:", pendingRollValues);
@@ -722,6 +737,15 @@ function handleAllDiceLocked() {
   console.log("All 6 dice are locked - collecting and preparing for next roll");
   allDiceLockedRollPending = true;
   
+  // Clear perm locked status for all dice since valid roll with 6 locked
+  lockedDice.forEach(die => {
+    die.permLocked = false;
+    if (die.element) {
+      die.element.classList.remove('perm-locked');
+    }
+  });
+  permLockedCount = 0;
+  
   // Collect all locked dice into cup
   collectAllDiceIntoCup();
   
@@ -741,8 +765,16 @@ function spillLockedDiceWithValues() {
   console.log("Spilling locked dice - need to select at least one scoring die");
   allDiceLockedRollPending = true;
   
-  // Get the current values from locked dice
-  const diceValues = lockedDice.map(d => d.face);
+  // Get the current values from locked dice - only spill non-perm-locked ones
+  const diceToSpill = lockedDice.filter(d => !d.permLocked);
+  const diceValues = diceToSpill.map(d => d.face);
+  
+  // If all dice are perm locked, we can't spill any - this shouldn't happen normally
+  if (diceToSpill.length === 0) {
+    console.log("All dice are permanently locked, cannot spill");
+    allDiceLockedRollPending = false;
+    return;
+  }
   
   // Move cup to center first
   cupXPercent = 40;
@@ -758,15 +790,19 @@ function spillLockedDiceWithValues() {
   const baseVx = 5;
   const baseVy = 0;
   
-  // Remove locked dice elements and create new rolling dice
-  lockedDice.forEach((die, i) => {
+  // Remove only non-perm-locked dice elements and create new rolling dice
+  diceToSpill.forEach((die) => {
     if (die.element) {
       const overlay = die.element.querySelector('.locked-overlay');
       if (overlay) overlay.remove();
       die.element.remove();
     }
+    const index = lockedDice.indexOf(die);
+    if (index !== -1) lockedDice.splice(index, 1);
   });
-  lockedDice.length = 0;
+  
+  // Reposition remaining locked dice
+  repositionLockedDice();
   
   // Create new dice with the same values
   for (let i = 0; i < diceValues.length; i++) {
@@ -785,7 +821,7 @@ function spillLockedDiceWithValues() {
       rolling: true,
       rollTime: 0,
       element: null,
-      serverIndex: i
+      serverIndex: permLockedCount + i // Offset by perm locked count
     });
   }
   
@@ -997,6 +1033,12 @@ function animateToPosition(element, targetX, targetY, callback) {
 
 async function unlockDie(die) {
   if (!die.locked) return;
+  // Cannot unlock permanently locked dice
+  if (die.permLocked) {
+    console.log("Cannot unlock permanently locked die");
+    return;
+  }
+  
   const index = lockedDice.indexOf(die);
   if (index === -1) return;
   
@@ -1102,6 +1144,7 @@ function collectAllDiceIntoCup() {
         const overlay = die.element.querySelector('.locked-overlay');
         if (overlay) overlay.remove();
         die.element.classList.remove('locked');
+        die.element.classList.remove('perm-locked');
         animateToPosition(die.element, cupTargetX, cupTargetY, () => {
           if (die.element) { die.element.remove(); }
         });
@@ -1110,6 +1153,7 @@ function collectAllDiceIntoCup() {
   });
   
   lockedDice.length = 0;
+  permLockedCount = 0; // Reset perm locked count
   
   dice.forEach((die) => {
     if (die.element && !die.rolling) {
