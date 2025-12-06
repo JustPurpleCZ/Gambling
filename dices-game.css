@@ -31,8 +31,8 @@ body {
 
 .ui-layer {
   position: absolute;
-width: 100%;
-height: 100%;
+  width: 100%;
+  height: 100%;
   color: white;
   font-weight: bold;
   pointer-events: auto !important;

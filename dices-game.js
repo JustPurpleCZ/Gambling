@@ -25,12 +25,10 @@ async function checkAuth() {
             resolve(u);
         });
     });
-
     if (!user) {
         window.location.href = 'index.html';
         return;
     }
-
     uid = user.uid;
 }
 
@@ -65,25 +63,18 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     await checkAuth();
     await getLobbyInfo();
 
-    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}`), );
+    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}`));
     if (snapshot.exists()) {
       console.log("Game already active, skipping lobby");
       gameStart();
     } else {
-
     presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
-    
     console.log("Setting presence for", uid);
     set(presenceRef, true);
     onDisconnect(presenceRef).set(false);
 
-    onChildAdded(playersRef, () => {
-        updatePlayerList();
-    });
-
-    onChildRemoved(playersRef, () => {
-        updatePlayerList();
-    });
+    onChildAdded(playersRef, () => { updatePlayerList(); });
+    onChildRemoved(playersRef, () => { updatePlayerList(); });
 
     onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId && !gameStarted) {
@@ -106,11 +97,8 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
     startBtn.style.display = "block";
-
     startBtn.addEventListener("click", () => {
-        if (playerCount >= 2) {
-            startGame();
-        }
+        if (playerCount >= 2) { startGame(); }
     })
 }
 
@@ -120,65 +108,45 @@ let playerCount;
 async function updatePlayerList() {
     console.log("Updating player list");
     let players;
-
     get(playersRef).then((snapshot) => {
         if (snapshot.exists()) {
             players = snapshot.val();
             console.log("Player list:", players);
             playerCount = 0;
-
             playerList.replaceChildren();
-
             Object.values(players).forEach(player => {
                 console.log("Adding player:", player.username);
                 playerCount++;
                 const playerDiv = document.createElement("div");
                 const name = document.createElement("p");
-
                 playerList.appendChild(playerDiv);
                 playerDiv.appendChild(name);
-
                 if (isHost) {
                     const kickBtn = document.createElement("button");
                     playerDiv.appendChild(kickBtn);
                     kickBtn.textContent = "kick player";
-
-                    kickBtn.addEventListener("click", () => {
-                        kick(player);
-                    });
+                    kickBtn.addEventListener("click", () => { kick(player); });
                 }
-
                 name.textContent = player.username;
             });
-
             playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
-            
         } else {
             console.log("Not found");
         }
     }).catch(console.error);
 }
 
-async function kick(kickPlayer) {
-   console.log("Kicking disabled");
-}
+async function kick(kickPlayer) { console.log("Kicking disabled"); }
 
 async function leaveLobby() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
             method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "lobbyId": lobbyId,
-            })
+            headers: { "Authorization": token, "Content-Type": "application/json" },
+            body: JSON.stringify({ "lobbyId": lobbyId })
     });
-
     const response = await res.json();
     console.log(response);
-
     if (response.success) {
         onDisconnect(presenceRef).cancel();
         localStorage.removeItem("dicesLobbyId");
@@ -189,35 +157,22 @@ async function leaveLobby() {
     }
 }
 
-document.getElementById("leaveBtn").addEventListener("click", () => {
-    leaveLobby();
-})
+document.getElementById("leaveBtn").addEventListener("click", () => { leaveLobby(); })
 
 async function startGame() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
             method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "lobbyId": lobbyId,
-            })
+            headers: { "Authorization": token, "Content-Type": "application/json" },
+            body: JSON.stringify({ "lobbyId": lobbyId })
     });
-
     const response = await res.json();
     console.log(response);
-
-    if (!response.success) {
-        console.log("Failed to start game:", response.reply);
-    }
+    if (!response.success) { console.log("Failed to start game:", response.reply); }
 }
 
-//Game start
 let activePresenceRef;
 let playerOrder;
-
 const errorMessage = document.getElementById("errMessage");
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
@@ -225,9 +180,7 @@ const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
 async function gameStart() {
     console.log("Game is starting");
     gameStarted = true;
-
     activePresenceRef = ref(db, `/games/active/dices/${lobbyId}/players/${uid}/connected`);
-
     console.log("Setting new presence:", uid);
     set(activePresenceRef, true);
     onDisconnect(activePresenceRef).set(false);
@@ -242,21 +195,13 @@ async function gameStart() {
     onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
         if (snap.val() != null) {
           playerOrder = snap.val()
-
           document.getElementById("preStart").style.display = "none";
           updateActivePlayerList();
           document.getElementById("gameDiv").style.display = "block";
-
-          onValue(activePlayersRef, (snapshot) => {
-            updateActivePlayerList();
-          });
-
-          // Set up end turn button
+          onValue(activePlayersRef, (snapshot) => { updateActivePlayerList(); });
           const endTurnBtn = document.querySelector(".end-turn-button");
           if (endTurnBtn) {
-            endTurnBtn.addEventListener("click", () => {
-              submitMove();
-            });
+            endTurnBtn.addEventListener("click", () => { submitMove(); });
           }
         }
     });
@@ -266,7 +211,6 @@ async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
     let gameEnded = false;
-
     const gameEndSnap = await get(ref(db, `/games/active/dices/${lobbyId}/gameEnded`));
     if (gameEndSnap.exists() && gameEndSnap.val()) {
         console.log("Game has ended");
@@ -281,35 +225,17 @@ async function updateActivePlayerList() {
 
     for (const player of playerOrder) {
         const playerData = playersInfo.val()[player];
-        
-        // Track my own data
         if (player === uid) {
-          myPlayerData = {
-            uid: player,
-            ...playerData
-          };
+          myPlayerData = { uid: player, ...playerData };
         } else {
-          // Track other players
-          otherPlayers.push({
-            uid: player,
-            ...playerData
-          });
+          otherPlayers.push({ uid: player, ...playerData });
         }
-        
-        // Check if this is the current player
         if (playerData.playersTurn === true) {
-          currentPlayerData = {
-            uid: player,
-            ...playerData
-          };
-          
-          if (player === uid && !gameEnded) {
-            isMyTurnThisUpdate = true;
-          }
+          currentPlayerData = { uid: player, ...playerData };
+          if (player === uid && !gameEnded) { isMyTurnThisUpdate = true; }
         }
     }
 
-    // Update current player display at top (only if it's not me)
     if (currentPlayerData && currentPlayerData.uid !== uid) {
       updateCurrentPlayerDisplay(currentPlayerData, false);
       lastOtherPlayerData = currentPlayerData;
@@ -321,39 +247,25 @@ async function updateActivePlayerList() {
       }
     }
 
-    // Update other players panel on the right
     updateOtherPlayersPanel(otherPlayers, currentPlayerData);
-
-    // Always update my player info at bottom
-    if (myPlayerData) {
-      updateMyPlayerInfo(myPlayerData);
-    }
-
-    // Always show bottom control panel, but enable/disable based on turn
+    if (myPlayerData) { updateMyPlayerInfo(myPlayerData); }
     updateBottomControlPanel(isMyTurnThisUpdate);
 
-    // Handle game end
     if (gameEnded) {
         document.getElementById("gameEndDiv").style.display = "block";
-
         const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
         const winnerId = idSnap.val();
-
         const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
         const winnerInfo = infoSnap.val();
-
         const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
         const winAmount = winAmountSnap.val();
-
         document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
         document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
-
         if (winnerId == uid) {
             document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
         } else {
             document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
         }
-
         document.getElementById("exit").addEventListener("click", () => {
             localStorage.removeItem("dicesLobbyId");
             localStorage.removeItem("dicesIsHost");
@@ -364,38 +276,24 @@ async function updateActivePlayerList() {
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
         console.log("My turn just ended. Waiting before collecting all dice.");
-        setTimeout(() => {
-            collectAllDiceIntoCup();
-        }, 2000);
+        setTimeout(() => { collectAllDiceIntoCup(); }, 2000);
     }
-
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
+
 function updateOtherPlayersPanel(otherPlayers, currentPlayerData) {
   let panel = document.querySelector(".other-players-panel");
-  
   if (!panel) {
     panel = document.createElement("div");
     panel.className = "other-players-panel";
     document.getElementById("game-container").appendChild(panel);
   }
-  
   panel.innerHTML = "";
-  
   otherPlayers.forEach(player => {
     const card = document.createElement("div");
     card.className = "other-player-card";
-    
-    // Highlight if it's their turn
-    if (currentPlayerData && player.uid === currentPlayerData.uid) {
-      card.classList.add("is-current");
-    }
-    
-    // Show disconnected state
-    if (player.connected === false) {
-      card.classList.add("disconnected");
-    }
-    
+    if (currentPlayerData && player.uid === currentPlayerData.uid) { card.classList.add("is-current"); }
+    if (player.connected === false) { card.classList.add("disconnected"); }
     card.innerHTML = `
       <div class="other-player-pfp"></div>
       <div class="other-player-details">
@@ -404,26 +302,19 @@ function updateOtherPlayersPanel(otherPlayers, currentPlayerData) {
         ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
       </div>
     `;
-    
     panel.appendChild(card);
   });
 }
+
 function updateCurrentPlayerDisplay(playerData, isMe) {
   let displayDiv = document.querySelector(".current-player-display");
-  
   if (!displayDiv) {
     displayDiv = document.createElement("div");
     displayDiv.className = "current-player-display";
     document.getElementById("game-container").appendChild(displayDiv);
   }
-  
-  if (isMe) {
-    displayDiv.classList.add("is-me");
-    return;
-  } else {
-    displayDiv.classList.remove("is-me");
-  }
-  
+  if (isMe) { displayDiv.classList.add("is-me"); return; }
+  else { displayDiv.classList.remove("is-me"); }
   displayDiv.innerHTML = `
     <div class="current-player-pfp"></div>
     <div class="current-player-info">
@@ -432,19 +323,16 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
     </div>
     <div class="current-player-dice"></div>
   `;
-  
   const diceContainer = displayDiv.querySelector(".current-player-dice");
   if (playerData.rolledDice && playerData.rolledDice.length > 0) {
     playerData.rolledDice.forEach((dieValue, index) => {
       const dieDiv = document.createElement("div");
       dieDiv.className = "current-player-dice-item";
       dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
-      
       if (playerData.heldDice && playerData.heldDice[index]) {
         dieDiv.style.border = "2px solid #d4af37";
         dieDiv.style.boxShadow = "0 0 10px #d4af37";
       }
-      
       diceContainer.appendChild(dieDiv);
     });
   }
@@ -452,13 +340,11 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
 
 function updateMyPlayerInfo(playerData) {
   let myInfoDiv = document.querySelector(".my-player-info");
-  
   if (!myInfoDiv) {
     myInfoDiv = document.createElement("div");
     myInfoDiv.className = "my-player-info";
     document.getElementById("game-container").appendChild(myInfoDiv);
   }
-  
   myInfoDiv.innerHTML = `
     <div class="my-player-pfp"></div>
     <div class="my-player-details">
@@ -467,21 +353,16 @@ function updateMyPlayerInfo(playerData) {
     </div>
     <div class="my-player-dice"></div>
   `;
-  
-  // Add dice to display
   const diceContainer = myInfoDiv.querySelector(".my-player-dice");
   if (playerData.rolledDice && playerData.rolledDice.length > 0) {
     playerData.rolledDice.forEach((dieValue, index) => {
       const dieDiv = document.createElement("div");
       dieDiv.className = "my-player-dice-item";
       dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
-      
-      // Add visual indicator if held
       if (playerData.heldDice && playerData.heldDice[index]) {
         dieDiv.style.border = "2px solid #4a9eff";
         dieDiv.style.boxShadow = "0 0 10px #4a9eff";
       }
-      
       diceContainer.appendChild(dieDiv);
     });
   }
@@ -490,35 +371,19 @@ function updateMyPlayerInfo(playerData) {
 async function updateBottomControlPanel(isMyTurn) {
   let controlPanel = document.querySelector(".bottom-control-panel");
   controlPanel.style.display = "flex";
-  
-  // Enable or disable the button based on turn
   const endTurnBtn = controlPanel.querySelector(".end-turn-button");
-  if (isMyTurn) {
-    endTurnBtn.classList.remove("disabled");
-  } else {
-    endTurnBtn.classList.add("disabled");
-  }
-  
-  // Update turn score
+  if (isMyTurn) { endTurnBtn.classList.remove("disabled"); }
+  else { endTurnBtn.classList.add("disabled"); }
   const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
   const turnScore = turnScoreSnap.val() || 0;
-  
   const scoreValue = controlPanel.querySelector(".score-value");
-  if (scoreValue) {
-    scoreValue.textContent = turnScore;
-  }
-  
-  // Handle rolled dice for clicking (only if it's my turn)
+  if (scoreValue) { scoreValue.textContent = turnScore; }
   if (isMyTurn) {
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
     const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
-    
     const rolledDice = snap.val();
     const heldDice = snapshot.val();
-    
     console.log("Rolls:", rolledDice, heldDice);
-    
-    // Store for die clicking
     window.currentRolledDice = rolledDice;
     window.currentHeldDice = heldDice;
   }
@@ -528,23 +393,13 @@ async function submitMove() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_move", {
             method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "lobbyId": lobbyId,
-                "move": "skip"
-            })
+            headers: { "Authorization": token, "Content-Type": "application/json" },
+            body: JSON.stringify({ "lobbyId": lobbyId, "move": "skip" })
     });
-
     const response = await res.json();
     console.log("Move response:", response);
-
     if (response.success) {
-        if (errorMessage) {
-            errorMessage.style.display = "none";
-        }
+        if (errorMessage) { errorMessage.style.display = "none"; }
         collectAllDiceIntoCup();
     } else {
         if (errorMessage) {
@@ -555,16 +410,12 @@ async function submitMove() {
 }
 
 const nameP = document.getElementById("lobbyName");
-if(localStorage.getItem("lobbyName")) {
-    nameP.textContent = localStorage.getItem("lobbyName");
-}
+if(localStorage.getItem("lobbyName")) { nameP.textContent = localStorage.getItem("lobbyName"); }
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const cup = document.getElementById('cup');
 const gameContainer = document.getElementById('game-container');
-
-// --- RESIZING & COORDINATE SYSTEMS ---
 
 function resizeCanvas() {
     canvas.width = canvas.clientWidth;
@@ -572,28 +423,15 @@ function resizeCanvas() {
 }
 resizeCanvas();
 
-function vhToPx(percent) {
-  return (percent * canvas.height) / 100;
-}
-
-function vwToPx(percent) {
-  return (percent * canvas.width) / 100;
-}
-
-function pxToVw(px) {
-  return (px / canvas.width) * 100;
-}
-
-function pxToVh(px) {
-  return (px / canvas.height) * 100;
-}
+function vhToPx(percent) { return (percent * canvas.height) / 100; }
+function vwToPx(percent) { return (percent * canvas.width) / 100; }
+function pxToVw(px) { return (px / canvas.width) * 100; }
+function pxToVh(px) { return (px / canvas.height) * 100; }
 
 function renderDiePosition(die) {
     if (!die.element) return;
-    
     const pixelX = canvas.offsetLeft + vwToPx(die.xPercent);
     const pixelY = canvas.offsetTop + vhToPx(die.yPercent);
-    
     die.element.style.left = pixelX + 'px';
     die.element.style.top = pixelY + 'px';
     die.element.style.transform = `rotate(${die.rotation}deg)`;
@@ -601,13 +439,8 @@ function renderDiePosition(die) {
 
 function getRelativeMousePos(e) {
     const rect = canvas.getBoundingClientRect();
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
-
-// --- GAME STATE ---
 
 let dice = [];
 let lockedDice = [];
@@ -628,12 +461,17 @@ let cupCanCollect = true;
 let wasMyTurnLastUpdate = false;
 let lastOtherPlayerData = null;
 
+// New state variables for auto-roll logic
+let rollPending = false;
+let rollResponse = null;
+let previousDiceValues = [];
+let waitingForRelease = false;
+let allDiceLockedRollPending = false;
+
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
 const diceImages = [];
-for (let i = 1; i <= 6; i++) {
-  diceImages.push(`main/dice/dice_${i}.png`);
-}
+for (let i = 1; i <= 6; i++) { diceImages.push(`main/dice/dice_${i}.png`); }
 const lockedOverlay = 'main/dice/dice_lock_1.gif';
 
 cup.style.backgroundImage = `url(main/dice/cup.png)`;
@@ -642,13 +480,11 @@ cup.style.backgroundSize = 'contain';
 function updateCupPosition() {
     const xPx = canvas.offsetLeft + vwToPx(cupXPercent);
     const yPx = canvas.offsetTop + vhToPx(cupYPercent);
-    
     cup.style.left = xPx + 'px';
     cup.style.top = yPx + 'px';
 }
 updateCupPosition();
 
-// --- AUDIO ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playShakeSound() {
   const oscillator = audioCtx.createOscillator();
@@ -663,10 +499,8 @@ function playShakeSound() {
   oscillator.stop(audioCtx.currentTime + 0.1);
 }
 
-// --- CONTROLS ---
-
 cup.addEventListener('mousedown', (e) => {
-  if (isRolling) return;
+  if (isRolling || allDiceLockedRollPending) return;
   isDraggingCup = true;
   cup.classList.add('dragging');
   cupState = 'normal';
@@ -676,7 +510,6 @@ cup.addEventListener('mousedown', (e) => {
   const rect = cup.getBoundingClientRect();
   mouseX = e.clientX - rect.left;
   mouseY = e.clientY - rect.top;
-  
   prevMouseX = e.clientX;
   prevMouseY = e.clientY;
   e.preventDefault();
@@ -688,14 +521,12 @@ document.addEventListener('mousemove', (e) => {
   const containerRect = gameContainer.getBoundingClientRect();
   const targetScreenX = e.clientX - mouseX;
   const targetScreenY = e.clientY - mouseY;
-  
   const canvasRect = canvas.getBoundingClientRect();
   const relX = targetScreenX - canvasRect.left;
   const relY = targetScreenY - canvasRect.top;
   
   cupXPercent = pxToVw(relX);
   cupYPercent = pxToVh(relY);
-  
   updateCupPosition();
   
   const dx = e.clientX - prevMouseX;
@@ -706,13 +537,8 @@ document.addEventListener('mousemove', (e) => {
   
   if (speed > 10) {
     shakeIntensity += speed;
-    if (shakeIntensity > 50) {
-      playShakeSound();
-      shakeIntensity = 0;
-    }
-  } else {
-    shakeIntensity *= 0.8;
-  }
+    if (shakeIntensity > 50) { playShakeSound(); shakeIntensity = 0; }
+  } else { shakeIntensity *= 0.8; }
   
   prevMouseX = e.clientX;
   prevMouseY = e.clientY;
@@ -725,17 +551,37 @@ document.addEventListener('mouseup', async () => {
   isDraggingCup = false;
   cup.classList.remove('dragging');
   
-  if (dice.length === 0 && cupState === 'normal') {
-    const rollSuccess = await performRoll();
+  // If waiting for release after valid roll, spill with new values
+  if (waitingForRelease && pendingRollValues) {
+    waitingForRelease = false;
+    spillDice();
+    return;
+  }
+  
+  // Original behavior - if cup is empty and no dice collected, try to roll
+  if (dice.length === 0 && cupState === 'normal' && !rollPending) {
+    // Store current dice values before rolling
+    previousDiceValues = lockedDice.map(d => d.face);
     
-    if (rollSuccess && pendingRollValues) {
-      spillDice();
+    const rollResult = await performRoll();
+    
+    if (rollResult.success && pendingRollValues) {
+      // Check if all 6 dice are now locked
+      if (lockedDice.length === 6) {
+        handleAllDiceLocked();
+      } else {
+        spillDice();
+      }
+    } else if (!rollResult.success && rollResult.needsSelection) {
+      // Need to select at least one die - spill with previous values
+      spillDiceWithPreviousValues();
     }
   }
 });
 
 async function performRoll() {
   console.log("Performing roll via cup");
+  rollPending = true;
   
   try {
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
@@ -745,51 +591,127 @@ async function performRoll() {
       const token = await auth.currentUser.getIdToken();
       const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
         method: "POST",
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          "lobbyId": lobbyId,
-        })
+        headers: { "Authorization": token, "Content-Type": "application/json" },
+        body: JSON.stringify({ "lobbyId": lobbyId })
       });
 
       const response = await res.json();
       console.log("Roll response:", response);
+      rollPending = false;
 
       if (response.success) {
         if (errorMessage) errorMessage.style.display = "none";
-        
         const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
         pendingRollValues = rolledSnap.val();
         console.log("Dice values from server:", pendingRollValues);
-        
-        return true;
+        return { success: true };
       } else {
         if (errorMessage) {
           errorMessage.style.display = "block";
           errorMessage.textContent = response.reply;
         }
+        // Check if the error is about needing to select dice
+        const needsSelection = response.reply && 
+          (response.reply.toLowerCase().includes("select") || 
+           response.reply.toLowerCase().includes("at least one"));
         pendingRollValues = null;
-        return false;
+        return { success: false, needsSelection };
       }
     } else {
+      rollPending = false;
       if (errorMessage) {
         errorMessage.style.display = "block";
         errorMessage.textContent = "Maximum rolls reached!";
       }
       pendingRollValues = null;
-      return false;
+      return { success: false, needsSelection: false };
     }
   } catch (error) {
     console.error("Roll error:", error);
+    rollPending = false;
     if (errorMessage) {
       errorMessage.style.display = "block";
       errorMessage.textContent = "Roll failed. Please try again.";
     }
     pendingRollValues = null;
-    return false;
+    return { success: false, needsSelection: false };
   }
+}
+
+function spillDiceWithPreviousValues() {
+  console.log("Spilling dice with previous values - need to select at least one");
+  cupState = 'spilling';
+  cup.style.backgroundImage = `url(${cupSpillImg})`;
+  cupCanCollect = false;
+  
+  const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
+  let angleDeg = angleRad * (180 / Math.PI);
+  cup.style.transform = `rotate(${angleDeg+90}deg) scale(1.1)`;
+  
+  // Use the stored previous values for unlocked dice
+  const numDice = 6 - lockedDice.length;
+  const launchSpeedMultiplier = 4;
+  const baseVx = cupVelocityX !== 0 ? cupVelocityX * launchSpeedMultiplier : 5;
+  const baseVy = cupVelocityY !== 0 ? cupVelocityY * launchSpeedMultiplier : 0;
+  
+  // Get previous rolled dice values from server
+  get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`)).then(snap => {
+    const serverDice = snap.val() || [];
+    
+    for (let i = 0; i < numDice; i++) {
+      const spread = (Math.random() - 0.5) * 50;
+      // Use server values or random if not available
+      const faceValue = serverDice[i] || (Math.floor(Math.random() * 6) + 1);
+      
+      dice.push({
+        xPercent: cupXPercent + 5,
+        yPercent: cupYPercent + 30,
+        vx: baseVx + spread,
+        vy: baseVy + spread,
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 20,
+        face: faceValue,
+        finalFace: faceValue,
+        rolling: true,
+        rollTime: 0,
+        element: null,
+        serverIndex: i
+      });
+    }
+    
+    dice.forEach(die => {
+      const el = document.createElement('div');
+      el.className = 'die rolling';
+      el.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+      el.style.backgroundSize = 'contain';
+      gameContainer.appendChild(el);
+      die.element = el;
+      renderDiePosition(die);
+      die.clickHandler = () => lockDie(die);
+      el.addEventListener('click', die.clickHandler);
+    });
+    
+    isRolling = true;
+    cupVelocityX = 0;
+    cupVelocityY = 0;
+    
+    setTimeout(() => { moveCupToBottomRight(); }, 500);
+  });
+}
+
+function handleAllDiceLocked() {
+  console.log("All 6 dice are locked - collecting and preparing for next roll");
+  allDiceLockedRollPending = true;
+  
+  // Collect all locked dice into cup
+  collectAllDiceIntoCup();
+  
+  // Wait before allowing another roll
+  setTimeout(() => {
+    allDiceLockedRollPending = false;
+    cupCanCollect = true;
+    console.log("Ready for next roll after all dice locked");
+  }, 1500);
 }
 
 function spillDice() {
@@ -798,7 +720,6 @@ function spillDice() {
   cupCanCollect = false;
   const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
   let angleDeg = angleRad * (180 / Math.PI);
-
   cup.style.transform = `rotate(${angleDeg+90}deg) scale(1.1)`;
   
   const diceValues = pendingRollValues || [];
@@ -813,8 +734,8 @@ function spillDice() {
     const faceValue = diceValues[i] || (Math.floor(Math.random() * 6) + 1);
     
     dice.push({
-      xPercent: cupXPercent + 5, 
-      yPercent: cupYPercent + 30, 
+      xPercent: cupXPercent + 5,
+      yPercent: cupYPercent + 30,
       vx: baseVx + spread,
       vy: baseVy + spread,
       rotation: Math.random() * 360,
@@ -833,12 +754,9 @@ function spillDice() {
     el.className = 'die rolling';
     el.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
     el.style.backgroundSize = 'contain';
-    
-    gameContainer.appendChild(el); 
+    gameContainer.appendChild(el);
     die.element = el;
-    
     renderDiePosition(die);
-    
     die.clickHandler = () => lockDie(die);
     el.addEventListener('click', die.clickHandler);
   });
@@ -846,12 +764,9 @@ function spillDice() {
   isRolling = true;
   cupVelocityX = 0;
   cupVelocityY = 0;
-  
   pendingRollValues = null;
   
-  setTimeout(() => {
-    moveCupToBottomRight();
-  }, 500);
+  setTimeout(() => { moveCupToBottomRight(); }, 500);
 }
 
 function collectDice() {
@@ -859,10 +774,11 @@ function collectDice() {
   
   const cupSize = vhToPx(20);
   const diceSize = vhToPx(8);
-  
   const cupCenterX = vwToPx(cupXPercent) + cupSize * 1.2;
   const cupCenterY = vhToPx(cupYPercent) + cupSize * 2.45;
   const collectRadius = vhToPx(10);
+  
+  let collectedAny = false;
   
   for (let i = dice.length - 1; i >= 0; i--) {
     const die = dice[i];
@@ -870,15 +786,48 @@ function collectDice() {
     
     const diePxX = vwToPx(die.xPercent);
     const diePxY = vhToPx(die.yPercent);
-    
     const dx = diePxX + diceSize * 2 - cupCenterX;
     const dy = diePxY + diceSize * 2 - cupCenterY;
     const dist = Math.sqrt(dx*dx + dy*dy);
     
     if (dist < collectRadius) {
+      // Store the die's value before removing
+      if (!previousDiceValues.includes(die.face)) {
+        previousDiceValues.push(die.face);
+      }
       if (die.element) die.element.remove();
       dice.splice(i, 1);
+      collectedAny = true;
     }
+  }
+  
+  // Check if all unlocked dice are now in the cup
+  if (collectedAny && dice.length === 0 && !rollPending && isDraggingCup) {
+    // All dice collected - attempt roll
+    attemptAutoRoll();
+  }
+}
+
+async function attemptAutoRoll() {
+  console.log("All dice collected into cup - attempting auto roll");
+  
+  // Store current values of all dice (locked ones)
+  previousDiceValues = lockedDice.map(d => d.face);
+  
+  const rollResult = await performRoll();
+  
+  if (rollResult.success && pendingRollValues) {
+    // Check if all 6 dice would be locked
+    if (lockedDice.length === 6) {
+      handleAllDiceLocked();
+    } else {
+      // Valid roll - wait for cup release
+      waitingForRelease = true;
+      console.log("Roll valid - waiting for cup release to spill dice");
+    }
+  } else if (!rollResult.success && rollResult.needsSelection) {
+    // Need to select at least one die - spill immediately with previous values
+    spillDiceWithPreviousValues();
   }
 }
 
@@ -894,11 +843,9 @@ async function lockDie(die) {
     const heldSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
     const heldDice = heldSnap.val() || [];
     
-    // Use server index if available
     if (die.serverIndex !== undefined) {
       await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${die.serverIndex}`), true);
     } else {
-      // Fallback to finding by face value
       for (let i = 0; i < rolledDiceValues.length; i++) {
         if (rolledDiceValues[i] === die.face && !heldDice[i]) {
           await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`), true);
@@ -922,7 +869,6 @@ async function lockDie(die) {
     const overlay = document.createElement('div');
     overlay.className = 'locked-overlay';
     die.element.appendChild(overlay);
-    
     die.element.style.pointerEvents = 'auto';
     die.element.style.cursor = 'pointer';
   });
@@ -944,18 +890,12 @@ function animateToPosition(element, targetX, targetY, callback) {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    
     const currentX = startX + (targetX - startX) * eased;
     const currentY = startY + (targetY - startY) * eased;
-    
     element.style.left = currentX + 'px';
     element.style.top = currentY + 'px';
-    
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else if (callback) {
-      callback();
-    }
+    if (progress < 1) { requestAnimationFrame(animate); }
+    else if (callback) { callback(); }
   }
   animate();
 }
@@ -986,15 +926,12 @@ async function unlockDie(die) {
   
   lockedDice.splice(index, 1);
   die.locked = false;
-  
   const overlay = die.element.querySelector('.locked-overlay');
   if (overlay) overlay.remove();
-  
   die.element.classList.remove('locked');
   
   const randomXPercent = Math.random() * 80 + 10;
   const randomYPercent = Math.random() * 80 + 10;
-  
   die.vx = 0;
   die.vy = 0;
   die.rolling = false;
@@ -1005,11 +942,9 @@ async function unlockDie(die) {
   animateToPosition(die.element, targetX, targetY, () => {
     die.xPercent = randomXPercent;
     die.yPercent = randomYPercent;
-    
     die.element.removeEventListener('click', die.clickHandler);
     die.clickHandler = () => lockDie(die);
     die.element.addEventListener('click', die.clickHandler);
-    
     die.element.style.cursor = 'pointer';
   });
   
@@ -1020,11 +955,9 @@ async function unlockDie(die) {
 function repositionLockedDice() {
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
-  
   lockedDice.forEach((die, i) => {
     const targetX = containerW * 0.032;
     const targetY = (containerH * 0.17) + (i * (containerH * 0.1175));
-    
     if(die.element) {
         die.element.style.left = targetX + 'px';
         die.element.style.top = targetY + 'px';
@@ -1035,10 +968,8 @@ function repositionLockedDice() {
 function moveCupToBottomRight() {
   const targetXPercent = 75;
   const targetYPercent = 70;
-  
   const startXPercent = cupXPercent;
   const startYPercent = cupYPercent;
-  
   const duration = 800;
   const startTime = Date.now();
   
@@ -1050,48 +981,34 @@ function moveCupToBottomRight() {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    
     cupXPercent = startXPercent + (targetXPercent - startXPercent) * eased;
     cupYPercent = startYPercent + (targetYPercent - startYPercent) * eased;
-    
     updateCupPosition();
-    
-    if (progress < 1) {
-      requestAnimationFrame(animateCup);
-    } else {
-      setTimeout(() => {
-        cupCanCollect = true;
-      }, 500);
-    }
+    if (progress < 1) { requestAnimationFrame(animateCup); }
+    else { setTimeout(() => { cupCanCollect = true; }, 500); }
   }
-  
   animateCup();
 }
 
 function collectAllDiceIntoCup() {
   const targetXPercent = 75;
   const targetYPercent = 70;
-  
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
   const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
   
   let animationIndex = 0;
-  
   const lockedDiceCopy = [...lockedDice];
+  
   lockedDiceCopy.forEach((die) => {
     if (die.element) {
       const delay = animationIndex * 100;
       animationIndex++;
-      
       setTimeout(() => {
         const overlay = die.element.querySelector('.locked-overlay');
         if (overlay) overlay.remove();
         die.element.classList.remove('locked');
-        
         animateToPosition(die.element, cupTargetX, cupTargetY, () => {
-          if (die.element) {
-            die.element.remove();
-          }
+          if (die.element) { die.element.remove(); }
         });
       }, delay);
     }
@@ -1103,20 +1020,15 @@ function collectAllDiceIntoCup() {
     if (die.element && !die.rolling) {
       const delay = animationIndex * 100;
       animationIndex++;
-      
       setTimeout(() => {
         animateToPosition(die.element, cupTargetX, cupTargetY, () => {
-          if (die.element) {
-            die.element.remove();
-          }
+          if (die.element) { die.element.remove(); }
         });
       }, delay);
     }
   });
   
-  setTimeout(() => {
-    dice.length = 0;
-  }, animationIndex * 100 + 500);
+  setTimeout(() => { dice.length = 0; }, animationIndex * 100 + 500);
   
   cupXPercent = targetXPercent;
   cupYPercent = targetYPercent;
@@ -1130,32 +1042,17 @@ function update() {
   dice.forEach(die => {
     if (die.rolling) {
       die.rollTime += 16;
-      
       let diePxX = vwToPx(die.xPercent);
       let diePxY = vhToPx(die.yPercent);
-      
       diePxX += die.vx;
       diePxY += die.vy;
       die.vx *= 0.92;
       die.vy *= 0.92;
       
-      if (diePxX > canvas.width - diceSize) {
-        diePxX = canvas.width - diceSize;
-        die.vx *= -0.6;
-      }
-      if (diePxX < 0) {
-        diePxX = 0;
-        die.vx *= -0.6;
-      }
-      if (diePxY > canvas.height - diceSize) {
-        diePxY = canvas.height - diceSize;
-        die.vy *= -0.6;
-        die.vx *= 0.9;
-      }
-      if (diePxY < 0) {
-         diePxY = 0;
-         die.vy *= -0.6;
-      }
+      if (diePxX > canvas.width - diceSize) { diePxX = canvas.width - diceSize; die.vx *= -0.6; }
+      if (diePxX < 0) { diePxX = 0; die.vx *= -0.6; }
+      if (diePxY > canvas.height - diceSize) { diePxY = canvas.height - diceSize; die.vy *= -0.6; die.vx *= 0.9; }
+      if (diePxY < 0) { diePxY = 0; die.vy *= -0.6; }
       
       die.xPercent = pxToVw(diePxX);
       die.yPercent = pxToVh(diePxY);
@@ -1195,25 +1092,18 @@ function update() {
       if (speed < 0.1 && die.rollTime > 1000) {
         die.rolling = false;
         die.vx = 0; die.vy = 0; die.rotationSpeed = 0;
-        
         die.face = die.finalFace || Math.floor(Math.random() * 6) + 1;
-        
         if (die.element) {
             die.element.classList.remove('rolling');
             die.element.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
         }
-      } else {
-        allStopped = false;
-      }
+      } else { allStopped = false; }
       
       renderDiePosition(die);
     }
   });
   
-  if (allStopped && isRolling) {
-    isRolling = false;
-  }
-  
+  if (allStopped && isRolling) { isRolling = false; }
   requestAnimationFrame(update);
 }
 
@@ -1222,11 +1112,7 @@ update();
 window.addEventListener('resize', () => {
   resizeCanvas();
   updateCupPosition();
-  
-  dice.forEach(die => {
-    renderDiePosition(die);
-  });
-  
+  dice.forEach(die => { renderDiePosition(die); });
   repositionLockedDice();
 });
 
