@@ -500,7 +500,7 @@ function playShakeSound() {
 }
 
 cup.addEventListener('mousedown', async (e) => {
-  if (isRolling || allDiceLockedRollPending) return;
+  if (isRolling || allDiceLockedRollPending || rollPending) return;
   
   // Check if all 6 dice are locked - if so, attempt roll immediately
   if (lockedDice.length === 6 && dice.length === 0) {
@@ -577,15 +577,20 @@ document.addEventListener('mouseup', async () => {
     return;
   }
   
-  // If no unlocked dice and some locked dice exist, try to roll
-  if (dice.length === 0 && lockedDice.length > 0 && lockedDice.length < 6 && cupState === 'normal' && !rollPending) {
-    // Store current dice values before rolling
+  // If no dice anywhere (fresh turn or all collected), try to roll
+  if (dice.length === 0 && cupState === 'normal' && !rollPending) {
+    // Store current dice values before rolling (if any locked)
     previousDiceValues = lockedDice.map(d => d.face);
     
     const rollResult = await performRoll();
     
     if (rollResult.success && pendingRollValues) {
-      spillDice();
+      // Check if all 6 dice are locked (shouldn't happen on fresh roll, but just in case)
+      if (lockedDice.length === 6) {
+        handleAllDiceLocked();
+      } else {
+        spillDice();
+      }
     } else if (!rollResult.success && rollResult.needsSelection) {
       // Need to select at least one die - spill with previous values
       spillDiceWithPreviousValues();
