@@ -35,7 +35,12 @@ body {
   left: 20px;
   color: white;
   font-weight: bold;
-  pointer-events: none;
+  pointer-events: auto !important;
+  z-index: 2000;
+}
+
+.ui-layer * {
+  pointer-events: auto !important;
 }
 
 #gameCanvas {
@@ -43,7 +48,8 @@ body {
   top: 18%;    
   left: 15%;   
   width: 70%;  
-  height: 64%; 
+  height: 64%;
+  pointer-events: none;
 }
 
 .cup {
@@ -90,6 +96,11 @@ body {
   pointer-events: none;
 }
 
+.die, .cup {
+  pointer-events: auto;
+}
+
+/* Locked Dice Area - Left Side */
 .locked-area {
   position: absolute;
   top: 50%;
@@ -115,24 +126,7 @@ body {
   pointer-events: none;
 }
 
-.ui-layer {
-  pointer-events: auto !important;
-  z-index: 2000;
-}
-
-.ui-layer * {
-  pointer-events: auto !important;
-}
-
-#gameCanvas {
-  pointer-events: none;
-}
-
-.die, .cup {
-  pointer-events: auto;
-}
-
-/* Current Player Display at Top */
+/* Current Player Display at Top Center */
 .current-player-display {
   position: absolute;
   top: 2%;
@@ -193,84 +187,25 @@ body {
   filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
 }
 
-/* Bottom Control Panel - UPDATED POSITIONING AND LAYOUT */
+/* Bottom Control Panel - Below Locked Area */
 .bottom-control-panel {
-  /* New Positioning in UI Layer for Dices Game */
   position: absolute;
-  bottom: 5%; /* Position it near the bottom */
-  left: 3%; /* Align with the locked dice area */
-  
+  bottom: 3%;
+  left: 4vh;
   display: flex;
-  flex-direction: row; /* Set to row */
+  flex-direction: row;
   align-items: center;
-  gap: 15px; /* Adjusted gap for row layout */
+  gap: 15px;
   z-index: 2500;
   pointer-events: auto;
 }
 
-.my-player-info {
-  position: absolute;
-  bottom: 3%;
-  left: 3%;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 12px 20px;
-  border-radius: 12px;
-  border: 3px solid #4a9eff;
-  z-index: 2500;
-  pointer-events: none;
-  display: none; /* Keep my-player-info hidden to use .current-player-display for active player at top */
-}
-
-.my-player-pfp {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #4a9eff;
-  background: #333;
-}
-
-.my-player-details {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  color: white;
-}
-
-.my-player-name {
-  font-size: 18px;
-  font-weight: bold;
-  color: #4a9eff;
-}
-
-.my-player-score {
-  font-size: 16px;
-  color: #fff;
-}
-
-.my-player-dice {
-  display: flex;
-  gap: 8px;
-}
-
-.my-player-dice-item {
-  width: 35px;
-  height: 35px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  filter: drop-shadow(0 0 5px rgba(74, 158, 255, 0.5));
-}
-
 .end-turn-button {
   position: relative;
-  width: 10.6vh;
-  height: 3.4vh;
+  width: 12vh;
+  height: 4vh;
   cursor: pointer;
   transition: transform 0.2s, filter 0.2s;
-  order: 1; /* Button on the left */
 }
 
 .end-turn-button:hover {
@@ -301,24 +236,96 @@ body {
 
 .score-display {
   background: rgba(0, 0, 0, 0.8);
-  padding: 15px 25px;
+  padding: 10px 20px;
   border-radius: 10px;
   border: 2px solid #d4af37;
-  order: 2; /* Score on the right of the button */
 }
 
 .score-label {
   color: #d4af37;
-  font-size: 14px;
-  margin-bottom: 5px;
+  font-size: 12px;
+  margin-bottom: 3px;
   text-align: center;
 }
 
 .score-value {
   color: white;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
   text-align: center;
+}
+
+/* Other Players List - Right Side */
+.other-players-panel {
+  position: absolute;
+  right: 2%;
+  top: 15%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2500;
+  max-height: 70%;
+  overflow-y: auto;
+}
+
+.other-player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: 2px solid #555;
+  min-width: 180px;
+  transition: border-color 0.3s;
+}
+
+.other-player-card.is-current {
+  border-color: #d4af37;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.other-player-card.disconnected {
+  opacity: 0.5;
+}
+
+.other-player-pfp {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: 2px solid #666;
+  background: #333;
+  flex-shrink: 0;
+}
+
+.other-player-card.is-current .other-player-pfp {
+  border-color: #d4af37;
+}
+
+.other-player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.other-player-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.other-player-card.is-current .other-player-name {
+  color: #d4af37;
+}
+
+.other-player-score {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.other-player-status {
+  font-size: 11px;
+  color: #ff6b6b;
 }
 
 /* Hide old UI elements */
@@ -326,32 +333,10 @@ body {
   display: none !important;
 }
 
-/* Player list on the left - simplified */
 #activePlayerList {
-  position: absolute;
-  left: 2%;
-  top: 15%;
-  max-height: 60%;
-  overflow-y: auto;
-  z-index: 2000;
+  display: none !important;
 }
 
-#activePlayerList > div {
-  background: rgba(0, 0, 0, 0.7);
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 2px solid #555;
-  color: white;
-  min-width: 150px;
-}
-
-#activePlayerList > div p {
-  margin: 3px 0;
-  font-size: 14px;
-}
-
-/* Hide current player and myself from left list */
-#activePlayerList > div.is-current-player {
-  display: none;
+.my-player-info {
+  display: none !important;
 }

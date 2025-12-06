@@ -277,6 +277,7 @@ async function updateActivePlayerList() {
     let isMyTurnThisUpdate = false;
     let currentPlayerData = null;
     let myPlayerData = null;
+    let otherPlayers = [];
 
     for (const player of playerOrder) {
         const playerData = playersInfo.val()[player];
@@ -287,6 +288,12 @@ async function updateActivePlayerList() {
             uid: player,
             ...playerData
           };
+        } else {
+          // Track other players
+          otherPlayers.push({
+            uid: player,
+            ...playerData
+          });
         }
         
         // Check if this is the current player
@@ -300,44 +307,22 @@ async function updateActivePlayerList() {
             isMyTurnThisUpdate = true;
           }
         }
-        
-        // Create player div for left sidebar (will be hidden if current player or is me)
-        const activePlayerDiv = document.createElement("div");
-        if (playerData.playersTurn === true || player === uid) {
-          activePlayerDiv.classList.add("is-current-player");
-        }
-        
-        const name = document.createElement("p");
-        const score = document.createElement("p");
-        
-        activePlayerList.appendChild(activePlayerDiv);
-        activePlayerDiv.appendChild(name);
-        activePlayerDiv.appendChild(score);
-        
-        name.textContent = playerData.username;
-        score.textContent = "Score: " + playerData.score;
-
-        if (playerData.connected === false) {
-          const connected = document.createElement("p");
-          activePlayerDiv.appendChild(connected);
-          connected.textContent = "Disconnected";
-          connected.style.color = "#ff6b6b";
-        }
     }
 
     // Update current player display at top (only if it's not me)
     if (currentPlayerData && currentPlayerData.uid !== uid) {
       updateCurrentPlayerDisplay(currentPlayerData, false);
-      lastOtherPlayerData = currentPlayerData; // Store for when it's my turn
+      lastOtherPlayerData = currentPlayerData;
     } else if (currentPlayerData && currentPlayerData.uid === uid) {
-      // When it's my turn, show the last other player who played
       if (lastOtherPlayerData) {
         updateCurrentPlayerDisplay(lastOtherPlayerData, false);
       } else {
-        // If no previous player exists, hide the display
         updateCurrentPlayerDisplay(currentPlayerData, true);
       }
     }
+
+    // Update other players panel on the right
+    updateOtherPlayersPanel(otherPlayers, currentPlayerData);
 
     // Always update my player info at bottom
     if (myPlayerData) {
@@ -369,7 +354,7 @@ async function updateActivePlayerList() {
             document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
         }
 
-        document.getElementById("exitBtn").addEventListener("click", () => {
+        document.getElementById("exit").addEventListener("click", () => {
             localStorage.removeItem("dicesLobbyId");
             localStorage.removeItem("dicesIsHost");
             localStorage.removeItem("selfUID");
@@ -386,7 +371,43 @@ async function updateActivePlayerList() {
 
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
-
+function updateOtherPlayersPanel(otherPlayers, currentPlayerData) {
+  let panel = document.querySelector(".other-players-panel");
+  
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.className = "other-players-panel";
+    document.getElementById("game-container").appendChild(panel);
+  }
+  
+  panel.innerHTML = "";
+  
+  otherPlayers.forEach(player => {
+    const card = document.createElement("div");
+    card.className = "other-player-card";
+    
+    // Highlight if it's their turn
+    if (currentPlayerData && player.uid === currentPlayerData.uid) {
+      card.classList.add("is-current");
+    }
+    
+    // Show disconnected state
+    if (player.connected === false) {
+      card.classList.add("disconnected");
+    }
+    
+    card.innerHTML = `
+      <div class="other-player-pfp"></div>
+      <div class="other-player-details">
+        <div class="other-player-name">${player.username}</div>
+        <div class="other-player-score">Score: ${player.score}</div>
+        ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
+      </div>
+    `;
+    
+    panel.appendChild(card);
+  });
+}
 function updateCurrentPlayerDisplay(playerData, isMe) {
   let displayDiv = document.querySelector(".current-player-display");
   
@@ -396,7 +417,6 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
     document.getElementById("game-container").appendChild(displayDiv);
   }
   
-  // Add class if it's me to hide it
   if (isMe) {
     displayDiv.classList.add("is-me");
     return;
@@ -407,13 +427,12 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
   displayDiv.innerHTML = `
     <div class="current-player-pfp"></div>
     <div class="current-player-info">
-      <div class="current-player-name">${playerData.username}</div>
+      <div class="current-player-name">${playerData.username}'s Turn</div>
       <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
     </div>
     <div class="current-player-dice"></div>
   `;
   
-  // Add dice to display
   const diceContainer = displayDiv.querySelector(".current-player-dice");
   if (playerData.rolledDice && playerData.rolledDice.length > 0) {
     playerData.rolledDice.forEach((dieValue, index) => {
@@ -421,7 +440,6 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
       dieDiv.className = "current-player-dice-item";
       dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
       
-      // Add visual indicator if held
       if (playerData.heldDice && playerData.heldDice[index]) {
         dieDiv.style.border = "2px solid #d4af37";
         dieDiv.style.boxShadow = "0 0 10px #d4af37";
