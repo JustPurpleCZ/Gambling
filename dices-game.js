@@ -228,10 +228,7 @@ async function startGame() {
     const response = await res.json();
     console.log(response);
 
-    if (response.success) {
-        set(presenceRef, true);
-        onDisconnect(presenceRef).cancel();
-    } else {
+    if (!response.success) {
         console.log("Failed to start game:", response.reply);
     }
 }
