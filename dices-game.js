@@ -473,9 +473,7 @@ async function submitMove() {
 
     if (response.success) {
             errorMessage.style.display = "none";
-            setTimeout(() => {
-                collectAllDiceIntoCup();
-            }, 1000)
+            collectAllDiceIntoCup();
         } else {
             errorMessage.style.display = "block";
             errorMessage.textContent = response.reply;
@@ -873,8 +871,8 @@ async function lockDie(die) {
   die.element.style.transform = 'rotate(0deg)';
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
-  const targetX = containerW * 0.0285; 
-  const targetY = (containerH * 0.26) + (lockedDice.length * (containerH * 0.10));
+  const targetX = containerW * 0.02875; 
+  const targetY = (containerH * 0.14) + (lockedDice.length * (containerH * 0.15));
   
   animateToPosition(die.element, targetX, targetY, () => {
     const overlay = document.createElement('div');
