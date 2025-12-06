@@ -19,4 +19,5 @@
     bottom: -23vh;
     right: 1.9vh;
     transition: bottom 0.5s ease-out;
+    z-index: 51;
 }
