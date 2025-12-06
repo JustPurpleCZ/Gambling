@@ -468,6 +468,8 @@ async function submitMove() {
 
     if (response.success) {
             errorMessage.style.display = "none";
+            // Collect all dice into the cup before turn ends
+            collectAllDiceIntoCup();
         } else {
             errorMessage.style.display = "block";
             errorMessage.textContent = response.reply;
@@ -1026,6 +1028,41 @@ function moveCupToBottomRight() {
   }
   
   animateCup();
+}
+function collectAllDiceIntoCup() {
+  // First, move cup to bottom right if not already there
+  const targetXPercent = 75;
+  const targetYPercent = 70;
+  
+  // Calculate cup target position in pixels
+  const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
+  const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
+  
+  // Animate all dice on the table to slide into the cup
+  dice.forEach((die, index) => {
+    if (die.element && !die.rolling) {
+      const delay = index * 100; // Stagger the animations
+      
+      setTimeout(() => {
+        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+          // Remove the die element after it reaches the cup
+          if (die.element) {
+            die.element.remove();
+          }
+        });
+      }, delay);
+    }
+  });
+  
+  // Clear the dice array after all animations
+  setTimeout(() => {
+    dice.length = 0; // Clear all dice from the array
+  }, dice.length * 100 + 500);
+  
+  // Move cup to bottom right
+  cupXPercent = targetXPercent;
+  cupYPercent = targetYPercent;
+  updateCupPosition();
 }
 function update() {
   let allStopped = true;
