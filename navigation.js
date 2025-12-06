@@ -252,7 +252,7 @@ async function displayAch() {
 }
 
 async function initWallet() {
-    const balanceSnap = await get(ref(`/users/${uid}/credits`));
+    const balanceSnap = await get(ref(db, `/users/${uid}/credits`));
     const balance = balanceSnap.val();
     const walletDisplay = document.querySelector('.wallet-display');
     walletDisplay.textContent = `Wallet: $${balanceSnap}`;
@@ -268,7 +268,7 @@ onAuthStateChanged(auth, async (user) => {
 
     await initUnlocks();
     await initWallet();
-    
+
     const snap = await get(ref(db, `/users/${uid}/achievements`));
     unlockedAchList = snap.val();
     console.log("Unlocked achievements: ", unlockedAchList);
