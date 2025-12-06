@@ -117,3 +117,19 @@ body {
   pointer-events: none;
 
 }
+.ui-layer {
+  pointer-events: auto !important;
+  z-index: 2000;
+}
+
+.ui-layer * {
+  pointer-events: auto !important;
+}
+
+#gameCanvas {
+  pointer-events: none;
+}
+
+.die, .cup {
+  pointer-events: auto;
+}
