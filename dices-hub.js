@@ -29,7 +29,7 @@ async function checkAuth() {
     });
 
     if (!user) {
-        //window.location.href = 'index.html';
+        window.location.href = 'index.html';
         return;
     }
 }
@@ -181,10 +181,12 @@ async function quickJoin() {
     const inputName = document.getElementById("inputName");
     const inputMaxPlayers = document.getElementById("inputMaxPlayers");
     const inputBetSize = document.getElementById("inputCreateBetSize");
+    const inputCreatePassword = document.getElementById("inputCreatePassword");
     
     inputName.value = "Quick Join";
     inputMaxPlayers.value = "2";
     inputBetSize.value = selectedBetSize.toString();
+    inputCreatePassword.value = "";
     
     await createLobby();
 }
