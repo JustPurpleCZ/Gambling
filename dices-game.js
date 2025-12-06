@@ -295,7 +295,7 @@ function updateOtherPlayersPanel(otherPlayers, currentPlayerData) {
     if (currentPlayerData && player.uid === currentPlayerData.uid) { card.classList.add("is-current"); }
     if (player.connected === false) { card.classList.add("disconnected"); }
     card.innerHTML = `
-      <div class="other-player-pfp" style="background-image: url("main/profiles/${player.profilePicture.type}/${player.profilePicture.id}");"></div>
+      <div class="other-player-pfp" style="background-image: url("main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png");"></div>
       <div class="other-player-details">
         <div class="other-player-name">${player.username}</div>
         <div class="other-player-score">Score: ${player.score}</div>
@@ -316,7 +316,7 @@ function updateCurrentPlayerDisplay(playerData, isMe) {
   if (isMe) { displayDiv.classList.add("is-me"); return; }
   else { displayDiv.classList.remove("is-me"); }
   displayDiv.innerHTML = `
-    <div class="current-player-pfp" style="background-image: url("main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}");"></div>
+    <div class="current-player-pfp" style="background-image: url("main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png");"></div>
     <div class="current-player-info">
       <div class="current-player-name">${playerData.username}'s Turn</div>
       <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
@@ -346,7 +346,7 @@ function updateMyPlayerInfo(playerData) {
     document.getElementById("game-container").appendChild(myInfoDiv);
   }
   myInfoDiv.innerHTML = `
-    <div class="my-player-pfp" style="background-image: url("main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}");"></div>
+    <div class="my-player-pfp" style="background-image: url("main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png");"></div>
     <div class="my-player-details">
       <div class="my-player-name">${playerData.username}</div>
       <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>

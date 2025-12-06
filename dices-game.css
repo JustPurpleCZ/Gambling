@@ -202,8 +202,8 @@ body {
 
 .end-turn-button {
   position: relative;
-  width: 12vh;
-  height: 4vh;
+  width: 24vh;
+  height: 8vh;
   cursor: pointer;
   transition: transform 0.2s, filter 0.2s;
 }
