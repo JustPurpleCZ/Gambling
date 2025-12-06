@@ -1130,10 +1130,15 @@ function moveCupToBottomRight() {
 }
 
 function collectAllDiceIntoCup() {
-  const targetXPercent = 85;
-  const targetYPercent = 120;
-  const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
-  const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
+  // Use the same position as moveCupToBottomRight for consistency
+  const finalCupXPercent = 75;
+  const finalCupYPercent = 70;
+  
+  // Animate dice to an off-screen collection point first
+  const collectXPercent = 85;
+  const collectYPercent = 120;
+  const collectTargetX = canvas.offsetLeft + vwToPx(collectXPercent);
+  const collectTargetY = canvas.offsetTop + vhToPx(collectYPercent);
   
   let animationIndex = 0;
   const lockedDiceCopy = [...lockedDice];
@@ -1147,7 +1152,7 @@ function collectAllDiceIntoCup() {
         if (overlay) overlay.remove();
         die.element.classList.remove('locked');
         die.element.classList.remove('perm-locked');
-        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+        animateToPosition(die.element, collectTargetX, collectTargetY, () => {
           if (die.element) { die.element.remove(); }
         });
       }, delay);
@@ -1155,14 +1160,14 @@ function collectAllDiceIntoCup() {
   });
   
   lockedDice.length = 0;
-  permLockedCount = 0; // Reset perm locked count
+  permLockedCount = 0;
   
   dice.forEach((die) => {
     if (die.element && !die.rolling) {
       const delay = animationIndex * 100;
       animationIndex++;
       setTimeout(() => {
-        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+        animateToPosition(die.element, collectTargetX, collectTargetY, () => {
           if (die.element) { die.element.remove(); }
         });
       }, delay);
@@ -1171,9 +1176,16 @@ function collectAllDiceIntoCup() {
   
   setTimeout(() => { dice.length = 0; }, animationIndex * 100 + 500);
   
-  cupXPercent = targetXPercent;
-  cupYPercent = targetYPercent;
+  // Move cup to the consistent bottom-right position (same as after rolling)
+  cupXPercent = finalCupXPercent;
+  cupYPercent = finalCupYPercent;
   updateCupPosition();
+  
+  // Reset cup state
+  cupState = 'normal';
+  cup.style.backgroundImage = `url(${cupImg})`;
+  cup.style.transform = 'scale(1) rotate(0deg)';
+  cupCanCollect = true;
 }
 
 function update() {
