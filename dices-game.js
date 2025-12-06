@@ -1038,10 +1038,39 @@ function collectAllDiceIntoCup() {
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
   const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
   
-  // Animate all dice on the table to slide into the cup
-  dice.forEach((die, index) => {
+  let animationIndex = 0;
+  
+  // First, unlock and collect all locked dice
+  const lockedDiceCopy = [...lockedDice]; // Make a copy since we'll be modifying the array
+  lockedDiceCopy.forEach((die) => {
+    if (die.element) {
+      const delay = animationIndex * 100;
+      animationIndex++;
+      
+      setTimeout(() => {
+        // Remove the locked overlay
+        const overlay = die.element.querySelector('.locked-overlay');
+        if (overlay) overlay.remove();
+        die.element.classList.remove('locked');
+        
+        // Animate to cup
+        animateToPosition(die.element, cupTargetX, cupTargetY, () => {
+          if (die.element) {
+            die.element.remove();
+          }
+        });
+      }, delay);
+    }
+  });
+  
+  // Clear locked dice array
+  lockedDice.length = 0;
+  
+  // Then animate all dice on the table to slide into the cup
+  dice.forEach((die) => {
     if (die.element && !die.rolling) {
-      const delay = index * 100; // Stagger the animations
+      const delay = animationIndex * 100;
+      animationIndex++;
       
       setTimeout(() => {
         animateToPosition(die.element, cupTargetX, cupTargetY, () => {
@@ -1057,7 +1086,7 @@ function collectAllDiceIntoCup() {
   // Clear the dice array after all animations
   setTimeout(() => {
     dice.length = 0; // Clear all dice from the array
-  }, dice.length * 100 + 500);
+  }, animationIndex * 100 + 500);
   
   // Move cup to bottom right
   cupXPercent = targetXPercent;
