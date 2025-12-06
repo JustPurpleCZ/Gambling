@@ -81,6 +81,7 @@ body {
   cursor: pointer;
   user-select: none;
   transition: opacity 0.2s;
+  z-index: 3;
 }
 
 .die:hover {
@@ -98,12 +99,15 @@ body {
 
 .locked-area {
   position: absolute;
-  bottom: 5%;
-  left: 5%;
-  width: 25%;
-  height: 15%;
-  border: 3px dashed rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 5vh;
+  width: 10vh;
+  height: 60vh;
+  background-image: url(main/dice/dice_slots.png);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 2;
 }
 .locked-overlay {
   position: absolute;
