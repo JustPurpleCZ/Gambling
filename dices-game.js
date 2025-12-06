@@ -371,13 +371,30 @@ function updateMyPlayerInfo(playerData) {
 async function updateBottomControlPanel(isMyTurn) {
   let controlPanel = document.querySelector(".bottom-control-panel");
   controlPanel.style.display = "flex";
+  
   const endTurnBtn = controlPanel.querySelector(".end-turn-button");
-  if (isMyTurn) { endTurnBtn.classList.remove("disabled"); }
-  else { endTurnBtn.classList.add("disabled"); }
+  if (isMyTurn) { 
+    endTurnBtn.classList.remove("disabled"); 
+  } else { 
+    endTurnBtn.classList.add("disabled"); 
+  }
+  
+  // Get total score
+  const totalScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/score`));
+  const totalScore = totalScoreSnap.val() || 0;
+  const totalScoreValue = document.getElementById("totalScoreValue");
+  if (totalScoreValue) { 
+    totalScoreValue.textContent = totalScore; 
+  }
+  
+  // Get turn score
   const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
   const turnScore = turnScoreSnap.val() || 0;
-  const scoreValue = controlPanel.querySelector(".score-value");
-  if (scoreValue) { scoreValue.textContent = turnScore; }
+  const turnScoreValue = document.getElementById("turnScoreValue");
+  if (turnScoreValue) { 
+    turnScoreValue.textContent = turnScore; 
+  }
+  
   if (isMyTurn) {
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
     const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
