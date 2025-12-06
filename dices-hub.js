@@ -32,7 +32,17 @@ async function checkAuth() {
         window.location.href = 'index.html';
         return;
     }
+
+    initWallet();
 }
+
+async function initWallet() {
+    const balanceSnap = await get(ref(db, `/users/${user.uid}/credits`));
+    const balance = balanceSnap.val();
+    const walletDisplay = document.querySelector('.wallet-display');
+    walletDisplay.textContent = `Wallet: $${balance}`;
+}
+
 
 // Load lobbies
 async function loadLobbies() {
