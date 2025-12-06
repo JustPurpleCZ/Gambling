@@ -276,9 +276,18 @@ async function updateActivePlayerList() {
     activePlayerList.replaceChildren();
     let isMyTurnThisUpdate = false;
     let currentPlayerData = null;
+    let myPlayerData = null;
 
     for (const player of playerOrder) {
         const playerData = playersInfo.val()[player];
+        
+        // Track my own data
+        if (player === uid) {
+          myPlayerData = {
+            uid: player,
+            ...playerData
+          };
+        }
         
         // Check if this is the current player
         if (playerData.playersTurn === true) {
@@ -292,9 +301,9 @@ async function updateActivePlayerList() {
           }
         }
         
-        // Create player div for left sidebar (will be hidden if current player)
+        // Create player div for left sidebar (will be hidden if current player or is me)
         const activePlayerDiv = document.createElement("div");
-        if (playerData.playersTurn === true) {
+        if (playerData.playersTurn === true || player === uid) {
           activePlayerDiv.classList.add("is-current-player");
         }
         
@@ -316,21 +325,27 @@ async function updateActivePlayerList() {
         }
     }
 
-    // Update current player display at top
-    if (currentPlayerData) {
-      updateCurrentPlayerDisplay(currentPlayerData);
-    }
-
-    // Update bottom control panel
-    if (isMyTurnThisUpdate) {
-      updateBottomControlPanel();
-    } else {
-      // Hide control panel if not my turn
-      const controlPanel = document.querySelector(".bottom-control-panel");
-      if (controlPanel) {
-        controlPanel.style.display = "none";
+    // Update current player display at top (only if it's not me)
+    if (currentPlayerData && currentPlayerData.uid !== uid) {
+      updateCurrentPlayerDisplay(currentPlayerData, false);
+      lastOtherPlayerData = currentPlayerData; // Store for when it's my turn
+    } else if (currentPlayerData && currentPlayerData.uid === uid) {
+      // When it's my turn, show the last other player who played
+      if (lastOtherPlayerData) {
+        updateCurrentPlayerDisplay(lastOtherPlayerData, false);
+      } else {
+        // If no previous player exists, hide the display
+        updateCurrentPlayerDisplay(currentPlayerData, true);
       }
     }
+
+    // Always update my player info at bottom
+    if (myPlayerData) {
+      updateMyPlayerInfo(myPlayerData);
+    }
+
+    // Always show bottom control panel, but enable/disable based on turn
+    updateBottomControlPanel(isMyTurnThisUpdate);
 
     // Handle game end
     if (gameEnded) {
@@ -372,13 +387,21 @@ async function updateActivePlayerList() {
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
-function updateCurrentPlayerDisplay(playerData) {
+function updateCurrentPlayerDisplay(playerData, isMe) {
   let displayDiv = document.querySelector(".current-player-display");
   
   if (!displayDiv) {
     displayDiv = document.createElement("div");
     displayDiv.className = "current-player-display";
     document.getElementById("game-container").appendChild(displayDiv);
+  }
+  
+  // Add class if it's me to hide it
+  if (isMe) {
+    displayDiv.classList.add("is-me");
+    return;
+  } else {
+    displayDiv.classList.remove("is-me");
   }
   
   displayDiv.innerHTML = `
@@ -409,7 +432,44 @@ function updateCurrentPlayerDisplay(playerData) {
   }
 }
 
-async function updateBottomControlPanel() {
+function updateMyPlayerInfo(playerData) {
+  let myInfoDiv = document.querySelector(".my-player-info");
+  
+  if (!myInfoDiv) {
+    myInfoDiv = document.createElement("div");
+    myInfoDiv.className = "my-player-info";
+    document.getElementById("game-container").appendChild(myInfoDiv);
+  }
+  
+  myInfoDiv.innerHTML = `
+    <div class="my-player-pfp"></div>
+    <div class="my-player-details">
+      <div class="my-player-name">${playerData.username}</div>
+      <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
+    </div>
+    <div class="my-player-dice"></div>
+  `;
+  
+  // Add dice to display
+  const diceContainer = myInfoDiv.querySelector(".my-player-dice");
+  if (playerData.rolledDice && playerData.rolledDice.length > 0) {
+    playerData.rolledDice.forEach((dieValue, index) => {
+      const dieDiv = document.createElement("div");
+      dieDiv.className = "my-player-dice-item";
+      dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
+      
+      // Add visual indicator if held
+      if (playerData.heldDice && playerData.heldDice[index]) {
+        dieDiv.style.border = "2px solid #4a9eff";
+        dieDiv.style.boxShadow = "0 0 10px #4a9eff";
+      }
+      
+      diceContainer.appendChild(dieDiv);
+    });
+  }
+}
+
+async function updateBottomControlPanel(isMyTurn) {
   let controlPanel = document.querySelector(".bottom-control-panel");
   
   if (!controlPanel) {
@@ -436,6 +496,14 @@ async function updateBottomControlPanel() {
   
   controlPanel.style.display = "flex";
   
+  // Enable or disable the button based on turn
+  const endTurnBtn = controlPanel.querySelector(".end-turn-button");
+  if (isMyTurn) {
+    endTurnBtn.classList.remove("disabled");
+  } else {
+    endTurnBtn.classList.add("disabled");
+  }
+  
   // Update turn score
   const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
   const turnScore = turnScoreSnap.val() || 0;
@@ -445,18 +513,20 @@ async function updateBottomControlPanel() {
     scoreValue.textContent = turnScore;
   }
   
-  // Handle rolled dice for clicking
-  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
-  const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
-  
-  const rolledDice = snap.val();
-  const heldDice = snapshot.val();
-  
-  console.log("Rolls:", rolledDice, heldDice);
-  
-  // Store for die clicking
-  window.currentRolledDice = rolledDice;
-  window.currentHeldDice = heldDice;
+  // Handle rolled dice for clicking (only if it's my turn)
+  if (isMyTurn) {
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    
+    const rolledDice = snap.val();
+    const heldDice = snapshot.val();
+    
+    console.log("Rolls:", rolledDice, heldDice);
+    
+    // Store for die clicking
+    window.currentRolledDice = rolledDice;
+    window.currentHeldDice = heldDice;
+  }
 }
 
 async function submitMove() {
@@ -561,6 +631,7 @@ let isRolling = false;
 let pendingRollValues = null;
 let cupCanCollect = true;
 let wasMyTurnLastUpdate = false;
+let lastOtherPlayerData = null;
 
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
