@@ -1030,7 +1030,7 @@ function moveCupToBottomRight() {
 function collectAllDiceIntoCup() {
   // First, move cup to bottom right if not already there
   const targetXPercent = 75;
-  const targetYPercent = 80;
+  const targetYPercent = 95;
   
   // Calculate cup target position in pixels
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
