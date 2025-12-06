@@ -1007,8 +1007,8 @@ function repositionLockedDice() {
 }
 function moveCupToBottomRight() {
   // Set target position to bottom right (relative to canvas)
-  const targetXPercent = 75; // 75% from left
-  const targetYPercent = 60; // 70% from top
+  const targetXPercent = 70; // 75% from left
+  const targetYPercent = 50; // 70% from top
   
   const startXPercent = cupXPercent;
   const startYPercent = cupYPercent;
