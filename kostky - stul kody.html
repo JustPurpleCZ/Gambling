@@ -157,15 +157,15 @@ let cupState = 'normal'; // 'normal' or 'spilling'
 let isRolling = false;
 
 // Position cup initially
-cup.style.left = cupX + 'px';
-cup.style.top = cupY + 'px';
+cup.style.left = 0;
+cup.style.top = 0;
 
 // Load images
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spill.png';
 const diceImages = [];
 for (let i = 1; i <= 6; i++) {
-  diceImages.push(`main/dice/${i}.png`);
+  diceImages.push(`main/dice/dice_${i}.png`);
 }
 const lockedOverlay = 'main/dice/locked.png'; // You'll need to add this image
 
