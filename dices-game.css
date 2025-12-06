@@ -2,6 +2,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: "Tiny5", sans-serif;
+  font-weight: 100;
+  font-style: normal;
+  font-size: 4.8vh;
 }
 
 body {
@@ -15,19 +19,12 @@ body {
   justify-content: center;
 }
 
-#game-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
 #game-container {
   position: relative;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 2 / 1; 
+  width: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
   background-image: url(main/dice/deck_prototype.png);
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -60,13 +57,13 @@ body {
 
 .cup {
   position: absolute;
-  width: 10%;
-  height: 50%;
+  width: 20vh;
+  height: 50vh;
   cursor: grab;
   user-select: none;
   z-index: 1000;
   background-position: center;
-  background-size: contain;
+  background-size: cover;
   background-repeat: no-repeat;
 }
 
@@ -80,7 +77,7 @@ body {
 
 .die {
   position: absolute;
-  width: 8%;
+  width: 8vh; 
   height: auto;
   aspect-ratio: 1/1;
   cursor: pointer;
@@ -111,9 +108,9 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  left: 2%;
-  width: 6.175%;
-  height: 70%;
+  left: 4vh;
+  width: 12.35vh;
+  height: 70vh;
   background-image: url(main/dice/dice_slots.png);
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -137,14 +134,10 @@ body {
   position: absolute;
   top: 2%;
   left: 50%;
+  width: 80vh;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 1.5% 3%;
-  border-radius: 15px;
-  border: 3px solid #d4af37;
   z-index: 2500;
   pointer-events: none;
 }
@@ -154,11 +147,10 @@ body {
 }
 
 .current-player-pfp {
-  width: 6%;
-  aspect-ratio: 1/1;
-  border-radius: 50%;
-  border: 2px solid #d4af37;
-  background: #333;
+  width: 10vh;
+  height: 10vh;
+  background-position: center;
+  background-size: contain;
 }
 
 .current-player-info {
@@ -169,13 +161,13 @@ body {
 }
 
 .current-player-name {
-  font-size: 1.5vw;
+  font-size: 24px;
   font-weight: bold;
   color: #d4af37;
 }
 
 .current-player-score {
-  font-size: 1.1vw;
+  font-size: 18px;
   color: #fff;
 }
 
@@ -185,8 +177,8 @@ body {
 }
 
 .current-player-dice-item {
-  width: 4%;
-  aspect-ratio: 1/1;
+  width: 40px;
+  height: 40px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -197,19 +189,19 @@ body {
 .bottom-control-panel {
   position: absolute;
   bottom: 3%;
-  left: 2%;
+  left: 4vh;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 1.5%;
+  gap: 15px;
   z-index: 2500;
   pointer-events: auto;
 }
 
 .end-turn-button {
   position: relative;
-  width: 12%;
-  height: auto;
+  width: 24vh;
+  height: 8vh;
   cursor: pointer;
   transition: transform 0.2s, filter 0.2s;
 }
@@ -242,32 +234,21 @@ body {
 
 .score-display {
   background: rgba(0, 0, 0, 0.8);
-  padding: 2% 4%;
+  padding: 10px 20px;
   border-radius: 10px;
   border: 2px solid #d4af37;
-  min-width: 80px;
-}
-
-.score-display.turn-score {
-  border-color: #4a9eff;
 }
 
 .score-label {
   color: #d4af37;
-  font-size: 0.7vw;
+  font-size: 12px;
   margin-bottom: 3px;
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.score-display.turn-score .score-label {
-  color: #4a9eff;
 }
 
 .score-value {
   color: white;
-  font-size: 1.5vw;
+  font-size: 24px;
   font-weight: bold;
   text-align: center;
 }
@@ -293,7 +274,7 @@ body {
   padding: 10px 15px;
   border-radius: 12px;
   border: 2px solid #555;
-  min-width: 180px;
+  width: 30vh;
   transition: border-color 0.3s;
 }
 
@@ -309,14 +290,9 @@ body {
 .other-player-pfp {
   width: 45px;
   height: 45px;
-  border-radius: 50%;
-  border: 2px solid #666;
-  background: #333;
   flex-shrink: 0;
-}
-
-.other-player-card.is-current .other-player-pfp {
-  border-color: #d4af37;
+  background-position: center;
+  background-size: contain;
 }
 
 .other-player-details {
@@ -357,7 +333,6 @@ body {
 .my-player-info {
   display: none !important;
 }
-
 .die.perm-locked {
   cursor: not-allowed !important;
 }
