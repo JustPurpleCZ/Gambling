@@ -290,7 +290,7 @@ async function updateActivePlayerList() {
     let gameEnded = false;
 
     const gameEndSnap = await get(ref(db, `/games/active/dices/${lobbyId}/gameEnded`));
-    if (gameEndSnap.exists() && snap.val()) {
+    if (gameEndSnap.exists() && gameEndSnap.val()) {
         console.log("Game has ended");
         gameEnded = true;
     }
