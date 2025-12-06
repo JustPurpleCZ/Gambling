@@ -251,6 +251,11 @@ async function displayAch() {
     }, 5000);
 }
 
+async function initWallet() {
+    const walletDisplay = document.querySelector('.wallet-display');
+    walletDisplay.textContent = `Wallet: $${walletBalance}`;
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         localStorage.clear();
@@ -259,6 +264,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await initUnlocks();
+    await initWallet();
 
     uid = user.uid;
     const snap = await get(ref(db, `/users/${uid}/achievements`));
