@@ -328,9 +328,15 @@ async function updateActivePlayerList() {
     // Update current player display at top (only if it's not me)
     if (currentPlayerData && currentPlayerData.uid !== uid) {
       updateCurrentPlayerDisplay(currentPlayerData, false);
+      lastOtherPlayerData = currentPlayerData; // Store for when it's my turn
     } else if (currentPlayerData && currentPlayerData.uid === uid) {
-      // Hide top display if I'm the current player
-      updateCurrentPlayerDisplay(currentPlayerData, true);
+      // When it's my turn, show the last other player who played
+      if (lastOtherPlayerData) {
+        updateCurrentPlayerDisplay(lastOtherPlayerData, false);
+      } else {
+        // If no previous player exists, hide the display
+        updateCurrentPlayerDisplay(currentPlayerData, true);
+      }
     }
 
     // Always update my player info at bottom
@@ -338,16 +344,8 @@ async function updateActivePlayerList() {
       updateMyPlayerInfo(myPlayerData);
     }
 
-    // Update bottom control panel (end turn button)
-    if (isMyTurnThisUpdate) {
-      updateBottomControlPanel();
-    } else {
-      // Hide control panel if not my turn
-      const controlPanel = document.querySelector(".bottom-control-panel");
-      if (controlPanel) {
-        controlPanel.style.display = "none";
-      }
-    }
+    // Always show bottom control panel, but enable/disable based on turn
+    updateBottomControlPanel(isMyTurnThisUpdate);
 
     // Handle game end
     if (gameEnded) {
@@ -471,7 +469,7 @@ function updateMyPlayerInfo(playerData) {
   }
 }
 
-async function updateBottomControlPanel() {
+async function updateBottomControlPanel(isMyTurn) {
   let controlPanel = document.querySelector(".bottom-control-panel");
   
   if (!controlPanel) {
@@ -498,6 +496,14 @@ async function updateBottomControlPanel() {
   
   controlPanel.style.display = "flex";
   
+  // Enable or disable the button based on turn
+  const endTurnBtn = controlPanel.querySelector(".end-turn-button");
+  if (isMyTurn) {
+    endTurnBtn.classList.remove("disabled");
+  } else {
+    endTurnBtn.classList.add("disabled");
+  }
+  
   // Update turn score
   const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
   const turnScore = turnScoreSnap.val() || 0;
@@ -507,18 +513,20 @@ async function updateBottomControlPanel() {
     scoreValue.textContent = turnScore;
   }
   
-  // Handle rolled dice for clicking
-  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
-  const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
-  
-  const rolledDice = snap.val();
-  const heldDice = snapshot.val();
-  
-  console.log("Rolls:", rolledDice, heldDice);
-  
-  // Store for die clicking
-  window.currentRolledDice = rolledDice;
-  window.currentHeldDice = heldDice;
+  // Handle rolled dice for clicking (only if it's my turn)
+  if (isMyTurn) {
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+    const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    
+    const rolledDice = snap.val();
+    const heldDice = snapshot.val();
+    
+    console.log("Rolls:", rolledDice, heldDice);
+    
+    // Store for die clicking
+    window.currentRolledDice = rolledDice;
+    window.currentHeldDice = heldDice;
+  }
 }
 
 async function submitMove() {
