@@ -875,8 +875,8 @@ async function lockDie(die) {
   die.element.style.transform = 'rotate(0deg)';
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
-  const targetX = containerW * 0.027; //-
-  const targetY = (containerH * 0.16) + (lockedDice.length * (containerH * 0.13));
+  const targetX = containerW * 0.029; //-
+  const targetY = (containerH * 0.17) + (lockedDice.length * (containerH * 0.12));
   
   animateToPosition(die.element, targetX, targetY, () => {
     const overlay = document.createElement('div');
