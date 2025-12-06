@@ -289,6 +289,12 @@ async function updateActivePlayerList() {
     console.log("Updating active player list");
     let gameEnded = false;
 
+    const gameEndSnap = await get(ref(db, `/games/active/dices/${lobbyId}/gameEnded`));
+    if (snap.exists() && snap.val()) {
+        console.log("Game has ended");
+        gameEnded = true;
+    }
+
     activePlayerList.replaceChildren();
     let isMyTurnThisUpdate = false;
     for (const player of playerOrder) {
@@ -316,7 +322,6 @@ async function updateActivePlayerList() {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
           theirTurn.textContent = "Playing";
-          gameEnded = false;
 
           if (player == uid && !gameEnded) {
             isMyTurnThisUpdate = true;
