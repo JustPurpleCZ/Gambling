@@ -862,6 +862,8 @@ async function lockDie(die) {
   dice.splice(index, 1);
   die.element.classList.add('locked');
   die.locked = true;
+  die.rotation = 0;
+  die.element.style.transform = 'rotate(0deg)';
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
   const targetX = containerW * 0.035; 
