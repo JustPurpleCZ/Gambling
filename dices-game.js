@@ -290,7 +290,7 @@ async function gameStart() {
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
-    let gameEnded = true;
+    let gameEnded = false;
 
     activePlayerList.replaceChildren();
     
