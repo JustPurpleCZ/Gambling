@@ -744,16 +744,16 @@ async function spin() {
         finalNumbers.forEach(number => {
             switch (number) {
                 case 1:
-                    finalSymbols.push('icon/3.png');
+                    finalSymbols.push('icon/1.png');
                     break;
                 case 2:
                     finalSymbols.push('icon/raiden.png');
                     break;
                 case 3:
-                    finalSymbols.push('icon/4.png');
+                    finalSymbols.push('icon/3.png');
                     break;
                 case 4:
-                    finalSymbols.push('icon/1.png');
+                    finalSymbols.push('icon/4.png');
                     break;
             }
         });
