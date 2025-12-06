@@ -1131,7 +1131,7 @@ function moveCupToBottomRight() {
 
 function collectAllDiceIntoCup() {
   const targetXPercent = 85;
-  const targetYPercent = 100;
+  const targetYPercent = 120;
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
   const cupTargetY = canvas.offsetTop + vhToPx(targetYPercent);
   
