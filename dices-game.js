@@ -415,9 +415,13 @@ async function updateActivePlayerList() {
         }
     }
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
-        console.log("My turn just ended. Collecting all dice.");
-        collectAllDiceIntoCup();
+        console.log("My turn just ended. Waiting before collecting all dice.");
+        // Wait 2 seconds before collecting dice
+        setTimeout(() => {
+            collectAllDiceIntoCup();
+        }, 2000);
     }
+
 
     // UPDATE GLOBAL STATE
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
