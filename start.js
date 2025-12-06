@@ -146,8 +146,8 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                if (displayName && displayName.length < 3) {
-                    errorMessage.textContent = 'Username must be at least 3 characters long';
+                if (displayName && displayName.length < 3 || displayName.length > 12) {
+                    errorMessage.textContent = 'Username must be between least 3 and 12 characters long';
                     return;
                 }
 
