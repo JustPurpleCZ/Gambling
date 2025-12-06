@@ -1007,8 +1007,8 @@ function repositionLockedDice() {
 }
 function moveCupToBottomRight() {
   // Set target position to bottom right (relative to canvas)
-  const targetXPercent = 70; // 75% from left
-  const targetYPercent = 50; // 70% from top
+  const targetXPercent = 75; // 75% from left
+  const targetYPercent = 70; // 70% from top
   
   const startXPercent = cupXPercent;
   const startYPercent = cupYPercent;
@@ -1046,7 +1046,7 @@ function moveCupToBottomRight() {
 function collectAllDiceIntoCup() {
   // First, move cup to bottom right if not already there
   const targetXPercent = 75;
-  const targetYPercent = 95;
+  const targetYPercent = 70;
   
   // Calculate cup target position in pixels
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
