@@ -297,74 +297,33 @@ async function updateActivePlayerList() {
 
     activePlayerList.replaceChildren();
     let isMyTurnThisUpdate = false;
-    
-    for (const playerId of playerOrder) {
-        const player = playersInfo.val()[playerId];
-        
-        // Create player card
-        const playerCard = document.createElement("div");
-        playerCard.className = "player-card";
-        
-        // Add active class if it's their turn
-        if (player.playersTurn) {
-            playerCard.classList.add("active");
-        }
-        
-        // Add disconnected class if disconnected
-        if (player.connected === false) {
-            playerCard.classList.add("disconnected");
-        }
-        
-        // Create profile picture
-        const pfp = document.createElement("div");
-        pfp.className = "player-pfp";
-        
-        // Fetch profile picture from database
-        try {
-            const pfpSnap = await get(ref(db, `/users/${playerId}/pfp`));
-            if (pfpSnap.exists() && pfpSnap.val()) {
-                pfp.style.backgroundImage = `url(${pfpSnap.val()})`;
-            }
-        } catch (error) {
-            console.log("Could not load pfp for", playerId);
-        }
-        
-        // Create info container
-        const info = document.createElement("div");
-        info.className = "player-info";
-        
+    for (const player of playerOrder) {
+        // Create the div FIRST
+        const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
-        name.className = "player-name";
-        name.textContent = player.username;
-        
         const score = document.createElement("p");
-        score.className = "player-score";
-        score.textContent = `Score: ${player.score}`;
+        const parTurnScore = document.createElement("p");
         
-        info.appendChild(name);
-        info.appendChild(score);
+        // Now check if needed (though this check might not be necessary)
+        // if (activePlayerList.contains(activePlayerDiv)) {
+        //     continue;
+        // }
         
-        // Add status indicator if it's their turn
-        if (player.playersTurn) {
-            const status = document.createElement("span");
-            status.className = "player-status";
-            status.textContent = "Playing";
-            playerCard.appendChild(status);
-        }
+        activePlayerList.appendChild(activePlayerDiv);
+        activePlayerDiv.appendChild(name);
+        activePlayerDiv.appendChild(score);
+        activePlayerDiv.appendChild(parTurnScore);
         
-        // Add disconnected status
-        if (player.connected === false) {
-            const status = document.createElement("span");
-            status.className = "player-status disconnected";
-            status.textContent = "DC";
-            playerCard.appendChild(status);
-        }
-        
-        playerCard.appendChild(pfp);
-        playerCard.appendChild(info);
-        activePlayerList.appendChild(playerCard);
+        name.textContent = playersInfo.val()[player].username;
+        score.textContent = playersInfo.val()[player].score;
+        parTurnScore.textContent = playersInfo.val()[player].turnScore;
 
-        if (player.playersTurn && playerId === uid && !gameEnded) {
+        if (playersInfo.val()[player].playersTurn == true) {
+          const theirTurn = document.createElement("p");
+          activePlayerDiv.appendChild(theirTurn);
+          theirTurn.textContent = "Playing";
+
+          if (player == uid && !gameEnded) {
             isMyTurnThisUpdate = true;
             playStuff.style.display = "block";
 
@@ -408,8 +367,25 @@ async function updateActivePlayerList() {
                     })
                 }
             }
-        } else {
+
+          } else {
             playStuff.style.display = "none";
+
+            const rolledDice = document.createElement("p");
+            const heldDice = document.createElement("p");
+
+            activePlayerDiv.appendChild(rolledDice);
+            activePlayerDiv.appendChild(heldDice);
+
+            rolledDice.textContent = playersInfo.val()[player].rolledDice;
+            heldDice.textContent = playersInfo.val()[player].heldDice;
+          }
+        }
+
+        if (playersInfo.val()[player].connected == false) {
+          const connected = document.createElement("p");
+          activePlayerDiv.appendChild(connected);
+          connected.textContent = "Disconnected";
         }
 
         if (gameEnded) {
@@ -443,14 +419,16 @@ async function updateActivePlayerList() {
             })
         }
     }
-    
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
         console.log("My turn just ended. Waiting before collecting all dice.");
+        // Wait 2 seconds before collecting dice
         setTimeout(() => {
             collectAllDiceIntoCup();
         }, 2000);
     }
 
+
+    // UPDATE GLOBAL STATE
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
