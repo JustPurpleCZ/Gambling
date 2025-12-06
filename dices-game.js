@@ -290,7 +290,7 @@ async function updateActivePlayerList() {
     let gameEnded = false;
 
     activePlayerList.replaceChildren();
-    
+    let isMyTurnThisUpdate = false;
     for (const player of playerOrder) {
         // Create the div FIRST
         const activePlayerDiv = document.createElement("div");
@@ -319,6 +319,7 @@ async function updateActivePlayerList() {
           gameEnded = false;
 
           if (player == uid && !gameEnded) {
+            isMyTurnThisUpdate = true;
             playStuff.style.display = "block";
 
             const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
@@ -413,6 +414,13 @@ async function updateActivePlayerList() {
             })
         }
     }
+    if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
+        console.log("My turn just ended. Collecting all dice.");
+        collectAllDiceIntoCup();
+    }
+
+    // UPDATE GLOBAL STATE
+    wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
 async function rollDice() {
@@ -465,8 +473,8 @@ async function submitMove() {
 
     if (response.success) {
             errorMessage.style.display = "none";
-            // Collect all dice into the cup before turn ends
-            collectAllDiceIntoCup();
+            // Collect all dice into the cup after the server processes the move
+            collectAllDiceIntoCup(); // <-- KEPT THIS LINE
         } else {
             errorMessage.style.display = "block";
             errorMessage.textContent = response.reply;
@@ -551,6 +559,7 @@ let cupState = 'normal';
 let isRolling = false;
 let pendingRollValues = null;
 let cupCanCollect = true;
+let wasMyTurnLastUpdate = false;
 
 // Images
 const cupImg = 'main/dice/cup.png';
