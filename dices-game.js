@@ -314,7 +314,7 @@ async function updateActivePlayerList() {
         name.textContent = playersInfo.val()[player].username;
         score.textContent = playersInfo.val()[player].score;
         parTurnScore.textContent = playersInfo.val()[player].turnScore;
-        
+
         if (playersInfo.val()[player].playersTurn == true) {
           const theirTurn = document.createElement("p");
           activePlayerDiv.appendChild(theirTurn);
@@ -816,10 +816,37 @@ function collectDice() {
   }
 }
 
-function lockDie(die) {
+async function lockDie(die) {
   if (die.rolling) return;
   const index = dice.indexOf(die);
   if (index === -1) return;
+  
+  // Find the corresponding dice button in the UI and mark it as held in the server
+  const rolledDiceButtons = rolledDiceDiv.querySelectorAll('button');
+  
+  // Find which die this is based on its face value and position
+  // We need to match it to the rolledDice array
+  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+  const rolledDiceValues = snap.val();
+  
+  if (rolledDiceValues) {
+    // Find the first unheld die with matching face value
+    const heldSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    const heldDice = heldSnap.val() || [];
+    
+    for (let i = 0; i < rolledDiceValues.length; i++) {
+      if (rolledDiceValues[i] === die.face && !heldDice[i]) {
+        // Mark this die as held in the server
+        await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`), true);
+        
+        // Also update the UI button if it exists
+        if (rolledDiceButtons[i]) {
+          rolledDiceButtons[i].classList.add('heldDice');
+        }
+        break;
+      }
+    }
+  }
   
   dice.splice(index, 1);
   die.element.classList.add('locked');
@@ -874,10 +901,34 @@ function animateToPosition(element, targetX, targetY, callback) {
   animate();
 }
 
-function unlockDie(die) {
+async function unlockDie(die) {
   if (!die.locked) return;
   const index = lockedDice.indexOf(die);
   if (index === -1) return;
+  
+  // Unmark the die in the server
+  const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+  const rolledDiceValues = snap.val();
+  
+  if (rolledDiceValues) {
+    // Find which die this is and unmark it
+    const heldSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice`));
+    const heldDice = heldSnap.val() || [];
+    
+    for (let i = 0; i < rolledDiceValues.length; i++) {
+      if (rolledDiceValues[i] === die.face && heldDice[i]) {
+        // Unmark this die in the server
+        await set(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/heldDice/${i}`), false);
+        
+        // Also update the UI button if it exists
+        const rolledDiceButtons = rolledDiceDiv.querySelectorAll('button');
+        if (rolledDiceButtons[i]) {
+          rolledDiceButtons[i].classList.remove('heldDice');
+        }
+        break;
+      }
+    }
+  }
   
   lockedDice.splice(index, 1);
   die.locked = false;
