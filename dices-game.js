@@ -1113,7 +1113,7 @@ function repositionLockedDice() {
   const containerH = gameContainer.clientHeight;
   lockedDice.forEach((die, i) => {
     const targetX = containerW * 0.032;
-    const targetY = (containerH * 0.125) + (lockedDice.length * (containerH * 0.1185));
+    const targetY = (containerH * 0.125) + (i * (containerH * 0.1185));
     if(die.element) {
         die.element.style.left = targetX + 'px';
         die.element.style.top = targetY + 'px';
