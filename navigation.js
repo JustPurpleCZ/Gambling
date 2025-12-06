@@ -255,7 +255,7 @@ async function initWallet() {
     const balanceSnap = await get(ref(db, `/users/${uid}/credits`));
     const balance = balanceSnap.val();
     const walletDisplay = document.querySelector('.wallet-display');
-    walletDisplay.textContent = `Wallet: $${balanceSnap}`;
+    walletDisplay.textContent = `Wallet: $${balance}`;
 }
 
 onAuthStateChanged(auth, async (user) => {
