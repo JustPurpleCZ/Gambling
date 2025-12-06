@@ -551,6 +551,7 @@ let cupVelocityY = 0;
 let cupState = 'normal';
 let isRolling = false;
 let pendingRollValues = null;
+let cupCanCollect = true;
 
 // Images
 const cupImg = 'main/dice/cup.png';
@@ -732,6 +733,7 @@ async function performRoll() {
 function spillDice() {
   cupState = 'spilling';
   cup.style.backgroundImage = `url(${cupSpillImg})`;
+  cupCanCollect = false;
   const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
   let angleDeg = angleRad * (180 / Math.PI);
 
@@ -787,10 +789,17 @@ function spillDice() {
   
   // Clear pending values
   pendingRollValues = null;
+  
+  // Wait 500ms, then move cup to bottom right
+  setTimeout(() => {
+    moveCupToBottomRight();
+  }, 500);
 }
 
 function collectDice() {
-  const cupSize = vhToPx(20); // Check collision in Pixels
+  if (!cupCanCollect) return; // Don't collect if disabled
+  
+  const cupSize = vhToPx(20);
   const diceSize = vhToPx(8);
   
   // Calculate cup center in Pixels
@@ -980,7 +989,44 @@ function repositionLockedDice() {
     }
   });
 }
-
+function moveCupToBottomRight() {
+  // Set target position to bottom right (relative to canvas)
+  const targetXPercent = 75; // 75% from left
+  const targetYPercent = 70; // 70% from top
+  
+  const startXPercent = cupXPercent;
+  const startYPercent = cupYPercent;
+  
+  const duration = 800; // Animation duration in ms
+  const startTime = Date.now();
+  
+  // Reset cup to normal state
+  cupState = 'normal';
+  cup.style.backgroundImage = `url(${cupImg})`;
+  cup.style.transform = 'scale(1) rotate(0deg)';
+  
+  function animateCup() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+    
+    cupXPercent = startXPercent + (targetXPercent - startXPercent) * eased;
+    cupYPercent = startYPercent + (targetYPercent - startYPercent) * eased;
+    
+    updateCupPosition();
+    
+    if (progress < 1) {
+      requestAnimationFrame(animateCup);
+    } else {
+      // Re-enable collection after animation completes and another 500ms
+      setTimeout(() => {
+        cupCanCollect = true;
+      }, 500);
+    }
+  }
+  
+  animateCup();
+}
 function update() {
   let allStopped = true;
   const diceSize = vhToPx(16);
