@@ -1013,7 +1013,7 @@ async function lockDie(die) {
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
   const targetX = containerW * 0.032;
-  const targetY = (containerH * 0.17) + (lockedDice.length * (containerH * 0.117)); //1173
+  const targetY = (containerH * 0.16) + (lockedDice.length * (containerH * 0.117)); //1173
   
   animateToPosition(die.element, targetX, targetY, () => {
     const overlay = document.createElement('div');
@@ -1113,7 +1113,7 @@ function repositionLockedDice() {
   const containerH = gameContainer.clientHeight;
   lockedDice.forEach((die, i) => {
     const targetX = containerW * 0.032;
-    const targetY = (containerH * 0.17) + (i * (containerH * 0.1175));
+    const targetY = (containerH * 0.16) + (i * (containerH * 0.1175));
     if(die.element) {
         die.element.style.left = targetX + 'px';
         die.element.style.top = targetY + 'px';
