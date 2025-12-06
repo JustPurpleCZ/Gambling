@@ -293,15 +293,18 @@ async function updateActivePlayerList() {
     let gameEnded = true;
 
     activePlayerList.replaceChildren();
-     for (const player of playerOrder) {
-        if (activePlayerDiv.children.contains(player)) {
-            continue;
-        }
-
+    
+    for (const player of playerOrder) {
+        // Create the div FIRST
         const activePlayerDiv = document.createElement("div");
         const name = document.createElement("p");
         const score = document.createElement("p");
         const parTurnScore = document.createElement("p");
+        
+        // Now check if needed (though this check might not be necessary)
+        // if (activePlayerList.contains(activePlayerDiv)) {
+        //     continue;
+        // }
         
         activePlayerList.appendChild(activePlayerDiv);
         activePlayerDiv.appendChild(name);
