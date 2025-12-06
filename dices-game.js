@@ -862,13 +862,10 @@ async function lockDie(die) {
   dice.splice(index, 1);
   die.element.classList.add('locked');
   die.locked = true;
-  
-  // Calculate target relative to container
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
-  
-  const targetX = (containerW * 0.06) + (lockedDice.length % 3) * (containerW * 0.05);
-  const targetY = (containerH * 0.85) + Math.floor(lockedDice.length / 3) * (containerH * 0.06);
+  const targetX = containerW * 0.035; 
+  const targetY = (containerH * 0.20) + (lockedDice.length * (containerH * 0.10));
   
   animateToPosition(die.element, targetX, targetY, () => {
     const overlay = document.createElement('div');
@@ -981,8 +978,9 @@ function repositionLockedDice() {
   const containerH = gameContainer.clientHeight;
   
   lockedDice.forEach((die, i) => {
-    const targetX = (containerW * 0.06) + (i % 3) * (containerW * 0.05);
-    const targetY = (containerH * 0.85) + Math.floor(i / 3) * (containerH * 0.06);
+    // Exact same math as lockDie, but using index 'i'
+    const targetX = containerW * 0.035; 
+    const targetY = (containerH * 0.20) + (i * (containerH * 0.10));
     
     // If not animating, just set it
     if(die.element) {
@@ -1032,7 +1030,7 @@ function moveCupToBottomRight() {
 function collectAllDiceIntoCup() {
   // First, move cup to bottom right if not already there
   const targetXPercent = 75;
-  const targetYPercent = 70;
+  const targetYPercent = 80;
   
   // Calculate cup target position in pixels
   const cupTargetX = canvas.offsetLeft + vwToPx(targetXPercent);
