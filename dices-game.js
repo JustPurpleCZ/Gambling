@@ -547,7 +547,7 @@ let cupVelocityX = 0;
 let cupVelocityY = 0;
 let cupState = 'normal';
 let isRolling = false;
-
+let pendingRollValues = null;
 
 // Images
 const cupImg = 'main/dice/cup.png';
@@ -597,7 +597,7 @@ cup.addEventListener('mousedown', (e) => {
   cupState = 'normal';
   cup.style.backgroundImage = `url(${cupImg})`;
   cup.style.transform = 'scale(1.1) rotate(0deg)';
-  // Calculate click offset within the cup element
+  
   const rect = cup.getBoundingClientRect();
   mouseX = e.clientX - rect.left;
   mouseY = e.clientY - rect.top;
@@ -654,15 +654,76 @@ document.addEventListener('mousemove', (e) => {
   collectDice();
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', async () => {
   if (!isDraggingCup) return;
   isDraggingCup = false;
   cup.classList.remove('dragging');
+  
+  // Check if ALL dice are collected (cup is full)
+  // All dice collected = dice.length is 0 (they're in the cup, not on table)
   if (dice.length === 0 && cupState === 'normal') {
-    spillDice();
+    // Call the roll function first
+    const rollSuccess = await performRoll();
+    
+    // Then spill dice with the returned values if roll succeeded
+    if (rollSuccess && pendingRollValues) {
+      spillDice();
+    }
   }
 });
 
+async function performRoll() {
+  console.log("Performing roll via cup");
+  
+  try {
+    const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
+    const rollCount = snap.val();
+
+    if (rollCount < 3) {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
+        method: "POST",
+        headers: {
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "lobbyId": lobbyId,
+        })
+      });
+
+      const response = await res.json();
+      console.log("Roll response:", response);
+
+      if (response.success) {
+        errorMessage.style.display = "none";
+        
+        // Get the rolled dice values from Firebase
+        const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+        pendingRollValues = rolledSnap.val();
+        console.log("Dice values from server:", pendingRollValues);
+        
+        return true;
+      } else {
+        errorMessage.style.display = "block";
+        errorMessage.textContent = response.reply;
+        pendingRollValues = null;
+        return false;
+      }
+    } else {
+      errorMessage.style.display = "block";
+      errorMessage.textContent = "Maximum rolls reached!";
+      pendingRollValues = null;
+      return false;
+    }
+  } catch (error) {
+    console.error("Roll error:", error);
+    errorMessage.style.display = "block";
+    errorMessage.textContent = "Roll failed. Please try again.";
+    pendingRollValues = null;
+    return false;
+  }
+}
 // --- GAME LOGIC ---
 
 function spillDice() {
@@ -671,16 +732,21 @@ function spillDice() {
   const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
   let angleDeg = angleRad * (180 / Math.PI);
 
-  
-  // Apply the rotation to the cup element
   cup.style.transform = `rotate(${angleDeg+90}deg) scale(1.1)`;
-  const numDice = 6 - lockedDice.length;
+  
+  // Use server values if available, otherwise generate random
+  const diceValues = pendingRollValues || [];
+  const numDice = diceValues.length || (6 - lockedDice.length);
+  
   const launchSpeedMultiplier = 4;
   const baseVx = cupVelocityX !== 0 ? cupVelocityX * launchSpeedMultiplier : 5;
   const baseVy = cupVelocityY !== 0 ? cupVelocityY * launchSpeedMultiplier : 0;
   
   for (let i = 0; i < numDice; i++) {
     const spread = (Math.random() - 0.5) * 50;
+    
+    // Use server value if available, otherwise random
+    const faceValue = diceValues[i] || (Math.floor(Math.random() * 6) + 1);
     
     dice.push({
       xPercent: cupXPercent + 5, 
@@ -689,7 +755,8 @@ function spillDice() {
       vy: baseVy + spread,
       rotation: Math.random() * 360,
       rotationSpeed: (Math.random() - 0.5) * 20,
-      face: Math.floor(Math.random() * 6) + 1,
+      face: faceValue,
+      finalFace: faceValue, // Store the final face value
       rolling: true,
       rollTime: 0,
       element: null
@@ -705,7 +772,6 @@ function spillDice() {
     gameContainer.appendChild(el); 
     die.element = el;
     
-    // Initial render
     renderDiePosition(die);
     
     die.clickHandler = () => lockDie(die);
@@ -715,6 +781,9 @@ function spillDice() {
   isRolling = true;
   cupVelocityX = 0;
   cupVelocityY = 0;
+  
+  // Clear pending values
+  pendingRollValues = null;
 }
 
 function collectDice() {
@@ -933,17 +1002,20 @@ function update() {
       }
       
       const speed = Math.sqrt(die.vx*die.vx + die.vy*die.vy);
-      if (speed < 0.1 && die.rollTime > 1000) {
-        die.rolling = false;
-        die.vx = 0; die.vy = 0; die.rotationSpeed = 0;
-        die.face = Math.floor(Math.random() * 6) + 1;
-        if (die.element) {
-          die.element.classList.remove('rolling');
-          die.element.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
-        }
-      } else {
-        allStopped = false;
-      }
+    if (speed < 0.1 && die.rollTime > 1000) {
+    die.rolling = false;
+    die.vx = 0; die.vy = 0; die.rotationSpeed = 0;
+    
+    // Use finalFace if it exists (from server), otherwise random
+    die.face = die.finalFace || Math.floor(Math.random() * 6) + 1;
+    
+    if (die.element) {
+        die.element.classList.remove('rolling');
+        die.element.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+    }
+    } else {
+    allStopped = false;
+    }
       
       // 6. RENDER
       renderDiePosition(die);
