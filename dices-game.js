@@ -499,8 +499,27 @@ function playShakeSound() {
   oscillator.stop(audioCtx.currentTime + 0.1);
 }
 
-cup.addEventListener('mousedown', (e) => {
+cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending) return;
+  
+  // Check if all 6 dice are locked - if so, attempt roll immediately
+  if (lockedDice.length === 6 && dice.length === 0) {
+    e.preventDefault();
+    const rollResult = await performRoll();
+    
+    if (rollResult.success) {
+      // Valid roll with all dice locked - collect them into cup
+      handleAllDiceLocked();
+      return;
+    } else if (rollResult.needsSelection) {
+      // Need to select dice - unlock all and spill them
+      spillLockedDiceWithValues();
+      return;
+    }
+    // If roll failed for other reasons, don't pick up cup
+    return;
+  }
+  
   isDraggingCup = true;
   cup.classList.add('dragging');
   cupState = 'normal';
@@ -558,20 +577,15 @@ document.addEventListener('mouseup', async () => {
     return;
   }
   
-  // Original behavior - if cup is empty and no dice collected, try to roll
-  if (dice.length === 0 && cupState === 'normal' && !rollPending) {
+  // If no unlocked dice and some locked dice exist, try to roll
+  if (dice.length === 0 && lockedDice.length > 0 && lockedDice.length < 6 && cupState === 'normal' && !rollPending) {
     // Store current dice values before rolling
     previousDiceValues = lockedDice.map(d => d.face);
     
     const rollResult = await performRoll();
     
     if (rollResult.success && pendingRollValues) {
-      // Check if all 6 dice are now locked
-      if (lockedDice.length === 6) {
-        handleAllDiceLocked();
-      } else {
-        spillDice();
-      }
+      spillDice();
     } else if (!rollResult.success && rollResult.needsSelection) {
       // Need to select at least one die - spill with previous values
       spillDiceWithPreviousValues();
@@ -710,8 +724,84 @@ function handleAllDiceLocked() {
   setTimeout(() => {
     allDiceLockedRollPending = false;
     cupCanCollect = true;
-    console.log("Ready for next roll after all dice locked");
+    // Store new pending values for next spill
+    get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`)).then(snap => {
+      pendingRollValues = snap.val();
+      console.log("Ready for next roll after all dice locked, new values:", pendingRollValues);
+    });
   }, 1500);
+}
+
+function spillLockedDiceWithValues() {
+  console.log("Spilling locked dice - need to select at least one scoring die");
+  allDiceLockedRollPending = true;
+  
+  // Get the current values from locked dice
+  const diceValues = lockedDice.map(d => d.face);
+  
+  // Move cup to center first
+  cupXPercent = 40;
+  cupYPercent = 30;
+  updateCupPosition();
+  
+  cupState = 'spilling';
+  cup.style.backgroundImage = `url(${cupSpillImg})`;
+  cupCanCollect = false;
+  cup.style.transform = `rotate(90deg) scale(1.1)`;
+  
+  const launchSpeedMultiplier = 4;
+  const baseVx = 5;
+  const baseVy = 0;
+  
+  // Remove locked dice elements and create new rolling dice
+  lockedDice.forEach((die, i) => {
+    if (die.element) {
+      const overlay = die.element.querySelector('.locked-overlay');
+      if (overlay) overlay.remove();
+      die.element.remove();
+    }
+  });
+  lockedDice.length = 0;
+  
+  // Create new dice with the same values
+  for (let i = 0; i < diceValues.length; i++) {
+    const spread = (Math.random() - 0.5) * 50;
+    const faceValue = diceValues[i];
+    
+    dice.push({
+      xPercent: cupXPercent + 5,
+      yPercent: cupYPercent + 30,
+      vx: baseVx + spread,
+      vy: baseVy + spread,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 20,
+      face: faceValue,
+      finalFace: faceValue,
+      rolling: true,
+      rollTime: 0,
+      element: null,
+      serverIndex: i
+    });
+  }
+  
+  dice.forEach(die => {
+    const el = document.createElement('div');
+    el.className = 'die rolling';
+    el.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+    el.style.backgroundSize = 'contain';
+    gameContainer.appendChild(el);
+    die.element = el;
+    renderDiePosition(die);
+    die.clickHandler = () => lockDie(die);
+    el.addEventListener('click', die.clickHandler);
+  });
+  
+  isRolling = true;
+  
+  setTimeout(() => {
+    moveCupToBottomRight();
+    allDiceLockedRollPending = false;
+  }, 500);
 }
 
 function spillDice() {
