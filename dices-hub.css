@@ -53,7 +53,7 @@
 
 body {
     background-image: url(main/automat/bg-purple.png);
-    background-size: 110%;
+    background-size: cover;
     color: white;
     overflow: hidden;
     height: 100vh;
@@ -101,11 +101,9 @@ div, .kostkar {
 
 .button-row {
     display: flex;
-    gap: 15px;
 }
 
 .button-row.rules-row {
-    gap: 5px;
     justify-content: flex-end;
     width: 100%;
 }
@@ -370,6 +368,9 @@ div, .kostkar {
     flex-direction: column;
     justify-content: space-between;
 }
+.form-column-right:nth-child(1){
+    width: 90%;
+}
 .form-column-left{
     flex: 0 0 60%;
 }
@@ -468,10 +469,9 @@ div, .kostkar {
 }
 .table {
     position: absolute;
-    bottom: -30.5vh;
-    width: 100%;
-    left: -50%;
-    height: auto;
+    bottom: -22vh;
+    height: 40vh;
+    left: -70%;
     z-index: -1;
     transform: scale(1.15);
 }
