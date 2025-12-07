@@ -307,20 +307,16 @@ async function updateActivePlayerList() {
     const message = document.createElement('p');
     if (winnerId == uid) {
         message.textContent = "You won";
-        const winSound = new Audio('sound/yay.mp3'); // Update path to your sound file
+        const winSound = new Audio('sound/yay.mp3');
         winSound.play().catch(e => console.log('Sound play failed:', e));
     } else {
         const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
         const winnerInfo = infoSnap.val();
         message.textContent = winnerInfo.username + " won";
-        const winSound = new Audio('sound/wrong.mp3'); // Update path to your sound file
+        const winSound = new Audio('sound/wrong.mp3');
         winSound.play().catch(e => console.log('Sound play failed:', e));
     }
     message.style.cssText = 'color: white; font-size: 48px; margin-bottom: 20px;';
-    
-    // Play sound
-    const winSound = new Audio('main/dice/win.mp3'); // Update path to your sound file
-    winSound.play().catch(e => console.log('Sound play failed:', e));
     
     // Create button (hidden initially)
     const backBtn = document.createElement('button');
