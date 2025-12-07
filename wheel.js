@@ -4,7 +4,7 @@ const highlight = document.getElementById('highlight');
 const wheelContainer = document.getElementById('wheelContainer');
 const resultText = document.getElementById('resultText');
 const arrow = document.querySelector('.arrow');
-const clickSound = new Audio('click.mp3'); 
+const clickSound = new Audio('sound/click.mp3'); 
 
 // State variables
 let rotation = 0;
@@ -31,15 +31,19 @@ function getEventAngle(event) {
 }
 
 function onDragStart(event) {
-    event.preventDefault();
-    isDragging = true;
-    cancelAnimationFrame(animationFrameId);
-    startAngle = getEventAngle(event) - (rotation * Math.PI / 180);
-    angularVelocity = 0;
-    wheel.style.transition = 'none';
+    console.log("Drag start");
+    if (true) {
+        event.preventDefault();
+        isDragging = true;
+        cancelAnimationFrame(animationFrameId);
+        startAngle = getEventAngle(event) - (rotation * Math.PI / 180);
+        angularVelocity = 0;
+        wheel.style.transition = 'none';
+    }
 }
 
 function onDragMove(event) {
+    console.log("Drag move");
     if (!isDragging) return;
     event.preventDefault();
     const currentEventAngle = getEventAngle(event);
@@ -51,6 +55,7 @@ function onDragMove(event) {
 }
 
 function onDragEnd(event) {
+    console.log("Drag end");
     if (!isDragging) return;
     isDragging = false;
     wheel.style.transition = '';
@@ -62,6 +67,7 @@ function onDragEnd(event) {
 // --- Animation Logic ---
 
 function startFreeSpin() {
+    console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
     
     const spin = () => {
@@ -113,6 +119,7 @@ function startFreeSpin() {
 // --- Result Calculation ---
 
 function calculateResult() {
+    console.log("Result calc");
     const finalAngle = (rotation % 360 + 360) % 360;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
