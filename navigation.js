@@ -179,8 +179,7 @@ async function initUnlocks() {
                     machine.classList.add("destination-item");
                     console.log("Wheel of fortune unlocked");
                     machine.addEventListener("click", () => {
-                        //window.location.href = "wheel.html";
-                        console.log("no wheel page yet");
+                        window.location.href = "wheel.html";
                     })
                 }
                 break;
