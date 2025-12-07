@@ -1,0 +1,50 @@
+body {
+    font-family: 'Inter', sans-serif;
+    touch-action: none; /* Prevents scrolling on touch devices when interacting with the wheel */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.wheel-container {
+    position: relative;
+    width: 70vw;
+    height: 70vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none; /* Prevents text selection during drag */
+}
+.wheel, .highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    -webkit-user-drag: none; /* Prevents image dragging */
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    /*user-drag: none;*/
+}
+.wheel {
+    /* The spinning element */
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooths out manual rotation */
+}
+.highlight {
+        /* The interactive highlight layer */
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0.5;
+}
+.arrow {
+    position: absolute;
+    top: -5.1vw; /* Position arrow above the wheel */
+    width: 14vw;
+    height: 13vw;
+    scale: 0.55;
+    z-index: 20;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    /* NEW: Add a transition for smooth snapping back to center */
+    transition: transform 0.1s ease-out;
+}

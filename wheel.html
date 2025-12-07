@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel of Fate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="wheel.css">
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen overflow-hidden p-4">
+
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold tracking-tight">Wheel of Fate</h1>
+        <p class="text-gray-400 mt-2">Drag or swipe the wheel to spin!</p>
+    </div>
+
+    <div id="wheelContainer" class="wheel-container">
+        
+        <img src="pointer.png" alt="Pointer" class="arrow">
+
+        <img src="kolo2.png" alt="Spinning Wheel" id="wheel" class="wheel">
+
+        <img src="odlesk3.png" alt="Highlight" id="highlight" class="highlight">
+
+    </div>
+
+    <div id="result" class="mt-8 text-center bg-gray-800 px-6 py-4 rounded-lg shadow-lg">
+        <p class="text-lg text-gray-400">The wheel will land on:</p>
+        <p id="resultText" class="text-3xl font-bold text-red-400 transition-all duration-300">Spin to find out!</p>
+    </div>
+
+   <script src="wheel.js" type="module"></script>
+
+</body>
+</html>
