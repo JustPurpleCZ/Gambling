@@ -740,7 +740,6 @@ document.addEventListener('mousemove', (e) => {
   
   if (speed > 10) {
     shakeIntensity += speed;
-    if (shakeIntensity > 50) { playShakeSound(); shakeIntensity = 0; }
   } else { shakeIntensity *= 0.8; }
   
   prevMouseX = e.clientX;
