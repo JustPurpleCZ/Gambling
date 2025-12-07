@@ -104,7 +104,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
-    startBtn.style.display = "block";
+    startBtn.style.display = "inline";
     startBtn.addEventListener("click", () => {
         if (playerCount >= 2) { startGame(); }
     })
@@ -205,7 +205,6 @@ async function gameStart() {
           playerOrder = snap.val()
           document.getElementById("preStart").style.display = "none";
           updateActivePlayerList();
-          document.getElementById("gameDiv").style.display = "block";
           onValue(activePlayersRef, (snapshot) => { updateActivePlayerList(); });
           const endTurnBtn = document.querySelector(".end-turn-button");
           if (endTurnBtn) {
@@ -285,7 +284,6 @@ async function updateActivePlayerList() {
     updateBottomControlPanel(isMyTurnThisUpdate);
 
     if (gameEnded) {
-        document.getElementById("gameEndDiv").style.display = "block";
         const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
         const winnerId = idSnap.val();
         const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
