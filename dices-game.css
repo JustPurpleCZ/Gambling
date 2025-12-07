@@ -154,8 +154,9 @@ body {
 }
 
 .current-player-pfp {
-  width: 10%;
-  height: 10%;
+  width: 10vh;
+  height: 10vh;
+
   background-position: center;
   background-size: contain;
 }
