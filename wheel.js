@@ -32,7 +32,7 @@ function getEventAngle(event) {
 
 function onDragStart(event) {
     console.log("Drag start");
-    if (!angularVelocity) {
+    if (angularVelocity == 0) {
         event.preventDefault();
         isDragging = true;
         cancelAnimationFrame(animationFrameId);
