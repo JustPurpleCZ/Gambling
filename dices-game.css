@@ -133,11 +133,11 @@ body {
   position: absolute;
   top: 2%;
   left: 50%;
-  width: 50%;
+  width: 80%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   z-index: 2500;
   pointer-events: none;
 }
@@ -267,11 +267,10 @@ body {
   gap: 2vh;
 }
 .other-player-card:hover {
-  left: -20vw;
+  left: -20vw !important;
 }
 .other-player-card.is-current {
   left: -5vw;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
 .other-player-card.disconnected {
   filter: brightness(50%);
