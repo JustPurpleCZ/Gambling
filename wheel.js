@@ -32,18 +32,19 @@ function getEventAngle(event) {
 
 function onDragStart(event) {
     console.log("Drag start");
-    if (!angularVelocity) {
+    if (angularVelocity == 0) {
         event.preventDefault();
         isDragging = true;
         cancelAnimationFrame(animationFrameId);
         startAngle = getEventAngle(event) - (rotation * Math.PI / 180);
         angularVelocity = 0;
         wheel.style.transition = 'none';
+    } else {
+        console.log("Velocity: ", Math.abs(angularVelocity));
     }
 }
 
 function onDragMove(event) {
-    console.log("Drag move");
     if (!isDragging) return;
     event.preventDefault();
     const currentEventAngle = getEventAngle(event);
@@ -61,7 +62,14 @@ function onDragEnd(event) {
     wheel.style.transition = '';
     // Reset the segment tracker when a new spin starts
     lastKnownSegment = Math.floor(rotation / 45);
+    if (Math.abs(angularVelocity) < 50 && isDragging) angularVelocity = 50;
     startFreeSpin();
+}
+
+async function getWheelResult() {
+    setTimeout(() => {
+        console.log("Got wheel result now surely");
+    }, 3000);
 }
 
 // --- Animation Logic ---
@@ -69,7 +77,9 @@ function onDragEnd(event) {
 function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
-    
+
+    getWheelResult();
+
     const spin = () => {
         // Update wheel rotation
         rotation += angularVelocity;
@@ -103,11 +113,11 @@ function startFreeSpin() {
         // Apply the final transform to the arrow
         arrow.style.transform = `rotate(${arrowTilt}deg)`;
 
-
         // Check if the wheel has stopped
         if (Math.abs(angularVelocity) < 0.05) {
             cancelAnimationFrame(animationFrameId);
             arrow.style.transform = 'rotate(0deg)'; // Ensure it's perfectly centered when stopped
+            angularVelocity = 0;
             calculateResult();
         } else {
             animationFrameId = requestAnimationFrame(spin);
