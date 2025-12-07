@@ -852,30 +852,8 @@ async function pickupNote(note) {
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
 
     //DEBUG - CASH OUT
-    if (!localMode) {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ Amount: noteValue })
-        });
-                    
-        const data = await res.json();
-
-        if (!data.valid) {
-            console.log("CASH OUT FAILED");
-        } else {
-            walletBalance += noteValue;
-        }
-        updateAvailableBills();
-    } else {
-        console.log("LOCAL MODE, SIMULATING CASH OUT")
-        walletBalance += noteValue;
-        updateAvailableBills();
-    }
+    walletBalance += noteValue;
+    updateAvailableBills();
     
     // Get the current position and size of the note
     const noteRect = note.getBoundingClientRect();
@@ -1021,6 +999,9 @@ async function cashout() {
     else if(playerCredit > 0 && !isDoorOpen && !isOutputting){
     // Normal cashout process remains the same
     const notesToDispense = calculateNotes(playerCredit);
+    
+    sendCashoutRequest()
+
     playerCredit = 0;
     updateCreditDisplay();
     
@@ -1037,6 +1018,27 @@ async function cashout() {
     isDoorOpen = true;
     }
 }
+
+async function sendCashoutRequest() {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
+        method: "POST",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ Amount: playerCredit })
+    });
+                
+    const data = await res.json();
+
+    if (data.valid) {
+        console.log("Cashout success: ", data);
+    } else {
+        console.log("CASH OUT FAILED");
+    }
+}
+
 async function collectNote(note) {
     return new Promise(resolve => {
         const value = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
