@@ -1361,7 +1361,8 @@ class RobotController {
         this.tutorialResolve = null;
         this.optionsMenu = document.querySelector('.options-menu');
         this.currentDialogueAbortController = null;
-        
+        this.isPlayingOptionSequence = false;
+
         // Initialize robot
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
@@ -1381,7 +1382,7 @@ class RobotController {
         const optionButtons = document.querySelectorAll('.option-btn');
         optionButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent event bubbling
+                e.stopPropagation();
                 const option = e.target.dataset.option;
                 
                 if (option === 'close') {
@@ -1389,11 +1390,11 @@ class RobotController {
                     return;
                 }
                 
-                // Handle first two buttons
+                // Handle first two buttons - fixed mapping
                 if (option === '1') {
-                    await this.handleOptionSequence('stats');
+                    await this.handleOptionSequence('invest'); // My Chances
                 } else if (option === '2') {
-                    await this.handleOptionSequence('rules');
+                    await this.handleOptionSequence('stats');  // My Stats
                 }
             });
         });
@@ -1416,6 +1417,10 @@ class RobotController {
     }
     
     async handleOptionSequence(option) {
+        // Prevent multiple option sequences from running
+        if (this.isPlayingOptionSequence) return;
+        this.isPlayingOptionSequence = true;
+        
         const menu = this.optionsMenu;
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
@@ -1424,8 +1429,17 @@ class RobotController {
         menu.style.bottom = '-50vh';
         await this.delay(500);
         
+        // Check if we were closed during the delay
+        if (!this.optionsMenu.classList.contains('active')) {
+            this.isPlayingOptionSequence = false;
+            return;
+        }
+        
         // Hide only the first two buttons
         hideableButtons.forEach(button => button.classList.add('hidden'));
+        if (textContent) {
+            textContent.classList.add('active');
+        }
         
         // Show menu again
         menu.style.bottom = '0vh';
@@ -1433,16 +1447,20 @@ class RobotController {
         // Create abort controller for this sequence
         this.currentDialogueAbortController = new AbortController();
         
-        if (option === 'stats') {
-            // Use the new dynamic stats sequence
-            await this.playStatsSequence();
-        } else {
-            // Play appropriate robot sequence for other options
-            const sequence = MANUAL_SEQUENCES.chances;
-            await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+        try {
+            if (option === 'stats') {
+                await this.playStatsSequence();
+            } else {
+                // Play appropriate robot sequence for other options (My Chances)
+                const sequence = MANUAL_SEQUENCES.chances;
+                await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+            }
+        } catch (error) {
+            console.error('Option sequence error:', error);
+        } finally {
+            this.currentDialogueAbortController = null;
+            this.isPlayingOptionSequence = false;
         }
-        
-        this.currentDialogueAbortController = null;
     }
     async playStatsSequence() {
         // Fetch user stats from database
@@ -1548,16 +1566,23 @@ class RobotController {
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContents = menu.querySelectorAll('.menu-text-content');
         
-        menu.classList.remove('active');
+        // Hide menu first
+        menu.style.bottom = '-50vh';
+        
+        // Reset button visibility and text content
         hideableButtons.forEach(button => button.classList.remove('hidden'));
         textContents.forEach(content => content.classList.remove('active'));
         
+        // Remove active class from menu
+        menu.classList.remove('active');
+        
+        // Reset flags
+        this.isPlayingOptionSequence = false;
+        
         await this.returnToIdle();
+        
         this.isInActiveState = false;
         this.isAnimating = false;
-
-        // Make sure the menu is visually hidden
-        menu.style.bottom = '-50vh';
     }
 
     async handleClick() {
