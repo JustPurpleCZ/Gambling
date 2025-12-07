@@ -433,6 +433,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const cup = document.getElementById('cup');
 const gameContainer = document.getElementById('game-container');
+const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
+const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 
 function resizeCanvas() {
     canvas.width = canvas.clientWidth;
