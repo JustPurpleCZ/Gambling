@@ -263,39 +263,22 @@ body {
   padding: 2.1vh 2.1vh 2.1vh 2.5vh;
   width: 100%;
   transition: all 0.5s;
-  right: -8vh;
+  right: -20vw;
   gap: 2vh;
 }
-
-/* Current player card highlight */
+.other-player-card:hover {
+  right: -5vw;
+}
 .other-player-card.is-current {
-  right: 0;
+  right: -17vw;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
-
-/* Your own card highlight */
-.other-player-card.is-me {
-  box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
-}
-
-/* When it's your turn AND you're in the list */
-.other-player-card.is-me.is-current {
-  box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
-}
-
 .other-player-card.disconnected {
-  opacity: 0.5;
+  transform: brightness(0.6);
 }
-
-/* Make card background show through */
-.other-player-card.has-played,
-.other-player-card.not-played {
-  background-color: transparent;
-}
-
 /* Slightly dim cards that have already played */
 .other-player-card.has-played {
-  opacity: 0.85;
+  transform: brightness(0.8);
 }
 
 .other-player-pfp {
