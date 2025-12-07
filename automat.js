@@ -1434,12 +1434,14 @@ class RobotController {
         // Create abort controller for this sequence
         this.currentDialogueAbortController = new AbortController();
         
-        // Play appropriate robot sequence
-        const sequence = option === 'stats' ? 
-            MANUAL_SEQUENCES.chances : 
-            MANUAL_SEQUENCES.stats;
-        
-        await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+        if (option === 'stats') {
+            // Use the new dynamic stats sequence
+            await this.playStatsSequence();
+        } else {
+            // Play appropriate robot sequence for other options
+            const sequence = MANUAL_SEQUENCES.chances;
+            await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+        }
         
         this.currentDialogueAbortController = null;
     }
