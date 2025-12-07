@@ -10,7 +10,7 @@ const clickSound = new Audio('sound/click.mp3');
 let rotation = 0;
 let isDragging = false;
 let angularVelocity = 0;
-const friction = 0.998;
+const friction = 0.9995;
 let startAngle = 0;
 let animationFrameId;
 let wheelResult;
@@ -70,6 +70,7 @@ function onDragEnd(event) {
 async function getWheelResult() {
     setTimeout(() => {
         wheelResult = 8;
+        console.log("Wheel result set from cloud");
     }, 3000);
 }
 
@@ -78,13 +79,17 @@ function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
 
+    if (Math.abs(angularVelocity) < 50 && isDragging) {
+        console.log("Velocity too low, setting to 50");
+        angularVelocity = 50;
+    }
     getWheelResult();
 
     const spin = () => {
         // Update wheel rotation
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.2 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.1 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
 
