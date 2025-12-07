@@ -284,26 +284,60 @@ async function updateActivePlayerList() {
     updateBottomControlPanel(isMyTurnThisUpdate);
 
     if (gameEnded) {
-        const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
-        const winnerId = idSnap.val();
+    const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
+    const winnerId = idSnap.val();
+    
+    // Create simple popup
+    const popup = document.createElement('div');
+    popup.id = 'gameEndPopup';
+    popup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+    `;
+    
+    const message = document.createElement('p');
+    if (winnerId == uid) {
+        message.textContent = "You won";
+    } else {
         const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
         const winnerInfo = infoSnap.val();
-        const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
-        const winAmount = winAmountSnap.val();
-        document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
-        document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
-        if (winnerId == uid) {
-            document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
-        } else {
-            document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
-        }
-        document.getElementById("exit").addEventListener("click", () => {
-            localStorage.removeItem("dicesLobbyId");
-            localStorage.removeItem("dicesIsHost");
-            localStorage.removeItem("selfUID");
-            window.location.href = "dices-hub.html";
-        })
+        message.textContent = winnerInfo.username + " won";
     }
+    message.style.cssText = 'color: white; font-size: 48px; margin-bottom: 20px;';
+    
+    // Play sound
+    const winSound = new Audio('main/dice/win.mp3'); // Update path to your sound file
+    winSound.play().catch(e => console.log('Sound play failed:', e));
+    
+    // Create button (hidden initially)
+    const backBtn = document.createElement('button');
+    backBtn.textContent = 'Back to Hub';
+    backBtn.style.cssText = 'display: none; padding: 10px 20px; font-size: 24px; cursor: pointer;';
+    backBtn.addEventListener('click', () => {
+        localStorage.removeItem("dicesLobbyId");
+        localStorage.removeItem("dicesIsHost");
+        localStorage.removeItem("selfUID");
+        window.location.href = "dices-hub.html";
+    });
+    
+    popup.appendChild(message);
+    popup.appendChild(backBtn);
+    document.body.appendChild(popup);
+    
+    // Show button after sound plays (adjust delay based on sound length)
+    setTimeout(() => {
+        backBtn.style.display = 'block';
+    }, 2000); // 2 second delay, adjust as needed
+}
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
     console.log("My turn just ended.");
@@ -639,20 +673,6 @@ function updateCupPosition() {
     cup.style.top = yPx + 'px';
 }
 updateCupPosition();
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playShakeSound() {
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  oscillator.frequency.value = 100 + Math.random() * 50;
-  oscillator.type = 'sine';
-  gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-  oscillator.start(audioCtx.currentTime);
-  oscillator.stop(audioCtx.currentTime + 0.1);
-}
 
 cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending || rollPending) return;
