@@ -733,37 +733,40 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', async () => {
-  if (!isDraggingCup) return;
-  isDraggingCup = false;
-  cup.classList.remove('dragging');
-  if (waitingForFarkleRelease && farkledDiceValues) {
-    waitingForFarkleRelease = false;
-    spillFarkledDice();
-    return;
-  } 
-  if (waitingForRelease && pendingRollValues) {
-    waitingForRelease = false;
-    spillDice();
-    return;
-  }
-  
-  if (dice.length === 0 && cupState === 'normal' && !rollPending) {
-    previousDiceValues = lockedDice.map(d => d.face);
+    if (!isDraggingCup) return;
+    isDraggingCup = false;
+    cup.classList.remove('dragging');
     
-    const rollResult = await performRoll();
-    
-    if (rollResult.success && pendingRollValues) {
-      if (lockedDice.length === 6) {
-        handleAllDiceLocked();
-      } else {
-        spillDice();
-      }
-    } else if (!rollResult.success && rollResult.needsSelection) {
-      spillDiceWithPreviousValues();
-    }} else if (rollResult.farkled) {
-    spillFarkledDice();
+    // Handle farkle release - spill the farkled dice
+    if (waitingForFarkleRelease && farkledDiceValues) {
+        waitingForFarkleRelease = false;
+        spillFarkledDice();
+        return;
     }
-  }
+    
+    if (waitingForRelease && pendingRollValues) {
+        waitingForRelease = false;
+        spillDice();
+        return;
+    }
+    
+    if (dice.length === 0 && cupState === 'normal' && !rollPending) {
+        previousDiceValues = lockedDice.map(d => d.face);
+        const rollResult = await performRoll();
+        
+        if (rollResult.success && pendingRollValues) {
+            if (lockedDice.length === 6) {
+                handleAllDiceLocked();
+            } else {
+                spillDice();
+            }
+        } else if (!rollResult.success && rollResult.needsSelection) {
+            spillDiceWithPreviousValues();
+        } else if (rollResult.farkled) {
+            // Farkled! Spill the dice to show them
+            spillFarkledDice();
+        }
+    }
 });
 
 async function performRoll() {
