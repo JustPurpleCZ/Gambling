@@ -68,7 +68,9 @@ function onDragEnd(event) {
 }
 
 async function getWheelResult() {
-    return 2;
+    setTimeout(() => {
+        wheelResult = 2;
+    }, 10000);
 }
 
 // --- Animation Logic ---
@@ -136,6 +138,7 @@ function calculateResult() {
     const finalAngle = (rotation % 360 + 360) % 360;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
+    console.log("result: ", result);
     return result;
 }
 
