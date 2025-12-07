@@ -251,6 +251,7 @@ body {
   gap: 1vh;
   z-index: 2500;
   overflow: visible;
+  width: 35%;
 }
 
 .other-player-card {
@@ -260,8 +261,8 @@ body {
   position: relative;
   aspect-ratio: 20 / 7;
   padding: 2.1vh 2.1vh 2.1vh 2.5vh;
-  width: 50vh;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  width: 100%;
+  transition: all 0.5s;
   right: -8vh;
   gap: 2vh;
 }
