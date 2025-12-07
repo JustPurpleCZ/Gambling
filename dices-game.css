@@ -32,7 +32,9 @@ body {
   background-position: center;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
-
+#preStart{
+  text-align: center;
+}
 .ui-layer {
   position: absolute;
   width: 100%;
@@ -189,6 +191,7 @@ body {
   align-items: center;
   height: 12%;
   gap: 1%;
+  width: 50%;
   z-index: 2500;
   pointer-events: auto;
 }
@@ -226,10 +229,6 @@ body {
   height: 100%;
   object-fit: contain;
 }
-
-.score-display {
-}
-
 .score-label {
   color: #d4af37;
   text-align: center;

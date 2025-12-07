@@ -16,6 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+// NEW: Background images for player cards - UPDATE THESE PATHS
 const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
@@ -214,6 +215,7 @@ async function gameStart() {
     });
 }
 
+// UPDATED: Complete rewrite of updateActivePlayerList
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
@@ -232,6 +234,7 @@ async function updateActivePlayerList() {
     let myPlayerIndex = -1;
     let allPlayersData = [];
 
+    // Build array of all players with their data and index
     for (let i = 0; i < playerOrder.length; i++) {
         const playerId = playerOrder[i];
         const playerData = playersInfo.val()[playerId];
@@ -253,18 +256,22 @@ async function updateActivePlayerList() {
 
     const totalPlayers = playerOrder.length;
 
+    // Handle different lobby sizes
     if (totalPlayers === 2) {
+        // 2-player: just show opponent at top, hide right panel
         const opponent = allPlayersData.find(p => p.uid !== uid);
         if (opponent) {
             updateCurrentPlayerDisplay(opponent, false, opponent.playersTurn);
         }
         hideOtherPlayersPanel();
     } else {
+        // 3+ players: always show current turn player at top (even if it's me)
         if (currentPlayerData) {
             const isMe = currentPlayerData.uid === uid;
             updateCurrentPlayerDisplay(currentPlayerData, isMe, true);
         }
 
+        // Build right panel with ALL players (including me and current player)
         const rightPanelPlayers = categorizePlayersForRightPanel(
             allPlayersData, 
             currentPlayerIndex, 
@@ -303,6 +310,7 @@ async function updateActivePlayerList() {
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
     console.log("My turn just ended.");
       if (farkledThisTurn) {
+          // Don't collect yet - wait for farkle animation to complete
           console.log("Farkled - waiting for dice to be displayed before collecting");
       } else {
           setTimeout(() => { collectAllDiceIntoCup(); }, 2000);
@@ -311,6 +319,7 @@ async function updateActivePlayerList() {
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
+// NEW FUNCTION: Categorize ALL players for the right panel
 function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, myUid) {
     const totalPlayers = allPlayers.length;
     const result = [];
@@ -320,6 +329,7 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
         const isCurrentTurn = player.playersTurn === true;
         let hasPlayedThisRound = false;
         
+        // Check if player farkled (got 0) on their last turn
         const lastTurnScore = player.lastTurnScore !== undefined ? player.lastTurnScore : null;
         const farkled = lastTurnScore === 0 && !isCurrentTurn;
         
@@ -353,6 +363,7 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
     return result;
 }
 
+// NEW FUNCTION
 function hideCurrentPlayerDisplay() {
     const displayDiv = document.querySelector(".current-player-display");
     if (displayDiv) {
@@ -360,6 +371,7 @@ function hideCurrentPlayerDisplay() {
     }
 }
 
+// NEW FUNCTION
 function hideOtherPlayersPanel() {
     const panel = document.querySelector(".other-players-panel");
     if (panel) {
@@ -367,6 +379,7 @@ function hideOtherPlayersPanel() {
     }
 }
 
+// NEW FUNCTION: Updated panel with all players
 function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
     let panel = document.querySelector(".other-players-panel");
     if (!panel) {
@@ -393,6 +406,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         if (isCurrentTurn) {
             card.style.backgroundImage = `url('${CARD_BG_ACTIVE}')`;
         } else if (farkled && hasPlayedThisRound) {
+            // Player farkled (got 0) this round
             card.classList.add("has-farkled");
             card.style.backgroundImage = `url('${CARD_BG_FARKLED}')`;
         } else if (hasPlayedThisRound) {
@@ -422,6 +436,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
     });
 }
 
+// UPDATED: Now shows yourself at top when it's your turn
 function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     let displayDiv = document.querySelector(".current-player-display");
     if (!displayDiv) {
@@ -593,6 +608,7 @@ let mouseX = 0;
 let mouseY = 0;
 let prevMouseX = 0;
 let prevMouseY = 0;
+let shakeIntensity = 0;
 let cupVelocityX = 0;
 let cupVelocityY = 0;
 let cupState = 'normal';
@@ -626,102 +642,19 @@ function updateCupPosition() {
 }
 updateCupPosition();
 
-// ============== NEW SOUND SYSTEM ==============
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-let lastShakeTime = 0;
-const shakeThrottleMs = 50;
-
-function playShakeSound(speed) {
-  const now = Date.now();
-  if (now - lastShakeTime < shakeThrottleMs) return;
-  lastShakeTime = now;
-  
-  const clampedSpeed = Math.min(Math.max(speed, 5), 50);
-  const basePitch = 80 + (clampedSpeed / 50) * 200;
-  
-  const bufferSize = audioCtx.sampleRate * 0.08;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
-  }
-  
-  const noiseSource = audioCtx.createBufferSource();
-  noiseSource.buffer = buffer;
-  
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = basePitch;
-  filter.Q.value = 2;
-  
+function playShakeSound() {
+  const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
-  const volume = 0.1 + (clampedSpeed / 50) * 0.2;
-  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-  
-  noiseSource.connect(filter);
-  filter.connect(gainNode);
+  oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
-  
-  noiseSource.start();
-  noiseSource.stop(audioCtx.currentTime + 0.08);
+  oscillator.frequency.value = 100 + Math.random() * 50;
+  oscillator.type = 'sine';
+  gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + 0.1);
 }
-
-function playDiceCollisionSound(force) {
-  const clampedForce = Math.min(Math.max(force, 0.5), 10);
-  const pitch = 800 - (clampedForce / 10) * 400;
-  const volume = 0.05 + (clampedForce / 10) * 0.15;
-  const duration = 0.05 + (clampedForce / 10) * 0.05;
-  
-  const osc1 = audioCtx.createOscillator();
-  const osc2 = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  
-  osc1.type = 'square';
-  osc1.frequency.setValueAtTime(pitch, audioCtx.currentTime);
-  osc1.frequency.exponentialRampToValueAtTime(pitch * 0.5, audioCtx.currentTime + duration);
-  
-  osc2.type = 'triangle';
-  osc2.frequency.setValueAtTime(pitch * 1.5, audioCtx.currentTime);
-  osc2.frequency.exponentialRampToValueAtTime(pitch * 0.3, audioCtx.currentTime + duration);
-  
-  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  
-  osc1.connect(gainNode);
-  osc2.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  
-  osc1.start();
-  osc2.start();
-  osc1.stop(audioCtx.currentTime + duration);
-  osc2.stop(audioCtx.currentTime + duration);
-}
-
-function playWallCollisionSound(force) {
-  const clampedForce = Math.min(Math.max(force, 0.5), 8);
-  const pitch = 300 + (clampedForce / 8) * 200;
-  const volume = 0.03 + (clampedForce / 8) * 0.07;
-  
-  const osc = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(pitch * 0.7, audioCtx.currentTime + 0.04);
-  
-  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-  
-  osc.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.04);
-}
-// ============== END SOUND SYSTEM ==============
 
 cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending || rollPending) return;
@@ -787,10 +720,10 @@ document.addEventListener('mousemove', (e) => {
   cupVelocityX = dx * 0.5;
   cupVelocityY = dy * 0.5;
   
-  // Play shake sound based on speed
   if (speed > 10) {
-    playShakeSound(speed);
-  }
+    shakeIntensity += speed;
+    if (shakeIntensity > 50) { playShakeSound(); shakeIntensity = 0; }
+  } else { shakeIntensity *= 0.8; }
   
   prevMouseX = e.clientX;
   prevMouseY = e.clientY;
@@ -803,6 +736,7 @@ document.addEventListener('mouseup', async () => {
     isDraggingCup = false;
     cup.classList.remove('dragging');
     
+    // Handle farkle release - spill the farkled dice
     if (waitingForFarkleRelease && farkledDiceValues) {
         waitingForFarkleRelease = false;
         spillFarkledDice();
@@ -828,6 +762,7 @@ document.addEventListener('mouseup', async () => {
         } else if (!rollResult.success && rollResult.needsSelection) {
             spillDiceWithPreviousValues();
         } else if (rollResult.farkled) {
+            // Farkled! Spill the dice to show them
             spillFarkledDice();
         }
     }
@@ -882,6 +817,7 @@ async function performRoll() {
             (response.reply.toLowerCase().includes("select") ||
                 response.reply.toLowerCase().includes("at least one"));
         
+        // Check if this is a farkle (0 score, turn ended)
         const isFarkle = response.reply &&
             (response.reply.toLowerCase().includes("farkle") ||
                 response.reply.toLowerCase().includes("no scoring") ||
@@ -889,6 +825,7 @@ async function performRoll() {
         
         if (isFarkle) {
             farkledThisTurn = true;
+            // Get the dice values that caused the farkle
             const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
             farkledDiceValues = rolledSnap.val();
             console.log("Farkled with dice:", farkledDiceValues);
@@ -918,7 +855,6 @@ async function performRoll() {
     return { success: false, needsSelection: false };
   }
 }
-
 function spillFarkledDice() {
     console.log("Spilling farkled dice to display them");
     cupState = 'spilling';
@@ -952,7 +888,7 @@ function spillFarkledDice() {
             rollTime: 0,
             element: null,
             serverIndex: i,
-            isFarkled: true
+            isFarkled: true // Mark as farkled dice - can't be selected
         });
     }
     
@@ -964,6 +900,7 @@ function spillFarkledDice() {
         gameContainer.appendChild(el);
         die.element = el;
         renderDiePosition(die);
+        // No click handler for farkled dice - they can't be selected
     });
     
     isRolling = true;
@@ -973,13 +910,13 @@ function spillFarkledDice() {
     
     setTimeout(() => { moveCupToBottomRight(); }, 500);
     
+    // After dice settle, wait a moment then collect everything
     setTimeout(() => {
         console.log("Collecting farkled dice after display");
         collectAllDiceIntoCup();
         farkledThisTurn = false;
-    }, 3000);
+    }, 3000); // Wait 3 seconds so player can see the farkle
 }
-
 function spillDiceWithPreviousValues() {
   console.log("Spilling dice with previous values - need to select at least one");
   cupState = 'spilling';
@@ -1382,6 +1319,7 @@ function repositionLockedDice() {
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
   lockedDice.forEach((die, i) => {
+
     const targetX = containerW * 0.028;
     const targetY = (containerH * 0.12) + (i * (containerH * 0.1169));
     if(die.element) {
@@ -1485,37 +1423,14 @@ function update() {
       die.vx *= 0.92;
       die.vy *= 0.92;
       
-      // Wall collisions with sound
-      if (diePxX > canvas.width - diceSize) { 
-        diePxX = canvas.width - diceSize; 
-        const force = Math.abs(die.vx);
-        if (force > 2) playWallCollisionSound(force);
-        die.vx *= -0.6; 
-      }
-      if (diePxX < 0) { 
-        diePxX = 0; 
-        const force = Math.abs(die.vx);
-        if (force > 2) playWallCollisionSound(force);
-        die.vx *= -0.6; 
-      }
-      if (diePxY > canvas.height - diceSize) { 
-        diePxY = canvas.height - diceSize; 
-        const force = Math.abs(die.vy);
-        if (force > 2) playWallCollisionSound(force);
-        die.vy *= -0.6; 
-        die.vx *= 0.9; 
-      }
-      if (diePxY < 0) { 
-        diePxY = 0; 
-        const force = Math.abs(die.vy);
-        if (force > 2) playWallCollisionSound(force);
-        die.vy *= -0.6; 
-      }
+      if (diePxX > canvas.width - diceSize) { diePxX = canvas.width - diceSize; die.vx *= -0.6; }
+      if (diePxX < 0) { diePxX = 0; die.vx *= -0.6; }
+      if (diePxY > canvas.height - diceSize) { diePxY = canvas.height - diceSize; die.vy *= -0.6; die.vx *= 0.9; }
+      if (diePxY < 0) { diePxY = 0; die.vy *= -0.6; }
       
       die.xPercent = pxToVw(diePxX);
       die.yPercent = pxToVh(diePxY);
       
-      // Dice-to-dice collisions with sound
       dice.forEach(other => {
         if (die === other) return;
         const otherPxX = vwToPx(other.xPercent);
@@ -1526,21 +1441,13 @@ function update() {
         if (dist < diceSize && dist > 0) {
            const nx = dx/dist; const ny = dy/dist;
            const overlap = diceSize - dist;
-           
-           // Calculate collision force and play sound
-           const relVx = die.vx - other.vx;
-           const relVy = die.vy - other.vy;
-           const impactForce = Math.sqrt(relVx*relVx + relVy*relVy);
-           if (impactForce > 1) {
-             playDiceCollisionSound(impactForce);
-           }
-           
            diePxX -= nx * overlap * 0.5;
            diePxY -= ny * overlap * 0.5;
            other.xPercent = pxToVw(vwToPx(other.xPercent) + nx*overlap*0.5);
            other.yPercent = pxToVh(vhToPx(other.yPercent) + ny*overlap*0.5);
            die.xPercent = pxToVw(diePxX);
            die.yPercent = pxToVh(diePxY);
+           const relVx = die.vx - other.vx; const relVy = die.vy - other.vy;
            const impulse = (relVx*nx + relVy*ny);
            die.vx -= impulse*nx; die.vy -= impulse*ny;
            other.vx += impulse*nx; other.vy += impulse*ny;
