@@ -21,7 +21,7 @@ body {
 
 #game-container {
   position: relative;
-  aspect-ratio: 2 / 1; 
+  aspect-ratio: 12 / 7; 
   width: 100%;
   max-width: 100vw;
   max-height: 100vh;
@@ -105,10 +105,10 @@ body {
 
 .locked-area {
   position: absolute;
-  top: 10vh;
-  left: 4vh;
-  width: 12.35vh;
-  height: 70vh;
+  top: 10%;
+  left: 4%;
+  aspect-ratio: 3 / 17;
+  height: 70%;
   background-image: url(main/dice/dice_slots.png);
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -140,11 +140,6 @@ body {
   pointer-events: none;
 }
 
-/* CHANGED: No longer hide when it's your turn */
-.current-player-display.is-me {
-  
-}
-
 .current-player-pfp {
   width: 10vh;
   height: 10vh;
@@ -160,13 +155,11 @@ body {
 }
 
 .current-player-name {
-  font-size: 24px;
   font-weight: bold;
   color: #d4af37;
 }
 
 .current-player-score {
-  font-size: 18px;
   color: #fff;
 }
 
@@ -176,8 +169,8 @@ body {
 }
 
 .current-player-dice-item {
-  width: 40px;
-  height: 40px;
+  width: 4vh;
+  height: 4vh;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -192,7 +185,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 15px;
+  gap: 1vh;
   z-index: 2500;
   pointer-events: auto;
 }
@@ -240,14 +233,11 @@ body {
 
 .score-label {
   color: #d4af37;
-  font-size: 12px;
-  margin-bottom: 3px;
   text-align: center;
 }
 
 .score-value {
   color: white;
-  font-size: 24px;
   font-weight: bold;
   text-align: center;
 }
