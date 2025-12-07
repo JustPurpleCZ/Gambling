@@ -69,7 +69,7 @@ function onDragEnd(event) {
 
 async function getWheelResult() {
     setTimeout(() => {
-        wheelResult = 2;
+        wheelResult = 8;
     }, 10000);
 }
 
@@ -85,7 +85,7 @@ function startFreeSpin() {
         // Update wheel rotation
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.5 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.25 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
         
