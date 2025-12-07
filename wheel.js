@@ -62,7 +62,14 @@ function onDragEnd(event) {
     wheel.style.transition = '';
     // Reset the segment tracker when a new spin starts
     lastKnownSegment = Math.floor(rotation / 45);
+    if (angularVelocity < 1000 && isDragging) angularVelocity = 1500;
     startFreeSpin();
+}
+
+async function getWheelResult() {
+    setTimeout(() => {
+        console.log("Got wheel result now surely");
+    }, 3000);
 }
 
 // --- Animation Logic ---
@@ -70,6 +77,8 @@ function onDragEnd(event) {
 function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
+
+    getWheelResult();
 
     const spin = () => {
         // Update wheel rotation
@@ -112,6 +121,7 @@ function startFreeSpin() {
         if (Math.abs(angularVelocity) < 0.05) {
             cancelAnimationFrame(animationFrameId);
             arrow.style.transform = 'rotate(0deg)'; // Ensure it's perfectly centered when stopped
+            angularVelocity = 0;
             calculateResult();
         } else {
             animationFrameId = requestAnimationFrame(spin);
