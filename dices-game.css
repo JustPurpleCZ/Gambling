@@ -256,13 +256,14 @@ body {
 .other-player-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: start;
   position: relative;
   aspect-ratio: 20 / 7;
-  padding: 2vh;
+  padding: 2.1vh 2.1vh 2.1vh 2.5vh;
   width: 50vh;
   transition: border-color 0.3s, box-shadow 0.3s;
   right: -8vh;
+  gap: 2vh;
 }
 
 /* Current player card highlight */
