@@ -363,7 +363,12 @@ div, .kostkar {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
+}
+.form-column-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 .form-column-left{
     flex: 0 0 60%;

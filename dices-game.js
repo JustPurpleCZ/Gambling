@@ -16,6 +16,10 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+// NEW: Background images for player cards - UPDATE THESE PATHS
+const CARD_BG_NOT_PLAYED = 'main/dice/card_not_played.png';
+const CARD_BG_PLAYED = 'main/dice/card_played.png';
+
 let presenceRef;
 
 async function checkAuth() {
@@ -207,6 +211,7 @@ async function gameStart() {
     });
 }
 
+// UPDATED: Complete rewrite of updateActivePlayerList
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
@@ -256,37 +261,46 @@ async function updateActivePlayerList() {
         }
         hideOtherPlayersPanel();
     } else {
-        // 3+ players: current turn player at top (if not me), others on right
-        if (currentPlayerData && currentPlayerData.uid !== uid) {
-            updateCurrentPlayerDisplay(currentPlayerData, false, true);
-            lastOtherPlayerData = currentPlayerData;
-        } else if (currentPlayerData && currentPlayerData.uid === uid) {
-            // It's my turn - show next player as preview
-            const nextPlayerIndex = (myPlayerIndex + 1) % totalPlayers;
-            const nextPlayer = allPlayersData[nextPlayerIndex];
-            if (nextPlayer && nextPlayer.uid !== uid) {
-                updateCurrentPlayerDisplay(nextPlayer, false, false);
-            } else {
-                hideCurrentPlayerDisplay();
-            }
+        // 3+ players: always show current turn player at top (even if it's me)
+        if (currentPlayerData) {
+            const isMe = currentPlayerData.uid === uid;
+            updateCurrentPlayerDisplay(currentPlayerData, isMe, true);
         }
 
-        // Build right panel with categorized players
+        // Build right panel with ALL players (including me and current player)
         const rightPanelPlayers = categorizePlayersForRightPanel(
             allPlayersData, 
             currentPlayerIndex, 
             myPlayerIndex, 
             uid
         );
-        updateOtherPlayersPanelNew(rightPanelPlayers);
+        updateOtherPlayersPanelNew(rightPanelPlayers, uid);
     }
 
     if (myPlayerData) { updateMyPlayerInfo(myPlayerData); }
     updateBottomControlPanel(isMyTurnThisUpdate);
 
-    // ... keep your existing gameEnded handling code here ...
     if (gameEnded) {
-        // your existing game end code
+        document.getElementById("gameEndDiv").style.display = "block";
+        const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
+        const winnerId = idSnap.val();
+        const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
+        const winnerInfo = infoSnap.val();
+        const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
+        const winAmount = winAmountSnap.val();
+        document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
+        document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
+        if (winnerId == uid) {
+            document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
+        } else {
+            document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
+        }
+        document.getElementById("exit").addEventListener("click", () => {
+            localStorage.removeItem("dicesLobbyId");
+            localStorage.removeItem("dicesIsHost");
+            localStorage.removeItem("selfUID");
+            window.location.href = "dices-hub.html";
+        })
     }
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
@@ -295,38 +309,35 @@ async function updateActivePlayerList() {
     }
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
+
+// NEW FUNCTION: Categorize ALL players for the right panel
 function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, myUid) {
     const totalPlayers = allPlayers.length;
     const result = [];
     
-    // Get players excluding me and the current turn player
-    const eligiblePlayers = allPlayers.filter(p => 
-        p.uid !== myUid && !p.playersTurn
-    );
-    
-    if (eligiblePlayers.length === 0) return result;
-    
-    eligiblePlayers.forEach(player => {
+    allPlayers.forEach(player => {
         const playerIndex = player.orderIndex;
+        const isCurrentTurn = player.playersTurn === true;
         let hasPlayedThisRound = false;
         
-        // A player has played this round if they come BEFORE the current player
-        // in the circular order starting from me
-        if (myIndex < currentTurnIndex) {
-            // Simple case: me ... currentPlayer
-            hasPlayedThisRound = (playerIndex > myIndex && playerIndex < currentTurnIndex);
-        } else if (myIndex > currentTurnIndex) {
-            // Wrapped case: currentPlayer ... me
-            hasPlayedThisRound = (playerIndex > myIndex || playerIndex < currentTurnIndex);
-        } else {
-            // myIndex === currentTurnIndex means it's my turn
-            hasPlayedThisRound = false;
+        if (!isCurrentTurn) {
+            if (myIndex < currentTurnIndex) {
+                hasPlayedThisRound = (playerIndex > myIndex && playerIndex < currentTurnIndex);
+            } else if (myIndex > currentTurnIndex) {
+                hasPlayedThisRound = (playerIndex > myIndex || playerIndex < currentTurnIndex);
+            } else {
+                hasPlayedThisRound = false;
+            }
         }
         
-        result.push({ player, hasPlayedThisRound });
+        result.push({ 
+            player, 
+            hasPlayedThisRound,
+            isMe: player.uid === myUid,
+            isCurrentTurn
+        });
     });
     
-    // Sort by turn order: next to play should be at top
     result.sort((a, b) => {
         const aIndex = a.player.orderIndex;
         const bIndex = b.player.orderIndex;
@@ -338,6 +349,7 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
     return result;
 }
 
+// NEW FUNCTION
 function hideCurrentPlayerDisplay() {
     const displayDiv = document.querySelector(".current-player-display");
     if (displayDiv) {
@@ -345,6 +357,7 @@ function hideCurrentPlayerDisplay() {
     }
 }
 
+// NEW FUNCTION
 function hideOtherPlayersPanel() {
     const panel = document.querySelector(".other-players-panel");
     if (panel) {
@@ -352,7 +365,8 @@ function hideOtherPlayersPanel() {
     }
 }
 
-function updateOtherPlayersPanelNew(categorizedPlayers) {
+// NEW FUNCTION: Updated panel with all players
+function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
     let panel = document.querySelector(".other-players-panel");
     if (!panel) {
         panel = document.createElement("div");
@@ -363,12 +377,21 @@ function updateOtherPlayersPanelNew(categorizedPlayers) {
     panel.style.display = "flex";
     panel.innerHTML = "";
     
-    categorizedPlayers.forEach(({ player, hasPlayedThisRound }) => {
+    categorizedPlayers.forEach(({ player, hasPlayedThisRound, isMe, isCurrentTurn }) => {
         const card = document.createElement("div");
         card.className = "other-player-card";
         
-        // Apply different background based on played status
-        if (hasPlayedThisRound) {
+        if (isCurrentTurn) {
+            card.classList.add("is-current");
+        }
+        
+        if (isMe) {
+            card.classList.add("is-me");
+        }
+        
+        if (isCurrentTurn) {
+            // Active player - no played/not-played background
+        } else if (hasPlayedThisRound) {
             card.classList.add("has-played");
             card.style.backgroundImage = `url('${CARD_BG_PLAYED}')`;
         } else {
@@ -382,12 +405,23 @@ function updateOtherPlayersPanelNew(categorizedPlayers) {
             card.classList.add("disconnected"); 
         }
         
+        let statusText = '';
+        if (isCurrentTurn) {
+            statusText = 'Playing';
+        } else if (hasPlayedThisRound) {
+            statusText = 'Played';
+        } else {
+            statusText = 'Waiting';
+        }
+        
+        const nameDisplay = isMe ? `${player.username} (You)` : player.username;
+        
         card.innerHTML = `
             <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
             <div class="other-player-details">
-                <div class="other-player-name">${player.username}</div>
+                <div class="other-player-name">${nameDisplay}</div>
                 <div class="other-player-score">Score: ${player.score}</div>
-                <div class="other-player-round-status">${hasPlayedThisRound ? 'Played' : 'Waiting'}</div>
+                <div class="other-player-round-status">${statusText}</div>
                 ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
             </div>
         `;
@@ -395,6 +429,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers) {
     });
 }
 
+// UPDATED: Now shows yourself at top when it's your turn
 function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     let displayDiv = document.querySelector(".current-player-display");
     if (!displayDiv) {
@@ -407,15 +442,11 @@ function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     
     if (isMe) { 
         displayDiv.classList.add("is-me"); 
-        return; 
     } else { 
         displayDiv.classList.remove("is-me"); 
     }
     
-    // Show different text based on whether it's their turn or they're next
-    const turnText = isCurrentTurn 
-        ? `${playerData.username}'s Turn` 
-        : `Next: ${playerData.username}`;
+    const turnText = isMe ? "Your Turn" : `${playerData.username}'s Turn`;
     
     displayDiv.innerHTML = `
         <div class="current-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
@@ -426,18 +457,20 @@ function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
         <div class="current-player-dice"></div>
     `;
     
-    const diceContainer = displayDiv.querySelector(".current-player-dice");
-    if (playerData.rolledDice && playerData.rolledDice.length > 0) {
-        playerData.rolledDice.forEach((dieValue, index) => {
-            const dieDiv = document.createElement("div");
-            dieDiv.className = "current-player-dice-item";
-            dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
-            if (playerData.heldDice && playerData.heldDice[index]) {
-                dieDiv.style.border = "2px solid #d4af37";
-                dieDiv.style.boxShadow = "0 0 10px #d4af37";
-            }
-            diceContainer.appendChild(dieDiv);
-        });
+    if (!isMe) {
+        const diceContainer = displayDiv.querySelector(".current-player-dice");
+        if (playerData.rolledDice && playerData.rolledDice.length > 0) {
+            playerData.rolledDice.forEach((dieValue, index) => {
+                const dieDiv = document.createElement("div");
+                dieDiv.className = "current-player-dice-item";
+                dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
+                if (playerData.heldDice && playerData.heldDice[index]) {
+                    dieDiv.style.border = "2px solid #d4af37";
+                    dieDiv.style.boxShadow = "0 0 10px #d4af37";
+                }
+                diceContainer.appendChild(dieDiv);
+            });
+        }
     }
 }
 
@@ -482,7 +515,6 @@ async function updateBottomControlPanel(isMyTurn) {
     endTurnBtn.classList.add("disabled"); 
   }
   
-  // Get total score
   const totalScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/score`));
   const totalScore = totalScoreSnap.val() || 0;
   const totalScoreValue = document.getElementById("totalScoreValue");
@@ -490,7 +522,6 @@ async function updateBottomControlPanel(isMyTurn) {
     totalScoreValue.textContent = totalScore; 
   }
   
-  // Get turn score
   const turnScoreSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/turnScore`));
   const turnScore = turnScoreSnap.val() || 0;
   const turnScoreValue = document.getElementById("turnScoreValue");
@@ -536,8 +567,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const cup = document.getElementById('cup');
 const gameContainer = document.getElementById('game-container');
-const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
-const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 
 function resizeCanvas() {
     canvas.width = canvas.clientWidth;
@@ -583,13 +612,12 @@ let cupCanCollect = true;
 let wasMyTurnLastUpdate = false;
 let lastOtherPlayerData = null;
 
-// New state variables for auto-roll logic
 let rollPending = false;
 let rollResponse = null;
 let previousDiceValues = [];
 let waitingForRelease = false;
 let allDiceLockedRollPending = false;
-let permLockedCount = 0; // Track how many dice are permanently locked
+let permLockedCount = 0;
 
 const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
@@ -625,21 +653,17 @@ function playShakeSound() {
 cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending || rollPending) return;
   
-  // Check if all 6 dice are locked - if so, attempt roll immediately
   if (lockedDice.length === 6 && dice.length === 0) {
     e.preventDefault();
     const rollResult = await performRoll();
     
     if (rollResult.success) {
-      // Valid roll with all dice locked - collect them into cup
       handleAllDiceLocked();
       return;
     } else if (rollResult.needsSelection) {
-      // Need to select dice - unlock all and spill them
       spillLockedDiceWithValues();
       return;
     }
-    // If roll failed for other reasons, don't pick up cup
     return;
   }
   
@@ -693,29 +717,24 @@ document.addEventListener('mouseup', async () => {
   isDraggingCup = false;
   cup.classList.remove('dragging');
   
-  // If waiting for release after valid roll, spill with new values
   if (waitingForRelease && pendingRollValues) {
     waitingForRelease = false;
     spillDice();
     return;
   }
   
-  // If no dice anywhere (fresh turn or all collected), try to roll
   if (dice.length === 0 && cupState === 'normal' && !rollPending) {
-    // Store current dice values before rolling (if any locked)
     previousDiceValues = lockedDice.map(d => d.face);
     
     const rollResult = await performRoll();
     
     if (rollResult.success && pendingRollValues) {
-      // Check if all 6 dice are locked (shouldn't happen on fresh roll, but just in case)
       if (lockedDice.length === 6) {
         handleAllDiceLocked();
       } else {
         spillDice();
       }
     } else if (!rollResult.success && rollResult.needsSelection) {
-      // Need to select at least one die - spill with previous values
       spillDiceWithPreviousValues();
     }
   }
@@ -744,12 +763,10 @@ async function performRoll() {
       if (response.success) {
         if (errorMessage) errorMessage.style.display = "none";
         
-        // Mark all currently locked dice as permanently locked
         lockedDice.forEach(die => {
           if (!die.permLocked) {
             die.permLocked = true;
             permLockedCount++;
-            // Remove the overlay and add perm-locked class
             if (die.element) {
               const overlay = die.element.querySelector('.locked-overlay');
               if (overlay) overlay.remove();
@@ -768,7 +785,6 @@ async function performRoll() {
           errorMessage.style.display = "block";
           errorMessage.textContent = response.reply;
         }
-        // Check if the error is about needing to select dice
         const needsSelection = response.reply && 
           (response.reply.toLowerCase().includes("select") || 
            response.reply.toLowerCase().includes("at least one"));
@@ -806,19 +822,16 @@ function spillDiceWithPreviousValues() {
   let angleDeg = angleRad * (180 / Math.PI);
   cup.style.transform = `rotate(${angleDeg+90}deg) scale(1.1)`;
   
-  // Use the stored previous values for unlocked dice
   const numDice = 6 - lockedDice.length;
   const launchSpeedMultiplier = 4;
   const baseVx = cupVelocityX !== 0 ? cupVelocityX * launchSpeedMultiplier : 5;
   const baseVy = cupVelocityY !== 0 ? cupVelocityY * launchSpeedMultiplier : 0;
   
-  // Get previous rolled dice values from server
   get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`)).then(snap => {
     const serverDice = snap.val() || [];
     
     for (let i = 0; i < numDice; i++) {
       const spread = (Math.random() - 0.5) * 50;
-      // Use server values or random if not available
       const faceValue = serverDice[i] || (Math.floor(Math.random() * 6) + 1);
       
       dice.push({
@@ -861,7 +874,6 @@ function handleAllDiceLocked() {
   console.log("All 6 dice are locked - collecting and preparing for next roll");
   allDiceLockedRollPending = true;
   
-  // Clear perm locked status for all dice since valid roll with 6 locked
   lockedDice.forEach(die => {
     die.permLocked = false;
     if (die.element) {
@@ -870,14 +882,11 @@ function handleAllDiceLocked() {
   });
   permLockedCount = 0;
   
-  // Collect all locked dice into cup
   collectAllDiceIntoCup();
   
-  // Wait before allowing another roll
   setTimeout(() => {
     allDiceLockedRollPending = false;
     cupCanCollect = true;
-    // Store new pending values for next spill
     get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`)).then(snap => {
       pendingRollValues = snap.val();
       console.log("Ready for next roll after all dice locked, new values:", pendingRollValues);
@@ -889,18 +898,15 @@ function spillLockedDiceWithValues() {
   console.log("Spilling locked dice - need to select at least one scoring die");
   allDiceLockedRollPending = true;
   
-  // Get the current values from locked dice - only spill non-perm-locked ones
   const diceToSpill = lockedDice.filter(d => !d.permLocked);
   const diceValues = diceToSpill.map(d => d.face);
   
-  // If all dice are perm locked, we can't spill any - this shouldn't happen normally
   if (diceToSpill.length === 0) {
     console.log("All dice are permanently locked, cannot spill");
     allDiceLockedRollPending = false;
     return;
   }
   
-  // Move cup to center first
   cupXPercent = 40;
   cupYPercent = 30;
   updateCupPosition();
@@ -914,7 +920,6 @@ function spillLockedDiceWithValues() {
   const baseVx = 5;
   const baseVy = 0;
   
-  // Remove only non-perm-locked dice elements and create new rolling dice
   diceToSpill.forEach((die) => {
     if (die.element) {
       const overlay = die.element.querySelector('.locked-overlay');
@@ -925,10 +930,8 @@ function spillLockedDiceWithValues() {
     if (index !== -1) lockedDice.splice(index, 1);
   });
   
-  // Reposition remaining locked dice
   repositionLockedDice();
   
-  // Create new dice with the same values
   for (let i = 0; i < diceValues.length; i++) {
     const spread = (Math.random() - 0.5) * 50;
     const faceValue = diceValues[i];
@@ -945,7 +948,7 @@ function spillLockedDiceWithValues() {
       rolling: true,
       rollTime: 0,
       element: null,
-      serverIndex: permLockedCount + i // Offset by perm locked count
+      serverIndex: permLockedCount + i
     });
   }
   
@@ -1046,7 +1049,6 @@ function collectDice() {
     const dist = Math.sqrt(dx*dx + dy*dy);
     
     if (dist < collectRadius) {
-      // Store the die's value before removing
       if (!previousDiceValues.includes(die.face)) {
         previousDiceValues.push(die.face);
       }
@@ -1056,9 +1058,7 @@ function collectDice() {
     }
   }
   
-  // Check if all unlocked dice are now in the cup
   if (collectedAny && dice.length === 0 && !rollPending && isDraggingCup) {
-    // All dice collected - attempt roll
     attemptAutoRoll();
   }
 }
@@ -1066,22 +1066,18 @@ function collectDice() {
 async function attemptAutoRoll() {
   console.log("All dice collected into cup - attempting auto roll");
   
-  // Store current values of all dice (locked ones)
   previousDiceValues = lockedDice.map(d => d.face);
   
   const rollResult = await performRoll();
   
   if (rollResult.success && pendingRollValues) {
-    // Check if all 6 dice would be locked
     if (lockedDice.length === 6) {
       handleAllDiceLocked();
     } else {
-      // Valid roll - wait for cup release
       waitingForRelease = true;
       console.log("Roll valid - waiting for cup release to spill dice");
     }
   } else if (!rollResult.success && rollResult.needsSelection) {
-    // Need to select at least one die - spill immediately with previous values
     spillDiceWithPreviousValues();
   }
 }
@@ -1157,7 +1153,6 @@ function animateToPosition(element, targetX, targetY, callback) {
 
 async function unlockDie(die) {
   if (!die.locked) return;
-  // Cannot unlock permanently locked dice
   if (die.permLocked) {
     console.log("Cannot unlock permanently locked die");
     return;
@@ -1252,11 +1247,9 @@ function moveCupToBottomRight() {
 }
 
 function collectAllDiceIntoCup() {
-  // Use the same position as moveCupToBottomRight for consistency
   const finalCupXPercent = 75;
   const finalCupYPercent = 70;
   
-  // Animate dice to an off-screen collection point first
   const collectXPercent = 80;
   const collectYPercent = 105;
   const collectTargetX = canvas.offsetLeft + vwToPx(collectXPercent);
@@ -1298,12 +1291,10 @@ function collectAllDiceIntoCup() {
   
   setTimeout(() => { dice.length = 0; }, animationIndex * 100 + 500);
   
-  // Move cup to the consistent bottom-right position (same as after rolling)
   cupXPercent = finalCupXPercent;
   cupYPercent = finalCupYPercent;
   updateCupPosition();
   
-  // Reset cup state
   cupState = 'normal';
   cup.style.backgroundImage = `url(${cupImg})`;
   cup.style.transform = 'scale(1) rotate(0deg)';

@@ -103,7 +103,6 @@ body {
   pointer-events: auto;
 }
 
-/* Locked Dice Area - Left Side */
 .locked-area {
   position: absolute;
   top: 10vh;
@@ -141,8 +140,12 @@ body {
   pointer-events: none;
 }
 
+/* CHANGED: No longer hide when it's your turn */
 .current-player-display.is-me {
-  display: none;
+  border: 2px solid #4a9eff;
+  background: rgba(74, 158, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
 }
 
 .current-player-pfp {
@@ -184,7 +187,7 @@ body {
   filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
 }
 
-/* Bottom Control Panel - Below Locked Area */
+/* Bottom Control Panel */
 .bottom-control-panel {
   position: absolute;
   bottom: 2vh;
@@ -252,7 +255,7 @@ body {
   text-align: center;
 }
 
-/* Other Players List - Right Side */
+/* Other Players Panel - Right Side */
 .other-players-panel {
   position: absolute;
   right: 2%;
@@ -274,16 +277,40 @@ body {
   border-radius: 12px;
   border: 2px solid #555;
   width: 30vh;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
+/* Current player card highlight */
 .other-player-card.is-current {
   border-color: #d4af37;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Your own card highlight */
+.other-player-card.is-me {
+  border-color: #4a9eff;
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
+}
+
+/* When it's your turn AND you're in the list */
+.other-player-card.is-me.is-current {
+  border-color: #4a9eff;
+  box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
 }
 
 .other-player-card.disconnected {
   opacity: 0.5;
+}
+
+/* Make card background show through */
+.other-player-card.has-played,
+.other-player-card.not-played {
+  background-color: transparent;
+}
+
+/* Slightly dim cards that have already played */
+.other-player-card.has-played {
+  opacity: 0.85;
 }
 
 .other-player-pfp {
@@ -320,6 +347,33 @@ body {
   color: #ff6b6b;
 }
 
+/* NEW: Round status indicator */
+.other-player-round-status {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+/* Card that hasn't played yet this round */
+.other-player-card.not-played .other-player-round-status {
+  color: #ffcc00;
+  background: rgba(255, 204, 0, 0.2);
+}
+
+/* Card that has already played this round */
+.other-player-card.has-played .other-player-round-status {
+  color: #66cc66;
+  background: rgba(102, 204, 102, 0.2);
+}
+
+/* Card that is currently playing */
+.other-player-card.is-current .other-player-round-status {
+  color: #ff9933;
+  background: rgba(255, 153, 51, 0.3);
+}
+
 /* Hide old UI elements */
 #playStuff {
   display: none !important;
@@ -332,6 +386,7 @@ body {
 .my-player-info {
   display: none !important;
 }
+
 .die.perm-locked {
   cursor: not-allowed !important;
 }
