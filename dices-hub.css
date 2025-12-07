@@ -471,7 +471,7 @@ div, .kostkar {
     position: absolute;
     bottom: -22vh;
     height: 40vh;
-    left: -70%;
+    left: -20vh;
     z-index: -1;
     transform: scale(1.15);
 }
