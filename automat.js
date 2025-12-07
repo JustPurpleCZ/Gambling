@@ -1032,7 +1032,7 @@ async function sendCashoutRequest() {
                 
     const data = await res.json();
 
-    if (dada.valid) {
+    if (data.valid) {
         console.log("Cashout success: ", data);
     } else {
         console.log("CASH OUT FAILED");
