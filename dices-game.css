@@ -40,7 +40,7 @@ body {
   justify-content: center;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.267);
+  background-color: rgba(0, 0, 0, 0.51);
   z-index: 9000;
 }
 
@@ -199,8 +199,8 @@ body {
   flex-direction: row;
   align-items: center;
   height: 12%;
-  gap: 1%;
-  width: 50%;
+  gap: 2%;
+  width: 60%;
   z-index: 2500;
   pointer-events: auto;
 }
