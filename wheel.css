@@ -3,11 +3,13 @@ body {
     touch-action: none; /* Prevents scrolling on touch devices when interacting with the wheel */
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    background-image: url(main/automat/bg-purple.png);
+    background-size: cover;
 }
 .wheel-container {
     position: relative;
-    width: 70vw;
-    height: 70vw;
+    width: 70vh;
+    height: 70vh;
 
     display: flex;
     justify-content: center;
@@ -20,7 +22,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    border-radius: 50%;
+    border-radius: 45%;
     -webkit-user-drag: none; /* Prevents image dragging */
     -khtml-user-drag: none;
     -moz-user-drag: none;
@@ -39,12 +41,59 @@ body {
 }
 .arrow {
     position: absolute;
-    top: -5.1vw; /* Position arrow above the wheel */
-    width: 14vw;
-    height: 13vw;
+    top: -5.1vh; /* Position arrow above the wheel */
+    width: 14vh;
+    height: 13vh;
     scale: 0.55;
     z-index: 20;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
     /* NEW: Add a transition for smooth snapping back to center */
     transition: transform 0.1s ease-out;
+}
+.tv{
+    position: absolute;
+    background-image: url(main/wheel/tvv2.png);
+    background-size: contain;
+    width: 95vh;
+    aspect-ratio: 83 / 140;
+    z-index: 100;
+    top: -15vh;
+    left: -100vh;
+    transition: all 3s;
+}
+.video{
+    position: relative;
+    top: 48.4vh;
+    left: 21.81vh;
+    width: 53.3vh;
+    height: 29.5vh;
+    z-index: 9;
+}
+.screen{
+    z-index: 8;
+}
+.video video{
+    position: absolute;
+    width: 53.3vh;
+    height: 29.5vh;
+    object-fit: fill;
+}
+.tv.active {
+    left: 45vh;
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+.dimming{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    transition: all 3s;
+    z-index: 50;
+    pointer-events: none;
+}
+.dimming.active{
+    background-color: rgba(0, 0, 0, 0.5);
 }

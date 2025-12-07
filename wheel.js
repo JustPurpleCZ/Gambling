@@ -4,21 +4,24 @@ const highlight = document.getElementById('highlight');
 const wheelContainer = document.getElementById('wheelContainer');
 const resultText = document.getElementById('resultText');
 const arrow = document.querySelector('.arrow');
+const tv = document.querySelector('.tv');
+const bg = document.querySelector('.dimming');
+const tvVideo = document.getElementById('screen');
 const clickSound = new Audio('sound/click.mp3'); 
 
 // State variables
 let rotation = 0;
 let isDragging = false;
 let angularVelocity = 0;
-const friction = 0.994;
+const friction = 0.992;
 let startAngle = 0;
 let animationFrameId;
 let wheelResult;
 
 // --- NEW: State variables for the arrow's "kick" animation ---
 let arrowTilt = 0;
-const arrowDamping = 0.9; // How quickly the arrow settles. Higher is slower (0.0 to 1.0).
-let lastKnownSegment = 0; // Used to detect when a divider is crossed.
+const arrowDamping = 0.9;
+let lastKnownSegment = 0;
 
 // --- Interaction Logic ---
 
@@ -61,7 +64,6 @@ function onDragEnd(event) {
     if (!isDragging) return;
     isDragging = false;
     wheel.style.transition = '';
-    // Reset the segment tracker when a new spin starts
     lastKnownSegment = Math.floor(rotation / 45);
     if (Math.abs(angularVelocity) < 50 && isDragging) angularVelocity = 50;
     startFreeSpin();
@@ -69,9 +71,36 @@ function onDragEnd(event) {
 
 async function getWheelResult() {
     setTimeout(() => {
-        wheelResult = 8;
+        wheelResult = 7;
         console.log("Wheel result set from cloud");
     }, 3000);
+}
+
+// --- TV Animation Logic ---
+
+function activateTV() {
+    // Add active class to TV
+    tv.classList.add('active');
+    bg.classList.add('active');
+    // Pick a random video (1-4)
+    const randomVideo = Math.floor(Math.random() * 4) + 1;
+    
+    // Small delay before changing video
+    setTimeout(() => {
+        tvVideo.src = `main/wheel/ads/${randomVideo}.mp4`;
+        tvVideo.load();
+        tvVideo.play();
+        
+        // When video ends, switch to static gif and remove active class
+        tvVideo.onended = () => {
+            tvVideo.src = '';
+            tvVideo.load();
+            setTimeout(() => {
+                tv.classList.remove('active');
+                bg.classList.remove('active');
+            }, 1000);
+        };
+    }, 4000);
 }
 
 // --- Animation Logic ---
@@ -87,48 +116,46 @@ function startFreeSpin() {
     getWheelResult();
 
     const spin = () => {
-        // Update wheel rotation
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.25 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.4 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
 
         wheel.style.transform = `rotate(${rotation}deg)`;
         
-        // --- COMPLETELY REVISED ARROW ANIMATION LOGIC ---
-
-        // 1. Check if a divider has been crossed
         const currentSegment = Math.floor(rotation / 45);
         if (currentSegment !== lastKnownSegment) {
             const speed = Math.abs(angularVelocity);
             const direction = Math.sign(angularVelocity);
             
-            // 2. Give the arrow a "kick". The kick is stronger at higher speeds.
-            // This creates a snappy reaction when fast and a gentle nudge when slow.
-            const kickStrength = Math.min(60, 15 + speed * 5); // Capped at 60 degrees
-            
-            // The kick is always against the direction of the wheel's motion.
+            const kickStrength = Math.min(60, 15 + speed * 5);
             arrowTilt = -direction * kickStrength;
             clickSound.currentTime = 0;
             clickSound.play();
-            // 3. Update our tracker
             lastKnownSegment = currentSegment;
         }
         
-        // 4. On every frame, apply damping to make the arrow settle back to center.
-        // This creates the smooth "decay" animation.
         arrowTilt *= arrowDamping;
-        
-        // Apply the final transform to the arrow
         arrow.style.transform = `rotate(${arrowTilt}deg)`;
 
         // Check if the wheel has stopped
         if (Math.abs(angularVelocity) < 0.05) {
             cancelAnimationFrame(animationFrameId);
-            arrow.style.transform = 'rotate(0deg)'; // Ensure it's perfectly centered when stopped
+            arrow.style.transform = 'rotate(0deg)';
             angularVelocity = 0;
-            calculateResult();
+            
+            const result = calculateResult();
+            const finalAngle = (rotation % 360 + 360) % 360;
+            
+            // Check if NOT in segment 0 (0-45 degrees)
+            // Segment 0 is when finalAngle is between 0 and 45
+            if (finalAngle >= 45 || finalAngle < 0) {
+                console.log("Landed on segment other than 0, activating TV");
+                activateTV();
+            } else {
+                console.log("Landed on segment 0 (0-45 degrees), no TV activation");
+            }
         } else {
             animationFrameId = requestAnimationFrame(spin);
         }
