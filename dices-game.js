@@ -19,6 +19,7 @@ const auth = getAuth(app);
 // NEW: Background images for player cards - UPDATE THESE PATHS
 const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
+const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
 
 let presenceRef;
 
@@ -320,6 +321,10 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
         const isCurrentTurn = player.playersTurn === true;
         let hasPlayedThisRound = false;
         
+        // Check if player farkled (got 0) on their last turn
+        const lastTurnScore = player.lastTurnScore !== undefined ? player.lastTurnScore : null;
+        const farkled = lastTurnScore === 0 && !isCurrentTurn;
+        
         if (!isCurrentTurn) {
             if (myIndex < currentTurnIndex) {
                 hasPlayedThisRound = (playerIndex > myIndex && playerIndex < currentTurnIndex);
@@ -334,7 +339,8 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
             player, 
             hasPlayedThisRound,
             isMe: player.uid === myUid,
-            isCurrentTurn
+            isCurrentTurn,
+            farkled
         });
     });
     
@@ -377,7 +383,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
     panel.style.display = "flex";
     panel.innerHTML = "";
     
-    categorizedPlayers.forEach(({ player, hasPlayedThisRound, isMe, isCurrentTurn }) => {
+    categorizedPlayers.forEach(({ player, hasPlayedThisRound, isMe, isCurrentTurn, farkled }) => {
         const card = document.createElement("div");
         card.className = "other-player-card";
         
@@ -391,6 +397,10 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         
         if (isCurrentTurn) {
             // Active player - no played/not-played background
+        } else if (farkled && hasPlayedThisRound) {
+            // Player farkled (got 0) this round
+            card.classList.add("has-farkled");
+            card.style.backgroundImage = `url('${CARD_BG_FARKLED}')`;
         } else if (hasPlayedThisRound) {
             card.classList.add("has-played");
             card.style.backgroundImage = `url('${CARD_BG_PLAYED}')`;
@@ -408,6 +418,8 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         let statusText = '';
         if (isCurrentTurn) {
             statusText = 'Playing';
+        } else if (farkled && hasPlayedThisRound) {
+            statusText = 'Farkled!';
         } else if (hasPlayedThisRound) {
             statusText = 'Played';
         } else {

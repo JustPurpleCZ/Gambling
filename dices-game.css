@@ -132,7 +132,7 @@ body {
   position: absolute;
   top: 2%;
   left: 50%;
-  width: 80vh;
+  width: 120vh;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -142,10 +142,7 @@ body {
 
 /* CHANGED: No longer hide when it's your turn */
 .current-player-display.is-me {
-  border: 2px solid #4a9eff;
-  background: rgba(74, 158, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px;
+  
 }
 
 .current-player-pfp {
