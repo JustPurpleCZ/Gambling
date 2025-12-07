@@ -256,8 +256,10 @@ body {
 .other-player-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   position: relative;
   aspect-ratio: 20 / 7;
+  padding: 2vh;
   width: 50vh;
   transition: border-color 0.3s, box-shadow 0.3s;
   right: -8vh;
@@ -295,7 +297,7 @@ body {
 }
 
 .other-player-pfp {
-  width: 95%;
+  height: 95%;
   aspect-ratio: 1 / 1;
   flex-shrink: 0;
   background-position: center;
