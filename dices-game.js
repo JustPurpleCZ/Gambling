@@ -415,25 +415,13 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
             card.classList.add("disconnected"); 
         }
         
-        let statusText = '';
-        if (isCurrentTurn) {
-            statusText = 'Playing';
-        } else if (farkled && hasPlayedThisRound) {
-            statusText = 'Farkled!';
-        } else if (hasPlayedThisRound) {
-            statusText = 'Played';
-        } else {
-            statusText = 'Waiting';
-        }
-        
-        const nameDisplay = isMe ? `${player.username} (You)` : player.username;
+        const nameDisplay = player.username;
         
         card.innerHTML = `
             <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
             <div class="other-player-details">
                 <div class="other-player-name">${nameDisplay}</div>
                 <div class="other-player-score">Score: ${player.score}</div>
-                <div class="other-player-round-status">${statusText}</div>
                 ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
             </div>
         `;
@@ -477,7 +465,6 @@ function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
                 dieDiv.className = "current-player-dice-item";
                 dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
                 if (playerData.heldDice && playerData.heldDice[index]) {
-                    dieDiv.style.border = "2px solid #d4af37";
                     dieDiv.style.boxShadow = "0 0 10px #d4af37";
                 }
                 diceContainer.appendChild(dieDiv);
