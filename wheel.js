@@ -40,7 +40,7 @@ function onDragStart(event) {
         angularVelocity = 0;
         wheel.style.transition = 'none';
     } else {
-        console.log("Velocity: ", angularVelocity)
+        console.log("Velocity: ", Math.abs(angularVelocity));
     }
 }
 
@@ -62,7 +62,7 @@ function onDragEnd(event) {
     wheel.style.transition = '';
     // Reset the segment tracker when a new spin starts
     lastKnownSegment = Math.floor(rotation / 45);
-    if (angularVelocity < 1000 && isDragging) angularVelocity = 1500;
+    if (Math.abs(angularVelocity) < 50 && isDragging) angularVelocity = 50;
     startFreeSpin();
 }
 
@@ -112,10 +112,6 @@ function startFreeSpin() {
         
         // Apply the final transform to the arrow
         arrow.style.transform = `rotate(${arrowTilt}deg)`;
-
-        if (Math.abs(angularVelocity) < 100) {
-            console.log("Should get spin result about now");
-        }
 
         // Check if the wheel has stopped
         if (Math.abs(angularVelocity) < 0.05) {
