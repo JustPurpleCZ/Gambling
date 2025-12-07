@@ -220,58 +220,73 @@ async function updateActivePlayerList() {
     activePlayerList.replaceChildren();
     let isMyTurnThisUpdate = false;
     let currentPlayerData = null;
+    let currentPlayerIndex = -1;
     let myPlayerData = null;
-    let otherPlayers = [];
+    let myPlayerIndex = -1;
+    let allPlayersData = [];
 
-    for (const player of playerOrder) {
-        const playerData = playersInfo.val()[player];
-        if (player === uid) {
-          myPlayerData = { uid: player, ...playerData };
-        } else {
-          otherPlayers.push({ uid: player, ...playerData });
+    // Build array of all players with their data and index
+    for (let i = 0; i < playerOrder.length; i++) {
+        const playerId = playerOrder[i];
+        const playerData = playersInfo.val()[playerId];
+        const fullData = { uid: playerId, orderIndex: i, ...playerData };
+        allPlayersData.push(fullData);
+        
+        if (playerId === uid) {
+            myPlayerData = fullData;
+            myPlayerIndex = i;
         }
         if (playerData.playersTurn === true) {
-          currentPlayerData = { uid: player, ...playerData };
-          if (player === uid && !gameEnded) { isMyTurnThisUpdate = true; }
+            currentPlayerData = fullData;
+            currentPlayerIndex = i;
+            if (playerId === uid && !gameEnded) { 
+                isMyTurnThisUpdate = true; 
+            }
         }
     }
 
-    if (currentPlayerData && currentPlayerData.uid !== uid) {
-      updateCurrentPlayerDisplay(currentPlayerData, false);
-      lastOtherPlayerData = currentPlayerData;
-    } else if (currentPlayerData && currentPlayerData.uid === uid) {
-      if (lastOtherPlayerData) {
-        updateCurrentPlayerDisplay(lastOtherPlayerData, false);
-      } else {
-        updateCurrentPlayerDisplay(currentPlayerData, true);
-      }
+    const totalPlayers = playerOrder.length;
+
+    // Handle different lobby sizes
+    if (totalPlayers === 2) {
+        // 2-player: just show opponent at top, hide right panel
+        const opponent = allPlayersData.find(p => p.uid !== uid);
+        if (opponent) {
+            updateCurrentPlayerDisplay(opponent, false, opponent.playersTurn);
+        }
+        hideOtherPlayersPanel();
+    } else {
+        // 3+ players: current turn player at top (if not me), others on right
+        if (currentPlayerData && currentPlayerData.uid !== uid) {
+            updateCurrentPlayerDisplay(currentPlayerData, false, true);
+            lastOtherPlayerData = currentPlayerData;
+        } else if (currentPlayerData && currentPlayerData.uid === uid) {
+            // It's my turn - show next player as preview
+            const nextPlayerIndex = (myPlayerIndex + 1) % totalPlayers;
+            const nextPlayer = allPlayersData[nextPlayerIndex];
+            if (nextPlayer && nextPlayer.uid !== uid) {
+                updateCurrentPlayerDisplay(nextPlayer, false, false);
+            } else {
+                hideCurrentPlayerDisplay();
+            }
+        }
+
+        // Build right panel with categorized players
+        const rightPanelPlayers = categorizePlayersForRightPanel(
+            allPlayersData, 
+            currentPlayerIndex, 
+            myPlayerIndex, 
+            uid
+        );
+        updateOtherPlayersPanelNew(rightPanelPlayers);
     }
 
-    updateOtherPlayersPanel(otherPlayers, currentPlayerData);
     if (myPlayerData) { updateMyPlayerInfo(myPlayerData); }
     updateBottomControlPanel(isMyTurnThisUpdate);
 
+    // ... keep your existing gameEnded handling code here ...
     if (gameEnded) {
-        document.getElementById("gameEndDiv").style.display = "block";
-        const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
-        const winnerId = idSnap.val();
-        const infoSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${winnerId}`));
-        const winnerInfo = infoSnap.val();
-        const winAmountSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winAmount`));
-        const winAmount = winAmountSnap.val();
-        document.getElementById("winnerName").textContent = "Winner: " + winnerInfo["username"];
-        document.getElementById("winnerScore").textContent = "Money won: " + winAmount;
-        if (winnerId == uid) {
-            document.getElementById("winMessage").textContent = "Good job! The money minus a small fee has been added transfered to your wallet.";
-        } else {
-            document.getElementById("winMessage").textContent = "Too bad, try not to lose your money next time!";
-        }
-        document.getElementById("exit").addEventListener("click", () => {
-            localStorage.removeItem("dicesLobbyId");
-            localStorage.removeItem("dicesIsHost");
-            localStorage.removeItem("selfUID");
-            window.location.href = "dices-hub.html";
-        })
+        // your existing game end code
     }
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
@@ -280,62 +295,150 @@ async function updateActivePlayerList() {
     }
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
-
-function updateOtherPlayersPanel(otherPlayers, currentPlayerData) {
-  let panel = document.querySelector(".other-players-panel");
-  if (!panel) {
-    panel = document.createElement("div");
-    panel.className = "other-players-panel";
-    document.getElementById("game-container").appendChild(panel);
-  }
-  panel.innerHTML = "";
-  otherPlayers.forEach(player => {
-    const card = document.createElement("div");
-    card.className = "other-player-card";
-    if (currentPlayerData && player.uid === currentPlayerData.uid) { card.classList.add("is-current"); }
-    if (player.connected === false) { card.classList.add("disconnected"); }
-    card.innerHTML = `
-      <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
-      <div class="other-player-details">
-        <div class="other-player-name">${player.username}</div>
-        <div class="other-player-score">Score: ${player.score}</div>
-        ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
-      </div>
-    `;
-    panel.appendChild(card);
-  });
+function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, myUid) {
+    const totalPlayers = allPlayers.length;
+    const result = [];
+    
+    // Get players excluding me and the current turn player
+    const eligiblePlayers = allPlayers.filter(p => 
+        p.uid !== myUid && !p.playersTurn
+    );
+    
+    if (eligiblePlayers.length === 0) return result;
+    
+    eligiblePlayers.forEach(player => {
+        const playerIndex = player.orderIndex;
+        let hasPlayedThisRound = false;
+        
+        // A player has played this round if they come BEFORE the current player
+        // in the circular order starting from me
+        if (myIndex < currentTurnIndex) {
+            // Simple case: me ... currentPlayer
+            hasPlayedThisRound = (playerIndex > myIndex && playerIndex < currentTurnIndex);
+        } else if (myIndex > currentTurnIndex) {
+            // Wrapped case: currentPlayer ... me
+            hasPlayedThisRound = (playerIndex > myIndex || playerIndex < currentTurnIndex);
+        } else {
+            // myIndex === currentTurnIndex means it's my turn
+            hasPlayedThisRound = false;
+        }
+        
+        result.push({ player, hasPlayedThisRound });
+    });
+    
+    // Sort by turn order: next to play should be at top
+    result.sort((a, b) => {
+        const aIndex = a.player.orderIndex;
+        const bIndex = b.player.orderIndex;
+        const aDist = (aIndex - currentTurnIndex + totalPlayers) % totalPlayers;
+        const bDist = (bIndex - currentTurnIndex + totalPlayers) % totalPlayers;
+        return aDist - bDist;
+    });
+    
+    return result;
 }
 
-function updateCurrentPlayerDisplay(playerData, isMe) {
-  let displayDiv = document.querySelector(".current-player-display");
-  if (!displayDiv) {
-    displayDiv = document.createElement("div");
-    displayDiv.className = "current-player-display";
-    document.getElementById("game-container").appendChild(displayDiv);
-  }
-  if (isMe) { displayDiv.classList.add("is-me"); return; }
-  else { displayDiv.classList.remove("is-me"); }
-  displayDiv.innerHTML = `
-    <div class="current-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
-    <div class="current-player-info">
-      <div class="current-player-name">${playerData.username}'s Turn</div>
-      <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
-    </div>
-    <div class="current-player-dice"></div>
-  `;
-  const diceContainer = displayDiv.querySelector(".current-player-dice");
-  if (playerData.rolledDice && playerData.rolledDice.length > 0) {
-    playerData.rolledDice.forEach((dieValue, index) => {
-      const dieDiv = document.createElement("div");
-      dieDiv.className = "current-player-dice-item";
-      dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
-      if (playerData.heldDice && playerData.heldDice[index]) {
-        dieDiv.style.border = "2px solid #d4af37";
-        dieDiv.style.boxShadow = "0 0 10px #d4af37";
-      }
-      diceContainer.appendChild(dieDiv);
+function hideCurrentPlayerDisplay() {
+    const displayDiv = document.querySelector(".current-player-display");
+    if (displayDiv) {
+        displayDiv.style.display = "none";
+    }
+}
+
+function hideOtherPlayersPanel() {
+    const panel = document.querySelector(".other-players-panel");
+    if (panel) {
+        panel.style.display = "none";
+    }
+}
+
+function updateOtherPlayersPanelNew(categorizedPlayers) {
+    let panel = document.querySelector(".other-players-panel");
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.className = "other-players-panel";
+        document.getElementById("game-container").appendChild(panel);
+    }
+    
+    panel.style.display = "flex";
+    panel.innerHTML = "";
+    
+    categorizedPlayers.forEach(({ player, hasPlayedThisRound }) => {
+        const card = document.createElement("div");
+        card.className = "other-player-card";
+        
+        // Apply different background based on played status
+        if (hasPlayedThisRound) {
+            card.classList.add("has-played");
+            card.style.backgroundImage = `url('${CARD_BG_PLAYED}')`;
+        } else {
+            card.classList.add("not-played");
+            card.style.backgroundImage = `url('${CARD_BG_NOT_PLAYED}')`;
+        }
+        card.style.backgroundSize = "100% 100%";
+        card.style.backgroundRepeat = "no-repeat";
+        
+        if (player.connected === false) { 
+            card.classList.add("disconnected"); 
+        }
+        
+        card.innerHTML = `
+            <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
+            <div class="other-player-details">
+                <div class="other-player-name">${player.username}</div>
+                <div class="other-player-score">Score: ${player.score}</div>
+                <div class="other-player-round-status">${hasPlayedThisRound ? 'Played' : 'Waiting'}</div>
+                ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
+            </div>
+        `;
+        panel.appendChild(card);
     });
-  }
+}
+
+function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
+    let displayDiv = document.querySelector(".current-player-display");
+    if (!displayDiv) {
+        displayDiv = document.createElement("div");
+        displayDiv.className = "current-player-display";
+        document.getElementById("game-container").appendChild(displayDiv);
+    }
+    
+    displayDiv.style.display = "flex";
+    
+    if (isMe) { 
+        displayDiv.classList.add("is-me"); 
+        return; 
+    } else { 
+        displayDiv.classList.remove("is-me"); 
+    }
+    
+    // Show different text based on whether it's their turn or they're next
+    const turnText = isCurrentTurn 
+        ? `${playerData.username}'s Turn` 
+        : `Next: ${playerData.username}`;
+    
+    displayDiv.innerHTML = `
+        <div class="current-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
+        <div class="current-player-info">
+            <div class="current-player-name">${turnText}</div>
+            <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
+        </div>
+        <div class="current-player-dice"></div>
+    `;
+    
+    const diceContainer = displayDiv.querySelector(".current-player-dice");
+    if (playerData.rolledDice && playerData.rolledDice.length > 0) {
+        playerData.rolledDice.forEach((dieValue, index) => {
+            const dieDiv = document.createElement("div");
+            dieDiv.className = "current-player-dice-item";
+            dieDiv.style.backgroundImage = `url(main/dice/dice_${dieValue}.png)`;
+            if (playerData.heldDice && playerData.heldDice[index]) {
+                dieDiv.style.border = "2px solid #d4af37";
+                dieDiv.style.boxShadow = "0 0 10px #d4af37";
+            }
+            diceContainer.appendChild(dieDiv);
+        });
+    }
 }
 
 function updateMyPlayerInfo(playerData) {
