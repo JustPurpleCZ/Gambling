@@ -39,11 +39,12 @@ function onDragStart(event) {
         startAngle = getEventAngle(event) - (rotation * Math.PI / 180);
         angularVelocity = 0;
         wheel.style.transition = 'none';
+    } else {
+        console.log("Velocity: ", angularVelocity)
     }
 }
 
 function onDragMove(event) {
-    console.log("Drag move");
     if (!isDragging) return;
     event.preventDefault();
     const currentEventAngle = getEventAngle(event);
@@ -69,7 +70,7 @@ function onDragEnd(event) {
 function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
-    
+
     const spin = () => {
         // Update wheel rotation
         rotation += angularVelocity;
@@ -103,6 +104,9 @@ function startFreeSpin() {
         // Apply the final transform to the arrow
         arrow.style.transform = `rotate(${arrowTilt}deg)`;
 
+        if (Math.abs(angularVelocity) < 100) {
+            console.log("Should get spin result about now");
+        }
 
         // Check if the wheel has stopped
         if (Math.abs(angularVelocity) < 0.05) {
