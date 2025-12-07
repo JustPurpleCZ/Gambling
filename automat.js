@@ -1506,8 +1506,9 @@ class RobotController {
         await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
         
         this.robot.src = 'robot/talkend.gif';
-        await this.delay(1600);
+        await this.delay(250);
         this.robot.src = 'robot/idle.gif';
+        await this.delay(1600);
         // Check for abort
         if (this.currentDialogueAbortController?.signal?.aborted) {
             this.robot.src = 'robot/idle.gif';
