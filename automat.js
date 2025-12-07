@@ -1391,7 +1391,7 @@ class RobotController {
                 
                 // Handle first two buttons
                 if (option === '1') {
-                    await this.handleOptionSequence('invest');
+                    await this.handleOptionSequence('stats');
                 } else if (option === '2') {
                     await this.handleOptionSequence('rules');
                 }
@@ -1435,7 +1435,7 @@ class RobotController {
         this.currentDialogueAbortController = new AbortController();
         
         // Play appropriate robot sequence
-        const sequence = option === 'invest' ? 
+        const sequence = option === 'stats' ? 
             MANUAL_SEQUENCES.chances : 
             MANUAL_SEQUENCES.stats;
         
@@ -1443,6 +1443,90 @@ class RobotController {
         
         this.currentDialogueAbortController = null;
     }
+    async playStatsSequence() {
+        // Fetch user stats from database
+        let spinCount = 0;
+        let moneyWon = 0;
+        
+        if (!localMode) {
+            try {
+                const snap = await get(ref(db, `/users/${auth.currentUser.uid}/slotMachine`));
+                const slotMachineStats = snap.val();
+                spinCount = slotMachineStats?.spins || 0;
+                moneyWon = slotMachineStats?.moneyWon || 0;
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        } else {
+            // Local mode test values
+            spinCount = 127;
+            moneyWon = 4250;
+        }
+        
+        // Convert numbers to digit arrays
+        const spinDigits = String(spinCount).split('');
+        const moneyDigits = String(moneyWon).split('');
+        // "You have spun..." 
+        this.dialogueAudio.src = 'robot/dialogue/youhavespun.mp3';
+        this.robot.src = 'robot/speakstart.gif';
+        await this.delay(250);
+        
+        const spinsIntroPromise = this.dialogueAudio.play()
+            .catch(err => console.error('Audio playback failed:', err));
+        
+        this.robot.src = 'robot/talk.gif';
+        await this.delay(1500);
+        await spinsIntroPromise;
+        
+        // Check for abort
+        if (this.currentDialogueAbortController?.signal?.aborted) {
+            this.robot.src = 'robot/idle.gif';
+            return;
+        }
+        
+        // Read spin count digits
+        for (const digit of spinDigits) {
+            if (this.currentDialogueAbortController?.signal?.aborted) {
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
+            this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
+            await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
+            await this.delay(100); // Small pause between digits
+        }
+        
+        // "...times!"
+        this.dialogueAudio.src = 'robot/dialogue/timesnwon.mp3';
+        await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
+        
+        this.robot.src = 'robot/talkend.gif';
+        await this.delay(300);
+
+        // Check for abort
+        if (this.currentDialogueAbortController?.signal?.aborted) {
+            this.robot.src = 'robot/idle.gif';
+            return;
+        }
+        
+        // Read money won digits
+        for (const digit of moneyDigits) {
+            if (this.currentDialogueAbortController?.signal?.aborted) {
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
+            this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
+            await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
+            await this.delay(100);
+        }
+        
+        // "...dollars!"
+        this.dialogueAudio.src = 'robot/dialogue/dollars.mp3';
+        await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
+        this.robot.src = 'robot/idle.gif';
+    }
+
     async closeOptionsAndReturn() {
         this.stopIdleTimer();
         
