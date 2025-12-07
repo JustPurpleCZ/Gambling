@@ -158,7 +158,7 @@ function startFreeSpin() {
     const spin = () => {
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.4 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.3 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
 
