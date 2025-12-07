@@ -20,7 +20,7 @@ const auth = getAuth(app);
 const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
-
+const CARD_BG_ACTIVE = 'main/dice/playercard_playing.png';
 let presenceRef;
 
 async function checkAuth() {
@@ -396,7 +396,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         }
         
         if (isCurrentTurn) {
-            // Active player - no played/not-played background
+            card.style.backgroundImage = `url('${CARD_BG_ACTIVE}')`;
         } else if (farkled && hasPlayedThisRound) {
             // Player farkled (got 0) this round
             card.classList.add("has-farkled");
