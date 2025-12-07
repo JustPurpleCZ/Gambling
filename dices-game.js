@@ -430,7 +430,6 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
             <div class="other-player-details">
                 <div class="other-player-name">${nameDisplay}</div>
                 <div class="other-player-score">Score: ${player.score}</div>
-                ${player.connected === false ? '<div class="other-player-status">Disconnected</div>' : ''}
             </div>
         `;
         panel.appendChild(card);
@@ -1320,8 +1319,9 @@ function repositionLockedDice() {
   const containerW = gameContainer.clientWidth;
   const containerH = gameContainer.clientHeight;
   lockedDice.forEach((die, i) => {
-    const targetX = containerW * 0.032;
-    const targetY = (containerH * 0.125) + (i * (containerH * 0.1185));
+
+    const targetX = containerW * 0.028;
+    const targetY = (containerH * 0.12) + (i * (containerH * 0.1169));
     if(die.element) {
         die.element.style.left = targetX + 'px';
         die.element.style.top = targetY + 'px';

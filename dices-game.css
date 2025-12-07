@@ -13,7 +13,9 @@ body {
   height: 100vh;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  background-color: #2c2c2c; 
+  background-image: url(main/dice/carpetidk.png); 
+  background-size: cover;
+  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,6 +137,7 @@ body {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   z-index: 2500;
   pointer-events: none;
 }
@@ -149,7 +152,7 @@ body {
 .current-player-info {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 1vh;
   color: white;
 }
 
@@ -164,7 +167,7 @@ body {
 
 .current-player-dice {
   display: flex;
-  gap: 10px;
+  gap: 1vh;
 }
 
 .current-player-dice-item {
@@ -245,35 +248,34 @@ body {
   top: 15%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1vh;
   z-index: 2500;
-  max-height: 70%;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .other-player-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 30vh;
+  position: relative;
+  aspect-ratio: 10 / 3;
+  width: 35vh;
   transition: border-color 0.3s, box-shadow 0.3s;
+  right: -8vh;
 }
 
 /* Current player card highlight */
 .other-player-card.is-current {
-  border-color: #d4af37;
+  right: 0;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
 
 /* Your own card highlight */
 .other-player-card.is-me {
-  border-color: #4a9eff;
   box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
 }
 
 /* When it's your turn AND you're in the list */
 .other-player-card.is-me.is-current {
-  border-color: #4a9eff;
   box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
 }
 
@@ -293,8 +295,8 @@ body {
 }
 
 .other-player-pfp {
-  width: 45px;
-  height: 45px;
+  width: 95%;
+  aspect-ratio: 1 / 1;
   flex-shrink: 0;
   background-position: center;
   background-size: contain;
@@ -303,11 +305,10 @@ body {
 .other-player-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.5vh;
 }
 
 .other-player-name {
-  font-size: 14px;
   font-weight: bold;
   color: #fff;
 }
@@ -317,12 +318,10 @@ body {
 }
 
 .other-player-score {
-  font-size: 12px;
   color: #aaa;
 }
 
 .other-player-status {
-  font-size: 11px;
   color: #ff6b6b;
 }
 
