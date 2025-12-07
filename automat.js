@@ -1360,6 +1360,7 @@ class RobotController {
         this.hand = document.querySelector('.robot-hand');
         this.tutorialResolve = null;
         this.optionsMenu = document.querySelector('.options-menu');
+        this.currentDialogueAbortController = null;
         
         // Initialize robot
         this.updateRobotState(ROBOT_STATES.IDLE);
@@ -1430,15 +1431,32 @@ class RobotController {
         // Show menu again
         menu.style.bottom = '0vh';
         
+        // Create abort controller for this sequence
+        this.currentDialogueAbortController = new AbortController();
+        
         // Play appropriate robot sequence
         const sequence = option === 'invest' ? 
             MANUAL_SEQUENCES.chances : 
             MANUAL_SEQUENCES.stats;
         
-        await this.playDialogueSequence(sequence);
+        await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+        
+        this.currentDialogueAbortController = null;
     }
     async closeOptionsAndReturn() {
         this.stopIdleTimer();
+        
+        // Abort any ongoing dialogue sequence
+        if (this.currentDialogueAbortController) {
+            this.currentDialogueAbortController.abort();
+            this.currentDialogueAbortController = null;
+        }
+        
+        // Stop any playing audio
+        this.dialogueAudio.pause();
+        this.dialogueAudio.currentTime = 0;
+        this.idleSound.pause();
+        this.idleSound.currentTime = 0;
         
         // Reset menu to original state
         const menu = this.optionsMenu;
@@ -1451,21 +1469,29 @@ class RobotController {
         
         await this.returnToIdle();
         this.isInActiveState = false;
-    
+        this.isAnimating = false;
+
         // Make sure the menu is visually hidden
         menu.style.bottom = '-50vh';
     }
 
     async handleClick() {
+        // Block if animating OR if menu is open
         if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();
+            
+            // Create abort controller for initial dialogue
+            this.currentDialogueAbortController = new AbortController();
+            
             // Get random sequence from DIALOGUE_SEQUENCES
             const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
-            await this.playDialogueSequence(sequence);
+            await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+            
+            this.currentDialogueAbortController = null;
             
             this.showOptions();
             this.isInActiveState = true;
@@ -1599,7 +1625,7 @@ class RobotController {
         await this.delay(500);
     }
 
-    async playDialogueSequence(sequence) {
+    async playDialogueSequence(sequence, abortSignal = null) {
         this.dialogueAudio.src = sequence.sound;
         this.robot.src = sequence.animations[0].gif;
         await this.delay(200);
@@ -1608,22 +1634,56 @@ class RobotController {
             .catch(err => console.error('Audio playback failed:', err));
         
         for (const animation of sequence.animations) {
+            // Check if we should abort
+            if (abortSignal?.aborted) {
+                this.dialogueAudio.pause();
+                this.dialogueAudio.currentTime = 0;
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
             this.robot.src = animation.gif;
-            await this.delay(animation.duration);
+            
+            // Use interruptible delay
+            const delayed = await this.interruptibleDelay(animation.duration, abortSignal);
+            if (!delayed) {
+                this.dialogueAudio.pause();
+                this.dialogueAudio.currentTime = 0;
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
         }
-    
+
         await audioPromise;
         
-        // Only play idle sound if it's a random dialogue sequence
-        const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
-        if (isRandomDialogue) {
-            this.idleSound.currentTime = 0;
-            await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        // Only play idle sound if it's a random dialogue sequence and not aborted
+        if (!abortSignal?.aborted) {
+            const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
+            if (isRandomDialogue) {
+                this.idleSound.currentTime = 0;
+                await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+            }
         }
         
         this.robot.src = 'robot/idle.gif';
     }
-
+    interruptibleDelay(ms, abortSignal) {
+        return new Promise(resolve => {
+            if (abortSignal?.aborted) {
+                resolve(false);
+                return;
+            }
+            
+            const timeout = setTimeout(() => resolve(true), ms);
+            
+            if (abortSignal) {
+                abortSignal.addEventListener('abort', () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                }, { once: true });
+            }
+        });
+    }
     async returnToIdle() {
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = '-80vh';
@@ -1649,9 +1709,10 @@ class RobotController {
     }
 
     async playSpecialSequence() {
-        if (this.isAnimating) return;
+        // Block if menu is open
+        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();
@@ -1665,9 +1726,10 @@ class RobotController {
         }
     }
     async playRadioSpecialSequence() {
-        if (this.isAnimating) return;
+        // Block if menu is open
+        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();
