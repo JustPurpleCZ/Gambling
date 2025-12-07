@@ -92,6 +92,8 @@ function startFreeSpin() {
 
         if (Math.abs(angularVelocity) > 0.25 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
+        } else if (Math.abs(angularVelocity) < 0.25 || calculateResult() == wheelResult) {
+            angularVelocity *= 0.992;
         }
 
         wheel.style.transform = `rotate(${rotation}deg)`;
