@@ -190,7 +190,7 @@ function startFreeSpin() {
             
             // Check if NOT in segment 0 (0-45 degrees)
             // Segment 0 is when finalAngle is between 0 and 45
-            if (finalAngle >= 45 || finalAngle < 0) {
+            if (wheelResult != 8) {
                 console.log("Landed on segment other than 0, activating TV");
                 activateTV();
             } else {
