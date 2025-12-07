@@ -21,6 +21,9 @@ const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
 const CARD_BG_ACTIVE = 'main/dice/playercard_playing.png';
+let farkledThisTurn = false;
+let farkledDiceValues = null;
+let waitingForFarkleRelease = false;
 let presenceRef;
 
 async function checkAuth() {
@@ -305,8 +308,13 @@ async function updateActivePlayerList() {
     }
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
-        console.log("My turn just ended. Waiting before collecting all dice.");
-        setTimeout(() => { collectAllDiceIntoCup(); }, 2000);
+    console.log("My turn just ended.");
+      if (farkledThisTurn) {
+          // Don't collect yet - wait for farkle animation to complete
+          console.log("Farkled - waiting for dice to be displayed before collecting");
+      } else {
+          setTimeout(() => { collectAllDiceIntoCup(); }, 2000);
+      }
     }
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
@@ -651,11 +659,24 @@ function playShakeSound() {
 
 cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending || rollPending) return;
-  
+  if (waitingForFarkleRelease) {
+    isDraggingCup = true;
+    cup.classList.add('dragging');
+    const rect = cup.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    prevMouseX = e.clientX;
+    prevMouseY = e.clientY;
+    e.preventDefault();
+    return;
+  }
   if (lockedDice.length === 6 && dice.length === 0) {
     e.preventDefault();
     const rollResult = await performRoll();
-    
+    if (rollResult.farkled) {
+      spillFarkledDice();
+      return;
+    }
     if (rollResult.success) {
       handleAllDiceLocked();
       return;
@@ -715,7 +736,11 @@ document.addEventListener('mouseup', async () => {
   if (!isDraggingCup) return;
   isDraggingCup = false;
   cup.classList.remove('dragging');
-  
+  if (waitingForFarkleRelease && farkledDiceValues) {
+    waitingForFarkleRelease = false;
+    spillFarkledDice();
+    return;
+  } 
   if (waitingForRelease && pendingRollValues) {
     waitingForRelease = false;
     spillDice();
@@ -735,6 +760,8 @@ document.addEventListener('mouseup', async () => {
       }
     } else if (!rollResult.success && rollResult.needsSelection) {
       spillDiceWithPreviousValues();
+    }} else if (rollResult.farkled) {
+    spillFarkledDice();
     }
   }
 });
@@ -781,12 +808,28 @@ async function performRoll() {
         return { success: true };
       } else {
         if (errorMessage) {
-          errorMessage.style.display = "block";
-          errorMessage.textContent = response.reply;
+            errorMessage.style.display = "block";
+            errorMessage.textContent = response.reply;
         }
-        const needsSelection = response.reply && 
-          (response.reply.toLowerCase().includes("select") || 
-           response.reply.toLowerCase().includes("at least one"));
+        const needsSelection = response.reply &&
+            (response.reply.toLowerCase().includes("select") ||
+                response.reply.toLowerCase().includes("at least one"));
+        
+        // Check if this is a farkle (0 score, turn ended)
+        const isFarkle = response.reply &&
+            (response.reply.toLowerCase().includes("farkle") ||
+                response.reply.toLowerCase().includes("no scoring") ||
+                response.reply.toLowerCase().includes("bust"));
+        
+        if (isFarkle) {
+            farkledThisTurn = true;
+            // Get the dice values that caused the farkle
+            const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
+            farkledDiceValues = rolledSnap.val();
+            console.log("Farkled with dice:", farkledDiceValues);
+            return { success: false, needsSelection: false, farkled: true };
+        }
+        
         pendingRollValues = null;
         return { success: false, needsSelection };
       }
@@ -810,7 +853,68 @@ async function performRoll() {
     return { success: false, needsSelection: false };
   }
 }
-
+function spillFarkledDice() {
+    console.log("Spilling farkled dice to display them");
+    cupState = 'spilling';
+    cup.style.backgroundImage = `url(${cupSpillImg})`;
+    cupCanCollect = false;
+    
+    const angleRad = Math.atan2(cupVelocityY, cupVelocityX);
+    let angleDeg = angleRad * (180 / Math.PI);
+    cup.style.transform = `rotate(${angleDeg + 90}deg) scale(1.1)`;
+    
+    const diceValues = farkledDiceValues || [];
+    const numDice = diceValues.length || (6 - lockedDice.length);
+    
+    const launchSpeedMultiplier = 4;
+    const baseVx = cupVelocityX !== 0 ? cupVelocityX * launchSpeedMultiplier : 5;
+    const baseVy = cupVelocityY !== 0 ? cupVelocityY * launchSpeedMultiplier : 0;
+    
+    for (let i = 0; i < numDice; i++) {
+        const spread = (Math.random() - 0.5) * 50;
+        const faceValue = diceValues[i] || (Math.floor(Math.random() * 6) + 1);
+        dice.push({
+            xPercent: cupXPercent + 5,
+            yPercent: cupYPercent + 30,
+            vx: baseVx + spread,
+            vy: baseVy + spread,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 20,
+            face: faceValue,
+            finalFace: faceValue,
+            rolling: true,
+            rollTime: 0,
+            element: null,
+            serverIndex: i,
+            isFarkled: true // Mark as farkled dice - can't be selected
+        });
+    }
+    
+    dice.forEach(die => {
+        const el = document.createElement('div');
+        el.className = 'die rolling';
+        el.style.backgroundImage = `url(${diceImages[die.face - 1]})`;
+        el.style.backgroundSize = 'contain';
+        gameContainer.appendChild(el);
+        die.element = el;
+        renderDiePosition(die);
+        // No click handler for farkled dice - they can't be selected
+    });
+    
+    isRolling = true;
+    cupVelocityX = 0;
+    cupVelocityY = 0;
+    farkledDiceValues = null;
+    
+    setTimeout(() => { moveCupToBottomRight(); }, 500);
+    
+    // After dice settle, wait a moment then collect everything
+    setTimeout(() => {
+        console.log("Collecting farkled dice after display");
+        collectAllDiceIntoCup();
+        farkledThisTurn = false;
+    }, 3000); // Wait 3 seconds so player can see the farkle
+}
 function spillDiceWithPreviousValues() {
   console.log("Spilling dice with previous values - need to select at least one");
   cupState = 'spilling';
@@ -1039,7 +1143,7 @@ function collectDice() {
   
   for (let i = dice.length - 1; i >= 0; i--) {
     const die = dice[i];
-    if (die.rolling) continue;
+    if (die.rolling || die.isFarkled) continue;
     
     const diePxX = vwToPx(die.xPercent);
     const diePxY = vhToPx(die.yPercent);
@@ -1079,10 +1183,12 @@ async function attemptAutoRoll() {
   } else if (!rollResult.success && rollResult.needsSelection) {
     spillDiceWithPreviousValues();
   }
+  waitingForFarkleRelease = true;
+  console.log("Farkled - waiting for cup release to show farkled dice");
 }
 
 async function lockDie(die) {
-  if (die.rolling) return;
+  if (die.rolling || die.isFarkled) return;
   const index = dice.indexOf(die);
   if (index === -1) return;
   
