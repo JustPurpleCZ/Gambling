@@ -17,8 +17,8 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // NEW: Background images for player cards - UPDATE THESE PATHS
-const CARD_BG_NOT_PLAYED = 'main/dice/card_not_played.png';
-const CARD_BG_PLAYED = 'main/dice/card_played.png';
+const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
+const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 
 let presenceRef;
 
