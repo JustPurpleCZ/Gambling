@@ -21,10 +21,9 @@ body {
 
 #game-container {
   position: relative;
-  aspect-ratio: 12 / 7; 
-  width: 100%;
-  max-width: 100vw;
-  max-height: 100vh;
+  aspect-ratio: 12 / 7;
+  width: min(100vw, calc(100vh * 12 / 7));
+  max-width: 100%;
   background-image: url(main/dice/deck_prototype.png);
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -104,9 +103,9 @@ body {
 }
 
 .locked-area {
-  position: absolute;
+  position: relative;
   top: 10%;
-  left: 4%;
+  left: 3%;
   aspect-ratio: 3 / 17;
   height: 70%;
   background-image: url(main/dice/dice_slots.png);
