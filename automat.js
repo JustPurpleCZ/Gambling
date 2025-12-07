@@ -1416,8 +1416,6 @@ class RobotController {
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
         
-        // Hide menu first
-        menu.style.bottom = '-50vh';
         await this.delay(500);
         
         // Check if we were closed during the delay
@@ -1431,9 +1429,6 @@ class RobotController {
         if (textContent) {
             textContent.classList.add('active');
         }
-        
-        // Show menu again
-        menu.style.bottom = '0vh';
         
         // Create abort controller for this sequence
         this.currentDialogueAbortController = new AbortController();
