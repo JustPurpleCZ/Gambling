@@ -1531,6 +1531,7 @@ class RobotController {
         this.dialogueAudio.src = 'robot/dialogue/dollars.mp3';
         await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
         this.robot.src = 'robot/idle.gif';
+        closeOptionsAndReturn();
     }
 
     async closeOptionsAndReturn() {
