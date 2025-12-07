@@ -1027,7 +1027,7 @@ async function sendCashoutRequest() {
             "Authorization": token,
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ Amount: noteValue })
+        body: JSON.stringify({ Amount: playerCredit })
     });
                 
     const data = await res.json();
