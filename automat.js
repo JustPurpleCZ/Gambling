@@ -1512,7 +1512,7 @@ class RobotController {
         
         this.robot.src = 'robot/talkend.gif';
         await this.delay(1600);
-
+        this.robot.src = 'robot/idle.gif';
         // Check for abort
         if (this.currentDialogueAbortController?.signal?.aborted) {
             this.robot.src = 'robot/idle.gif';
@@ -1556,10 +1556,7 @@ class RobotController {
         const menu = this.optionsMenu;
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContents = menu.querySelectorAll('.menu-text-content');
-        
-        // Hide menu first
-        menu.style.bottom = '-50vh';
-        
+
         // Reset button visibility and text content
         hideableButtons.forEach(button => button.classList.remove('hidden'));
         textContents.forEach(content => content.classList.remove('active'));
