@@ -204,11 +204,12 @@ img {
 
 .button {
     position: absolute;
-    width: 22.8vh;  /* Scaled from 12vh */
-    height: 22.8vh; /* Scaled from 12vh */
+    width: 22.8vh;
+    height: 22.8vh;
     z-index: 10;
-    top: 72.2vh;    /* Scaled from 38vh */
-    left: 38vh;     /* Scaled from 20vh */
+    top: 72.2vh;
+    left: 38vh;
+    cursor: pointer;
 }
 .button img{
     width: 100%;
@@ -279,6 +280,7 @@ img {
     top: 57vh;      /* Scaled from 30vh */
     left: 0;
     z-index: 30;
+    cursor: pointer;
 }
 .vlada{
     position: absolute;

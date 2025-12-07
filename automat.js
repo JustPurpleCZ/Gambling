@@ -539,7 +539,7 @@ function checkWin() {
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
             winAmount = 9999;
-            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
+            displayDiv.textContent = `$${winAmount}!!!`;
             playWinSound('giant');
         } else {
             if (baseSymbol === 'icon/4.png') {
