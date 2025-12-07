@@ -1,11 +1,22 @@
+@keyframes flicker {
+    0% {
+        opacity: 0.8;
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
+    }
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+    }
+}
+
 .wallet-display {
     position: absolute;
-    left: 11%;
-    top: 11vh;
+    left: 13%;
+    top: 9vh;
     width: 15vh;
-    transform: translateY(-50%);
     color: #00ff00;
     font-size: 4vh;
+    font-family: "Tiny5", sans-serif;
     text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     animation: flicker 0.2s infinite alternate;
     z-index: 52;
@@ -23,6 +34,7 @@
 
 .wallet * {
     position: absolute;
+    height: 30vh;
 }
 
 .wallet:hover {
