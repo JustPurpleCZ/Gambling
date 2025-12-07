@@ -100,7 +100,7 @@ function onDragEnd(event) {
 
 async function getWheelResult() {
     const token = await auth.currentUser.getIdToken();
-    const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/get_unlocks", {
+    const res = await fetch("https://wheel-spin-gtw5ppnvta-ey.a.run.app", {
         method: "GET",
         headers: {
             "Authorization": token,
