@@ -244,7 +244,7 @@ body {
 /* Other Players Panel - Right Side */
 .other-players-panel {
   position: absolute;
-  right: 2%;
+  right: -20vw;
   top: 15%;
   display: flex;
   flex-direction: column;
@@ -263,22 +263,22 @@ body {
   padding: 2.1vh 2.1vh 2.1vh 2.5vh;
   width: 100%;
   transition: all 0.5s;
-  right: -20vw;
+  left: 0;
   gap: 2vh;
 }
 .other-player-card:hover {
-  right: -5vw;
+  left: -20vw;
 }
 .other-player-card.is-current {
-  right: -17vw;
+  left: -5vw;
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
 .other-player-card.disconnected {
-  transform: brightness(0.6);
+  filter: brightness(50%);
 }
 /* Slightly dim cards that have already played */
 .other-player-card.has-played {
-  transform: brightness(0.8);
+  filter: brightness(80%);
 }
 
 .other-player-pfp {
