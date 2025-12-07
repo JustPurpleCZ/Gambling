@@ -79,7 +79,7 @@ function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
 
-    if (Math.abs(angularVelocity) < 50 && isDragging) {
+    if (Math.abs(angularVelocity) < 50) {
         console.log("Velocity too low, setting to 50");
         angularVelocity = 50;
     }
