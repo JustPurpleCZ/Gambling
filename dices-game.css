@@ -179,12 +179,12 @@ body {
 /* Bottom Control Panel */
 .bottom-control-panel {
   position: absolute;
-  bottom: 1%;
+  bottom: 2%;
   left: 3%;
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 18%;
+  height: 14%;
   gap: 1%;
   z-index: 2500;
   pointer-events: auto;
