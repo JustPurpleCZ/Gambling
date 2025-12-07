@@ -80,7 +80,7 @@ function startFreeSpin() {
     cancelAnimationFrame(animationFrameId);
 
     if (Math.abs(angularVelocity) < 10 || Math.abs(angularVelocity) > 50) {
-        console.log("Velocity too low, setting to 10");
+        console.log("Velocity too low or high, setting to 10");
         angularVelocity = 10;
     }
 
@@ -90,12 +90,8 @@ function startFreeSpin() {
         // Update wheel rotation
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.4) {
+        if (Math.abs(angularVelocity) > 0.25 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
-        } else if (0.25 < Math.abs(angularVelocity) < 0.4 || calculateResult() == wheelResult) {
-            angularVelocity *= friction - 0.002;
-        } else if (0.25 > Math.abs(angularVelocity) < 0.4 || calculateResult() == wheelResult) {
-            angularVelocity *= friction + 0.002;
         }
 
         wheel.style.transform = `rotate(${rotation}deg)`;
