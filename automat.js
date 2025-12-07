@@ -539,7 +539,7 @@ function checkWin() {
         if (topRow.every(symbol => symbol === topRow[0]) && 
             bottomRow.every(symbol => symbol === bottomRow[0])) {
             winAmount = 9999;
-            displayDiv.textContent = `JACKPOT:$${winAmount}!`;
+            displayDiv.textContent = `$${winAmount}!!!`;
             playWinSound('giant');
         } else {
             if (baseSymbol === 'icon/4.png') {
@@ -1307,15 +1307,6 @@ const MANUAL_SEQUENCES = {
             { gif: 'robot/idle.gif', duration: 3000 }
         ]
     },
-    stats: {
-        id: 'stats_info',
-        sound: 'robot/dialogue/stats_info.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 3000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
     screen_special: {
         id: 'special',
         sound: 'robot/dialogue/do not the glass.mp3',
@@ -1360,7 +1351,9 @@ class RobotController {
         this.hand = document.querySelector('.robot-hand');
         this.tutorialResolve = null;
         this.optionsMenu = document.querySelector('.options-menu');
-        
+        this.currentDialogueAbortController = null;
+        this.isPlayingOptionSequence = false;
+
         // Initialize robot
         this.updateRobotState(ROBOT_STATES.IDLE);
         this.setupEventListeners();
@@ -1380,7 +1373,7 @@ class RobotController {
         const optionButtons = document.querySelectorAll('.option-btn');
         optionButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent event bubbling
+                e.stopPropagation();
                 const option = e.target.dataset.option;
                 
                 if (option === 'close') {
@@ -1388,11 +1381,11 @@ class RobotController {
                     return;
                 }
                 
-                // Handle first two buttons
+                // Handle first two buttons - fixed mapping
                 if (option === '1') {
-                    await this.handleOptionSequence('invest');
+                    await this.handleOptionSequence('invest'); // My Chances
                 } else if (option === '2') {
-                    await this.handleOptionSequence('rules');
+                    await this.handleOptionSequence('stats');  // My Stats
                 }
             });
         });
@@ -1415,57 +1408,184 @@ class RobotController {
     }
     
     async handleOptionSequence(option) {
+        // Prevent multiple option sequences from running
+        if (this.isPlayingOptionSequence) return;
+        this.isPlayingOptionSequence = true;
+        
         const menu = this.optionsMenu;
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContent = menu.querySelector(`.menu-text-content[data-content="${option}"]`);
         
-        // Hide menu first
-        menu.style.bottom = '-50vh';
         await this.delay(500);
+        
+        // Check if we were closed during the delay
+        if (!this.optionsMenu.classList.contains('active')) {
+            this.isPlayingOptionSequence = false;
+            return;
+        }
         
         // Hide only the first two buttons
         hideableButtons.forEach(button => button.classList.add('hidden'));
-        textContent.classList.add('active');
+        if (textContent) {
+            textContent.classList.add('active');
+        }
         
-        // Show menu again
-        menu.style.bottom = '0vh';
+        // Create abort controller for this sequence
+        this.currentDialogueAbortController = new AbortController();
         
-        // Play appropriate robot sequence
-        const sequence = option === 'invest' ? 
-            MANUAL_SEQUENCES.chances : 
-            MANUAL_SEQUENCES.stats;
-        
-        await this.playDialogueSequence(sequence);
+        try {
+            if (option === 'stats') {
+                await this.playStatsSequence();
+            } else {
+                // Play appropriate robot sequence for other options (My Chances)
+                const sequence = MANUAL_SEQUENCES.chances;
+                await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+            }
+        } catch (error) {
+            console.error('Option sequence error:', error);
+        } finally {
+            this.currentDialogueAbortController = null;
+            this.isPlayingOptionSequence = false;
+        }
     }
+    async playStatsSequence() {
+        // Fetch user stats from database
+        let spinCount = 0;
+        let moneyWon = 0;
+        
+        if (!localMode) {
+            try {
+                const snap = await get(ref(db, `/users/${auth.currentUser.uid}/slotMachine`));
+                const slotMachineStats = snap.val();
+                spinCount = slotMachineStats?.spins || 0;
+                moneyWon = slotMachineStats?.moneyWon || 0;
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        } else {
+            // Local mode test values
+            spinCount = 127;
+            moneyWon = 4250;
+        }
+        
+        // Convert numbers to digit arrays
+        const spinDigits = String(spinCount).split('');
+        const moneyDigits = String(moneyWon).split('');
+        // "You have spun..." 
+        this.dialogueAudio.src = 'robot/dialogue/youhavespun.mp3';
+        this.robot.src = 'robot/speakstart.gif';
+        await this.delay(250);
+        
+        const spinsIntroPromise = this.dialogueAudio.play()
+            .catch(err => console.error('Audio playback failed:', err));
+        
+        this.robot.src = 'robot/talk.gif';
+        await this.delay(2200);
+        await spinsIntroPromise;
+        
+        // Check for abort
+        if (this.currentDialogueAbortController?.signal?.aborted) {
+            this.robot.src = 'robot/idle.gif';
+            return;
+        }
+        
+        // Read spin count digits
+        for (const digit of spinDigits) {
+            if (this.currentDialogueAbortController?.signal?.aborted) {
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
+            this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
+            await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
+            await this.delay(1000); // Small pause between digits
+        }
+        
+        // "...times!"
+        this.dialogueAudio.src = 'robot/dialogue/timesnwon.mp3';
+        await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
+        
+        this.robot.src = 'robot/talkend.gif';
+        await this.delay(250);
+        this.robot.src = 'robot/idle.gif';
+        await this.delay(1600);
+        // Check for abort
+        if (this.currentDialogueAbortController?.signal?.aborted) {
+            this.robot.src = 'robot/idle.gif';
+            return;
+        }
+        
+        // Read money won digits
+        for (const digit of moneyDigits) {
+            if (this.currentDialogueAbortController?.signal?.aborted) {
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
+            this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
+            await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
+            await this.delay(1000);
+        }
+        
+        // "...dollars!"
+        this.dialogueAudio.src = 'robot/dialogue/dollars.mp3';
+        await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
+        this.robot.src = 'robot/idle.gif';
+    }
+
     async closeOptionsAndReturn() {
         this.stopIdleTimer();
+        
+        // Abort any ongoing dialogue sequence
+        if (this.currentDialogueAbortController) {
+            this.currentDialogueAbortController.abort();
+            this.currentDialogueAbortController = null;
+        }
+        
+        // Stop any playing audio
+        this.dialogueAudio.pause();
+        this.dialogueAudio.currentTime = 0;
+        this.idleSound.pause();
+        this.idleSound.currentTime = 0;
         
         // Reset menu to original state
         const menu = this.optionsMenu;
         const hideableButtons = menu.querySelectorAll('.option-button-container.hideable');
         const textContents = menu.querySelectorAll('.menu-text-content');
-        
-        menu.classList.remove('active');
+
+        // Reset button visibility and text content
         hideableButtons.forEach(button => button.classList.remove('hidden'));
         textContents.forEach(content => content.classList.remove('active'));
         
+        // Remove active class from menu
+        menu.classList.remove('active');
+        
+        // Reset flags
+        this.isPlayingOptionSequence = false;
+        
         await this.returnToIdle();
+        
         this.isInActiveState = false;
-    
-        // Make sure the menu is visually hidden
-        menu.style.bottom = '-50vh';
+        this.isAnimating = false;
     }
 
     async handleClick() {
+        // Block if animating OR if menu is open
         if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();
+            
+            // Create abort controller for initial dialogue
+            this.currentDialogueAbortController = new AbortController();
+            
             // Get random sequence from DIALOGUE_SEQUENCES
             const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
-            await this.playDialogueSequence(sequence);
+            await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
+            
+            this.currentDialogueAbortController = null;
             
             this.showOptions();
             this.isInActiveState = true;
@@ -1599,7 +1719,7 @@ class RobotController {
         await this.delay(500);
     }
 
-    async playDialogueSequence(sequence) {
+    async playDialogueSequence(sequence, abortSignal = null) {
         this.dialogueAudio.src = sequence.sound;
         this.robot.src = sequence.animations[0].gif;
         await this.delay(200);
@@ -1608,22 +1728,56 @@ class RobotController {
             .catch(err => console.error('Audio playback failed:', err));
         
         for (const animation of sequence.animations) {
+            // Check if we should abort
+            if (abortSignal?.aborted) {
+                this.dialogueAudio.pause();
+                this.dialogueAudio.currentTime = 0;
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
+            
             this.robot.src = animation.gif;
-            await this.delay(animation.duration);
+            
+            // Use interruptible delay
+            const delayed = await this.interruptibleDelay(animation.duration, abortSignal);
+            if (!delayed) {
+                this.dialogueAudio.pause();
+                this.dialogueAudio.currentTime = 0;
+                this.robot.src = 'robot/idle.gif';
+                return;
+            }
         }
-    
+
         await audioPromise;
         
-        // Only play idle sound if it's a random dialogue sequence
-        const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
-        if (isRandomDialogue) {
-            this.idleSound.currentTime = 0;
-            await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+        // Only play idle sound if it's a random dialogue sequence and not aborted
+        if (!abortSignal?.aborted) {
+            const isRandomDialogue = DIALOGUE_SEQUENCES.some(seq => seq.id === sequence.id);
+            if (isRandomDialogue) {
+                this.idleSound.currentTime = 0;
+                await this.idleSound.play().catch(err => console.error('Idle sound failed:', err));
+            }
         }
         
         this.robot.src = 'robot/idle.gif';
     }
-
+    interruptibleDelay(ms, abortSignal) {
+        return new Promise(resolve => {
+            if (abortSignal?.aborted) {
+                resolve(false);
+                return;
+            }
+            
+            const timeout = setTimeout(() => resolve(true), ms);
+            
+            if (abortSignal) {
+                abortSignal.addEventListener('abort', () => {
+                    clearTimeout(timeout);
+                    resolve(false);
+                }, { once: true });
+            }
+        });
+    }
     async returnToIdle() {
         this.container.style.transition = 'left 0.5s ease-out';
         this.container.style.left = '-80vh';
@@ -1649,9 +1803,10 @@ class RobotController {
     }
 
     async playSpecialSequence() {
-        if (this.isAnimating) return;
+        // Block if menu is open
+        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();
@@ -1665,9 +1820,10 @@ class RobotController {
         }
     }
     async playRadioSpecialSequence() {
-        if (this.isAnimating) return;
+        // Block if menu is open
+        if (this.isAnimating || this.optionsMenu.classList.contains('active')) return;
         this.isAnimating = true;
-    
+
         try {
             await this.growthSequence();
             await this.transformAndReturn();

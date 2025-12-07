@@ -345,7 +345,7 @@ div, .kostkar {
     flex: 1;
     width: 96vh;
     height: 48vh;
-    padding: 9.5vh 7vh 5.8vh 4.2vh;
+    padding: 9.5vh 7vh 5vh 5.2vh;
     position: relative;
     z-index: 0;
 }
@@ -367,15 +367,18 @@ div, .kostkar {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
 }
 .form-column-right:nth-child(1){
-    width: 90%;
+    width: 50%;
 }
 .form-column-left{
-    flex: 0 0 60%;
+    flex: 0 0 63%;
+    height: 94%;
 }
 .form-group {
     display: flex;
+    height: 6vh;
 }
 
 .form-group input,
@@ -398,7 +401,13 @@ div, .kostkar {
     align-items: center;
     gap: 1vh;
 }
+.counter-up{
+    color: greenyellow;
+}
+.counter-down{
+    color: crimson;
 
+}
 .counter-display {
     flex: 1;
     padding: 1.5vh;
@@ -436,15 +445,15 @@ div, .kostkar {
 
 .submit-btn {
     width: 100%;
-    height: 6vh;
-    background-image: url('main/dice/create_button_fix.png');
+    height: 6.2vh;
+    aspect-ratio: 49 / 13;
+    background-image: url('main/dice/create2.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     border: none;
     color: transparent;
     cursor: pointer;
     transition: opacity 0.2s;
-    margin-top: auto;
 }
 
 /* Hidden elements */

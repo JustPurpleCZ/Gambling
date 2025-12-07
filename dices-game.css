@@ -156,6 +156,7 @@ body {
 .current-player-pfp {
   width: 10vh;
   height: 10vh;
+
   background-position: center;
   background-size: contain;
 }
@@ -275,7 +276,7 @@ body {
   gap: 2vh;
 }
 .other-player-card:hover {
-  left: -20vw !important;
+  left: -15vw !important;
 }
 .other-player-card.is-current {
   left: -5vw;

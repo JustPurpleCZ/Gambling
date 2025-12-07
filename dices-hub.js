@@ -254,12 +254,6 @@ document.getElementById('createForm').addEventListener('submit', (e) => {
 document.getElementById('exitBtn').addEventListener('click', () => {
     window.location.href = 'navigation.html';
 });
-
-// Rules button
-document.getElementById('rulesBtn').addEventListener('click', () => {
-    alert('Rules coming soon!');
-});
-
 let targetScore = 10;
 let maxPlayers = 2;
 
