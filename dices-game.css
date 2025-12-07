@@ -104,9 +104,9 @@ body {
 }
 
 .locked-area {
-  position: absolute;
+  position: relative;
   top: 10%;
-  left: 4%;
+  left: 3%;
   aspect-ratio: 3 / 17;
   height: 70%;
   background-image: url(main/dice/dice_slots.png);
