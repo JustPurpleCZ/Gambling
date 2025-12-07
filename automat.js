@@ -1426,7 +1426,6 @@ class RobotController {
         
         // Hide only the first two buttons
         hideableButtons.forEach(button => button.classList.add('hidden'));
-        textContent.classList.add('active');
         
         // Show menu again
         menu.style.bottom = '0vh';
