@@ -166,6 +166,7 @@ function startFreeSpin() {
 // --- Result Calculation ---
 
 function calculateResult() {
+    //miaow
     const finalAngle = (rotation % 360 + 360) % 360 - 25;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
