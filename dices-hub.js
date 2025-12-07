@@ -33,10 +33,10 @@ async function checkAuth() {
         return;
     }
 
-    initWallet();
+    initWallet(user);
 }
 
-async function initWallet() {
+async function initWallet(user) {
     const balanceSnap = await get(ref(db, `/users/${user.uid}/credits`));
     const balance = balanceSnap.val();
     const walletDisplay = document.querySelector('.wallet-display');
