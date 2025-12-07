@@ -13,6 +13,7 @@ let angularVelocity = 0;
 const friction = 0.995;
 let startAngle = 0;
 let animationFrameId;
+let wheelResult;
 
 // --- NEW: State variables for the arrow's "kick" animation ---
 let arrowTilt = 0;
@@ -67,9 +68,7 @@ function onDragEnd(event) {
 }
 
 async function getWheelResult() {
-    setTimeout(() => {
-        console.log("Got wheel result now surely");
-    }, 3000);
+    return 2;
 }
 
 // --- Animation Logic ---
@@ -83,7 +82,11 @@ function startFreeSpin() {
     const spin = () => {
         // Update wheel rotation
         rotation += angularVelocity;
-        angularVelocity *= friction;
+
+        if (Math.abs(angularVelocity) > 0.5 || calculateResult() == wheelResult) {
+            angularVelocity *= friction;
+        }
+        
         wheel.style.transform = `rotate(${rotation}deg)`;
         
         // --- COMPLETELY REVISED ARROW ANIMATION LOGIC ---
@@ -133,11 +136,7 @@ function calculateResult() {
     const finalAngle = (rotation % 360 + 360) % 360;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
-    resultText.textContent = `Segment ${result}`;
-    resultText.style.transform = 'scale(1.1)';
-    setTimeout(() => {
-        resultText.style.transform = 'scale(1)';
-    }, 300);
+    return result;
 }
 
 // --- Event Listeners ---
