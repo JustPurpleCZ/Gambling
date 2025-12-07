@@ -10,7 +10,7 @@ const clickSound = new Audio('sound/click.mp3');
 let rotation = 0;
 let isDragging = false;
 let angularVelocity = 0;
-const friction = 0.995;
+const friction = 0.998;
 let startAngle = 0;
 let animationFrameId;
 let wheelResult;
@@ -70,11 +70,10 @@ function onDragEnd(event) {
 async function getWheelResult() {
     setTimeout(() => {
         wheelResult = 8;
-    }, 10000);
+    }, 3000);
 }
 
 // --- Animation Logic ---
-
 function startFreeSpin() {
     console.log("Free spin start");
     cancelAnimationFrame(animationFrameId);
@@ -85,10 +84,10 @@ function startFreeSpin() {
         // Update wheel rotation
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.25 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.2 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
-        
+
         wheel.style.transform = `rotate(${rotation}deg)`;
         
         // --- COMPLETELY REVISED ARROW ANIMATION LOGIC ---
@@ -134,11 +133,9 @@ function startFreeSpin() {
 // --- Result Calculation ---
 
 function calculateResult() {
-    console.log("Result calc");
     const finalAngle = (rotation % 360 + 360) % 360;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
-    console.log("result: ", result);
     return result;
 }
 
