@@ -1307,15 +1307,6 @@ const MANUAL_SEQUENCES = {
             { gif: 'robot/idle.gif', duration: 3000 }
         ]
     },
-    stats: {
-        id: 'stats_info',
-        sound: 'robot/dialogue/stats_info.mp3',
-        animations: [
-            { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 3000 },
-            { gif: 'robot/talkend.gif', duration: 600 }
-        ]
-    },
     screen_special: {
         id: 'special',
         sound: 'robot/dialogue/do not the glass.mp3',
@@ -1494,7 +1485,7 @@ class RobotController {
             .catch(err => console.error('Audio playback failed:', err));
         
         this.robot.src = 'robot/talk.gif';
-        await this.delay(1500);
+        await this.delay(2200);
         await spinsIntroPromise;
         
         // Check for abort
@@ -1512,7 +1503,7 @@ class RobotController {
             
             this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
             await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
-            await this.delay(100); // Small pause between digits
+            await this.delay(1000); // Small pause between digits
         }
         
         // "...times!"
@@ -1520,7 +1511,7 @@ class RobotController {
         await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
         
         this.robot.src = 'robot/talkend.gif';
-        await this.delay(300);
+        await this.delay(1600);
 
         // Check for abort
         if (this.currentDialogueAbortController?.signal?.aborted) {
@@ -1537,7 +1528,7 @@ class RobotController {
             
             this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
             await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
-            await this.delay(100);
+            await this.delay(1000);
         }
         
         // "...dollars!"
