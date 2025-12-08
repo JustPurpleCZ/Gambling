@@ -203,10 +203,11 @@ let unlockedAchList;
 let achDisplaying = false;
 
 async function getAchInfo() {
-    if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
-        console.log(achDisplaying, unlockedAchList[achWaitingList[0]]);
+    if (achDisplaying) {
         return;
     }
+
+    displayingAch = true;
 
     const achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
