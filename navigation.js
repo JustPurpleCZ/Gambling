@@ -200,7 +200,7 @@ async function initUnlocks() {
 let achWaitingList = [];
 let achDisplaying = false;
 let unlockedAchList;
-
+const confetti = new Audio('sound/confetti.mp3'); 
 async function getAchInfo() {
     if (achDisplaying) {
         return;
@@ -246,6 +246,9 @@ function showAchievement(achName, achDescription, achValue, achImg) {
     ach.style.backgroundImage = `url('main/achievements/${achValue}.png')`;
     achname.textContent = achName;
     achds.textContent = achDescription;
+    setTimeout(() => {
+    confetti.play();
+    }, 1000);
     setTimeout(() => {
         ach.classList.remove("achActive");
     }, 7000);

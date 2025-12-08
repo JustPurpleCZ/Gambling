@@ -257,14 +257,6 @@ function calculateNotes(amount) {
     
     return notes;
 }
-function clearCreditDisplay() {
-    // Remove any existing credit display
-    const existingDisplay = document.querySelector('.credit-display');
-    if (existingDisplay) {
-        existingDisplay.remove();
-    }
-}
-
 class MusicNote {
     constructor(container) {
         this.element = document.createElement('img');
