@@ -53,7 +53,7 @@
 }
 
 .achActive {
-    transform: translateY(10%);
+    transform: translateY(10%) !important;
 }
 
 #achImg {
