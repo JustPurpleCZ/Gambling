@@ -219,6 +219,8 @@ async function getAchInfo() {
     let achDescription = achInformation.descrtiption;
     let achValue = achInformation.value
 
+    console.log("Achievement information: ", achName, achDescription, achValue, achImg);
+
     //Show achievement here
     //showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
