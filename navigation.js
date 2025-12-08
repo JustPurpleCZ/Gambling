@@ -212,7 +212,7 @@ async function getAchInfo() {
         return;
     }
 
-    displayingAch = true;
+    achDisplaying = true;
 
     const achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
@@ -238,7 +238,6 @@ async function getAchInfo() {
     }, 10000);
 }
 function showAchievement(achName, achDescription, achValue, achImg) {
-    achDisplaying = true;
     const ach = document.getElementById('ach');
     const achicon = document.getElementById('achImg');
     const achname = document.getElementById('achName');

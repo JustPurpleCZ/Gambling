@@ -42,7 +42,7 @@
 }
 
 #ach {
-    background-image: url('/main/achievements/bg-default.png');
+    background-image: url('main/achievements/bronze.png');
     background-size: cover;
     width: 125vh;
     height: 30vh;
@@ -52,12 +52,12 @@
     transform: translateY(-120%);
 }
 
-.ach.active {
+.ach .active {
     transform: translateY(10%);
 }
 
 #achImg {
-    background-image: url('/main/achievements/slotSpin10000.png');
+    background-image: url('main/achievements/slotSpin10000.png');
     background-size: cover;
     height: 25.05vh;
     width: 25.05vh;

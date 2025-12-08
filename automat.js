@@ -1039,27 +1039,6 @@ async function sendCashoutRequest() {
     }
 }
 
-async function collectNote(note) {
-    return new Promise(resolve => {
-        const value = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-        
-        // Play collection sound
-        const pickupSound = new Audio('sound/cashout.mp3');
-        pickupSound.volume = 0.6;
-        pickupSound.play().catch(error => {
-            console.log('Sound play failed:', error);
-        });
-        
-        // Add to credit
-        playerCredit += value;
-        updateCreditDisplay();
-        
-        // Remove the note
-        note.remove();
-        
-        setTimeout(resolve, 300); // Delay before next note
-    });
-}
 function enableWalletNoteTransfer(enable) {
     const bills = document.querySelectorAll('.bill');
     bills.forEach(bill => {
