@@ -214,9 +214,7 @@ function calculateResult() {
 }
 
 // --- Event Listeners ---
-highlight.addEventListener('mousedown', onDragStart);
 document.addEventListener('mousemove', onDragMove);
 document.addEventListener('mouseup', onDragEnd);
-highlight.addEventListener('touchstart', onDragStart);
 document.addEventListener('touchmove', onDragMove);
 document.addEventListener('touchend', onDragEnd);
