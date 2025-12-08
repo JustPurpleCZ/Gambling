@@ -242,7 +242,7 @@ function showAchievement(achName, achDescription, achValue, achImg) {
     const achname = document.getElementById('achName');
     const achds = document.getElementById('achDescription');
     ach.classList.add("achActive");
-    achicon.style.backgroundImage = `main/achievements/${achImg}`;
+    achicon.style.backgroundImage = `url('main/achievements/${achImg}.png')`;
     ach.style.backgroundImage = `url('main/achievements/${achValue}.png')`;
     achname.textContent = achName;
     achds.textContent = achDescription;
