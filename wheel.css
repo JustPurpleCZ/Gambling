@@ -22,7 +22,6 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    border-radius: 45%;
     -webkit-user-drag: none; /* Prevents image dragging */
     -khtml-user-drag: none;
     -moz-user-drag: none;
@@ -38,6 +37,13 @@ body {
     cursor: pointer;
     z-index: 10;
     opacity: 0.5;
+}
+#stand{
+	position:absolute;
+aspect-ratio: 5 / 6;
+width: 100%;
+top:0;
+	
 }
 .arrow {
     position: absolute;
