@@ -31,6 +31,7 @@ body {
 .wheel {
     /* The spinning element */
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooths out manual rotation */
+	z-index: 3;
 }
 .highlight {
         /* The interactive highlight layer */
@@ -43,6 +44,7 @@ body {
 aspect-ratio: 5 / 6;
 width: 100%;
 top:0;
+	z-index: 2;
 	
 }
 .arrow {
