@@ -52,7 +52,7 @@
     transform: translateY(-120%);
 }
 
-#ach .active {
+.achActive {
     transform: translateY(10%);
 }
 

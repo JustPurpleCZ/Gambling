@@ -242,13 +242,13 @@ function showAchievement(achName, achDescription, achValue, achImg) {
     const achicon = document.getElementById('achImg');
     const achname = document.getElementById('achName');
     const achds = document.getElementById('achDescription');
-    ach.classList.add("active");
+    ach.classList.add("achActive");
     achicon.src = `main/achievements/${achImg}`;
     ach.backgroundImage = `url('main/achievements/${achValue}.png')`;
     achname.textContent = achName;
     achds.textContent = achDescription;
     setTimeout(() => {
-        ach.classList.remove("active");
+        ach.classList.remove("achActive");
     }, 7000);
 }
 async function initWallet() {
