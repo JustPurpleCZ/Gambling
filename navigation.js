@@ -204,6 +204,7 @@ let achDisplaying = false;
 
 async function getAchInfo() {
     if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
+        console.log(achDisplaying, unlockedAchList[achWaitingList[0]])
         return;
     }
 
@@ -270,7 +271,7 @@ onAuthStateChanged(auth, async (user) => {
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
         console.log("Child added: ", achievement.key);
         achWaitingList.push(achievement.key);
-        getAchInfo();
+        getAchInfo();   
     })
 });
 
