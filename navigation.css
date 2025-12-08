@@ -16,7 +16,6 @@
     width: 15vh;
     transform: translateY(-50%);
     color: #00ff00;
-    font-size: 4vh;
     font-family: "Tiny5", sans-serif;
     text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     animation: flicker 0.2s infinite alternate;
@@ -44,7 +43,7 @@
 #ach {
     background-image: url('main/achievements/bronze.png');
     background-size: cover;
-    width: 125vh;
+    width: 150vh;
     height: 30vh;
     position: absolute;
     top: 0;
@@ -57,26 +56,30 @@
 }
 
 #achImg {
-    background-image: url('main/achievements/slotSpin10000.png');
+    background-image: url('main/achievements/slotSpin100.png');
     background-size: cover;
-    height: 25.05vh;
-    width: 25.05vh;
+    height: 100%;
+    aspect-ratio: 1 / 1;
     position: absolute;
-    left: 3.8vh;
-    top: 2.5vh;
+    left: 0;
+    top: 0;
 }
-
+#achName{
+    text-decoration: underline;
+    font-size: 6vh;
+    margin: 1vh;
+    font-weight: bold;
+}
 #achTextDiv {
     position: absolute;
-    width: 90vh;
-    left: 32vh;
-    top: 2vh;
+    width: 78.5%;
+    left: 19.25%;
+    top: 15%;
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    border: solid black 1px;
 } 
 
 #logoutBtn {
@@ -127,14 +130,18 @@
     --center-scale-multiplier: 1.5 ;
     --transition-speed: 0.1s;
 }
-
+*{
+    font-family: "Tiny5", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 3vh;
+}
 body {
     margin: 0;
     height: 100vh;
     overflow: hidden;
     background-color: #0d0a1a;
     color: white;
-    font-family: 'Roboto', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -149,7 +156,7 @@ body {
 
     width: 110vw;
     height: 110vh;
-    background-image: url(bigmoney.webp);
+    background-image: url(main/bigmoney.webp);
     background-size: cover;
     transition: transform var(--transition-speed) linear;
     z-index: -1;
