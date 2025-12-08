@@ -223,7 +223,7 @@ async function getAchInfo() {
 
     let achImg = achInformation.key + ".png";
     let achName = achInformation.name;
-    let achDescription = achInformation.descrtiption;
+    let achDescription = achInformation.description;
     let achValue = achInformation.value
 
     console.log("Achievement information: ", achName, achDescription, achValue, achImg)
