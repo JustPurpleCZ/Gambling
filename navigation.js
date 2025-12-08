@@ -198,51 +198,56 @@ async function initUnlocks() {
 }
 
 let achWaitingList = [];
-let displayingAch = false;
-let unlockedAchList;
 let achDisplaying = false;
+let unlockedAchList;
 
 async function getAchInfo() {
-    if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
+    if (achDisplaying) {
         return;
     }
+
+    if (unlockedAchList[achWaitingList[0]]) {
+        achWaitingList.shift(achWaitingList[0]);
+        return;
+    }
+
+    achDisplaying = true;
 
     const achievement = achWaitingList[0];
     achWaitingList.shift(achievement);
     console.log("Getting achievement info for: ", achievement);
 
-    const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
+    const snap = await get(ref(db, `/achievementInformation/${achievement}/`));
     const achInformation = snap.val();
 
-    let achImg = achInformation.key() + ".png";
+    let achImg = achievement + ".png";
     let achName = achInformation.name;
-    let achDescription = achInformation.descrtiption;
+    let achDescription = achInformation.description;
     let achValue = achInformation.value
 
-    console.log("Achievement information: ", achName, achDescription, achValue, achImg);
+    console.log("Achievement information: ", achName, achDescription, achValue, achImg)
 
     //Show achievement here
     showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
-        displayingAch = false;
+        achDisplaying = false;
         if (achWaitingList[0]) {
             getAchInfo();
         }
     }, 10000);
 }
 function showAchievement(achName, achDescription, achValue, achImg) {
-    achDisplaying = true;
     const ach = document.getElementById('ach');
     const achicon = document.getElementById('achImg');
     const achname = document.getElementById('achName');
     const achds = document.getElementById('achDescription');
-    ach.classList.add("active");
+    ach.classList.add("achActive");
     achicon.src = `main/achievements/${achImg}`;
     ach.backgroundImage = `url('main/achievements/${achValue}.png')`;
     achname.textContent = achName;
     achds.textContent = achDescription;
     setTimeout(() => {
-        ach.classList.remove("active");
+        ach.classList.remove("achActive");
     }, 7000);
 }
 async function initWallet() {
@@ -270,7 +275,7 @@ onAuthStateChanged(auth, async (user) => {
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
         console.log("Child added: ", achievement.key);
         achWaitingList.push(achievement.key);
-        getAchInfo();
+        getAchInfo();   
     })
 });
 
