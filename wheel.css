@@ -58,7 +58,8 @@ body {
     aspect-ratio: 83 / 140;
     z-index: 100;
     top: -15vh;
-    left: -100vh;
+    left: -100%;
+    transform: translateX(-50%);
     transition: all 3s;
 }
 .video{
@@ -79,7 +80,7 @@ body {
     object-fit: fill;
 }
 .tv.active {
-    left: 45vh;
+    left: 50%;
     transform: scale(1.02);
     filter: brightness(1.1);
 }
