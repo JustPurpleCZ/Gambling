@@ -1,3 +1,32 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
+    authDomain: "gambling-goldmine.firebaseapp.com",
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    projectId: "gambling-goldmine",
+    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    messagingSenderId: "159900206701",
+    appId: "1:159900206701:web:01223c4665df6f7377a164"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+let uid;
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return;
+    }
+    uid = user.uid;
+});
+
 // DOM element references
 const wheel = document.getElementById('wheel');
 const highlight = document.getElementById('highlight');
@@ -13,7 +42,7 @@ const clickSound = new Audio('sound/click.mp3');
 let rotation = 0;
 let isDragging = false;
 let angularVelocity = 0;
-const friction = 0.992;
+const friction = 0.99;
 let startAngle = 0;
 let animationFrameId;
 let wheelResult;
@@ -70,10 +99,21 @@ function onDragEnd(event) {
 }
 
 async function getWheelResult() {
-    setTimeout(() => {
-        wheelResult = 7;
-        console.log("Wheel result set from cloud");
-    }, 3000);
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch("https://wheel-spin-gtw5ppnvta-ey.a.run.app", {
+        method: "GET",
+        headers: {
+            "Authorization": token,
+            "Content-Type": "application/json"
+        }
+    });
+
+    const data = await res.json();
+    console.log(data);
+
+    if (data.success) {
+        wheelResult = data.finalSlot;
+    }
 }
 
 // --- TV Animation Logic ---
@@ -150,7 +190,7 @@ function startFreeSpin() {
             
             // Check if NOT in segment 0 (0-45 degrees)
             // Segment 0 is when finalAngle is between 0 and 45
-            if (finalAngle >= 45 || finalAngle < 0) {
+            if (wheelResult != 8) {
                 console.log("Landed on segment other than 0, activating TV");
                 activateTV();
             } else {
@@ -166,7 +206,7 @@ function startFreeSpin() {
 // --- Result Calculation ---
 
 function calculateResult() {
-    //miaow
+    //fix final slot calculation HERE
     const finalAngle = (rotation % 360 + 360) % 360 - 25;
     const segmentIndex = Math.floor(((finalAngle + 22.5) % 360) / 45);
     const result = 8 - segmentIndex;
@@ -174,9 +214,9 @@ function calculateResult() {
 }
 
 // --- Event Listeners ---
-highlight.addEventListener('mousedown', onDragStart);
+wheel.addEventListener('mousedown', onDragStart);
 document.addEventListener('mousemove', onDragMove);
 document.addEventListener('mouseup', onDragEnd);
-highlight.addEventListener('touchstart', onDragStart);
+wheel.addEventListener('touchstart', onDragStart);
 document.addEventListener('touchmove', onDragMove);
 document.addEventListener('touchend', onDragEnd);

@@ -20,18 +20,6 @@ const auth = getAuth(app);
 // Wait for auth
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch("https://account-init-gtw5ppnvta-ey.a.run.app", {
-            method: "POST",
-            headers: {
-                "Authorization": token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: null})
-        });
-
-        const data = await res.json();
-        console.log("accountInitData: ", data);
         window.location.href = 'navigation.html';
         return;
     }
