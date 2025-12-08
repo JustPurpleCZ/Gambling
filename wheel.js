@@ -123,7 +123,7 @@ function activateTV() {
     tv.classList.add('active');
     bg.classList.add('active');
     // Pick a random video (1-4)
-    const randomVideo = Math.floor(Math.random() * 4) + 1;
+    const randomVideo = Math.floor(Math.random() * 5) + 1;
     
     // Small delay before changing video
     setTimeout(() => {
