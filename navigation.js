@@ -204,6 +204,9 @@ let achDisplaying = false;
 
 async function getAchInfo() {
     if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
+        console.log("Ach waiting list:", achWaitingList);
+        console.log("Ach unlocked list:", unlockedAchList);
+        console.log("AchDisplaying:", achDisplaying);
         return;
     }
 
