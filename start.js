@@ -52,7 +52,7 @@ onAuthStateChanged(auth, async (user) => {
         isLogin = !isLogin;
         modalTitle.textContent = isLogin ? 'Login' : 'Create Account';
         submitButton.textContent = isLogin ? 'Login' : 'Create Account';
-        toggleAuth.textContent = isLogin ? 'Need an account? Sign up' : 'Already have an account? Login';
+        toggleAuth.textContent = isLogin ? 'Sign up' : 'Login';
         
         // Show/hide username field and handle required attribute
         const displayNameInput = document.getElementById('displayName');

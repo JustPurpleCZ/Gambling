@@ -222,15 +222,29 @@ async function getAchInfo() {
     console.log("Achievement information: ", achName, achDescription, achValue, achImg)
 
     //Show achievement here
-    //showAchievement(achName, achDescription, achValue, achImg);
+    showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
         displayingAch = false;
         if (achWaitingList[0]) {
             getAchInfo();
         }
-    }, 5000);
+    }, 10000);
 }
-
+function showAchievement(achName, achDescription, achValue, achImg) {
+    achDisplaying = true;
+    const ach = document.getElementById('ach');
+    const achicon = document.getElementById('achImg');
+    const achname = document.getElementById('achName');
+    const achds = document.getElementById('achDescription');
+    ach.classList.add("active");
+    achicon.src = `main/achievements/${achImg}`;
+    ach.backgroundImage = `url('main/achievements/${achValue}.png')`;
+    achname.textContent = achName;
+    achds.textContent = achDescription;
+    setTimeout(() => {
+        ach.classList.remove("active");
+    }, 7000);
+}
 async function initWallet() {
     const balanceSnap = await get(ref(db, `/users/${uid}/credits`));
     const balance = balanceSnap.val();
