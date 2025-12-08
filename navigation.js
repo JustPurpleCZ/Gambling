@@ -198,9 +198,8 @@ async function initUnlocks() {
 }
 
 let achWaitingList = [];
-let displayingAch = false;
-let unlockedAchList;
 let achDisplaying = false;
+let unlockedAchList;
 
 async function getAchInfo() {
     if (achDisplaying) {
@@ -231,7 +230,7 @@ async function getAchInfo() {
     //Show achievement here
     showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
-        displayingAch = false;
+        achDisplaying = false;
         if (achWaitingList[0]) {
             getAchInfo();
         }
