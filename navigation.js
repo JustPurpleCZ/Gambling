@@ -213,7 +213,7 @@ async function getAchInfo() {
     achWaitingList.shift(achievement);
     console.log("Getting achievement info for: ", achievement);
 
-    const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
+    const snap = await get(ref(db, `/achievementInformation/${achievement}/`));
     const achInformation = snap.val();
 
     let achImg = achInformation.key() + ".png";
