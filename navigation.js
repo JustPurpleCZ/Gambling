@@ -197,18 +197,12 @@ async function initUnlocks() {
     });
 }
 
-const achImg = document.getElementById("achImg");
-const achName = document.getElementById("achName");
-const achDescription = document.getElementById("achDescription");
-const achValue = document.getElementById("achValue");
-const achDiv = document.getElementById("ach");
-
 let achWaitingList = [];
 let displayingAch = false;
 let unlockedAchList;
 let achDisplaying = false;
 
-async function displayAch() {
+async function getAchInfo() {
     if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
         return;
     }
@@ -218,35 +212,20 @@ async function displayAch() {
     console.log("Getting achievement info for: ", achievement);
 
     const snap = await get(ref(db, `/achievementInformation/${achievement}/`)).val();
-    const achInfomation = snap.val();
+    const achInformation = snap.val();
 
-    achImg.style.backgroundImage = achievement + ".png";
-    achName.textContent = achInformation["name"];
-    achDescription.textContent = achInfomation["description"];
+    let achImg = achInformation.key() + ".png";
+    let achName = achInformation.name;
+    let achDescription = achInformation.descrtiption;
+    let achValue = achInformation.value
 
-    switch (achInfomation["value"]) {
-        case "bronze":
-            achValue.textContent = "$25";
-
-        case "silver":
-            achValue.textContent = "$125";
-
-        case "gold":
-            achValue.textContent = "$350";
-
-        default:
-            achValue.textContent = "";
-    }
-
-    achDiv.classList.add("achActive");
+    //Show achievement here
+    //showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
-        achDiv.classList.remove("achActive");
-        setTimeout(() => {
-            displayingAch = false;
-            if (achWaitingList[0]) {
-                displayAch();
-            }
-        }, 1000);
+        displayingAch = false;
+        if (achWaitingList[0]) {
+            getAchInfo();
+        }
     }, 5000);
 }
 
@@ -275,7 +254,7 @@ onAuthStateChanged(auth, async (user) => {
     onChildAdded(ref(db, `/users/${uid}/achievements`), (achievement) => {
         console.log("Child added: ", achievement.key);
         achWaitingList.push(achievement.key);
-        displayAch();
+        getAchInfo();
     })
 });
 
