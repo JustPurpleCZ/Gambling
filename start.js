@@ -59,14 +59,6 @@ onAuthStateChanged(auth, async (user) => {
         resetForm();
     });
 
-    // Close modal when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === authModal) {
-            authModal.style.display = 'none';
-            resetForm();
-        }
-    });
-
     // Toggle between login and signup
     toggleAuth.addEventListener('click', () => {
         isLogin = !isLogin;

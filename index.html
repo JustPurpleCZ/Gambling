@@ -15,12 +15,8 @@
         <img src="side.gif" alt="Please rotate your device">
         <div class="overlay-text">Please rotate your device</div>
     </div>
-    <div class="vlad">
-        <img src="robot/idlefull.gif" alt="">
-    </div>
-    <div class="logo">
-        <img src="icon/logo.png" alt="logo">
-    </div>
+    <div class="vlad"></div>
+    <div class="logo"></div>
     <button id="playButton">Play</button>
 
     <!-- Auth Modal -->
@@ -42,8 +38,10 @@
                     <input type="password" id="password" minlength="6" required>
                 </div>
                 <p id="errorMessage" class="error"></p>
-                <button type="submit" id="submitButton">Login</button>
-                <button type="button" id="toggleAuth">Need an account? Sign up</button>
+                <div class="buttons">
+                    <button type="submit" id="submitButton">Login</button>
+                    <button type="button" id="toggleAuth">Sign up</button>
+                </div>
             </form>
             <button id="closeModal" class="close-button">&times;</button>
         </div>
