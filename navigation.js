@@ -203,7 +203,7 @@ let unlockedAchList;
 let achDisplaying = false;
 
 async function getAchInfo() {
-    if (achDisplaying) {
+    if (achDisplaying || unlockedAchList[achWaitingList[0]]) {
         return;
     }
 
@@ -216,7 +216,7 @@ async function getAchInfo() {
     const snap = await get(ref(db, `/achievementInformation/${achievement}/`));
     const achInformation = snap.val();
 
-    let achImg = achInformation.key() + ".png";
+    let achImg = achInformation.key + ".png";
     let achName = achInformation.name;
     let achDescription = achInformation.descrtiption;
     let achValue = achInformation.value
