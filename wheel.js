@@ -42,7 +42,7 @@ const clickSound = new Audio('sound/click.mp3');
 let rotation = 0;
 let isDragging = false;
 let angularVelocity = 0;
-const friction = 0.992;
+const friction = 0.99;
 let startAngle = 0;
 let animationFrameId;
 let wheelResult;
@@ -158,7 +158,7 @@ function startFreeSpin() {
     const spin = () => {
         rotation += angularVelocity;
 
-        if (Math.abs(angularVelocity) > 0.3 || calculateResult() == wheelResult) {
+        if (Math.abs(angularVelocity) > 0.4 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
 

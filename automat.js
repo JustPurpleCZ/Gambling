@@ -27,7 +27,7 @@ async function checkAuth() {
     });
 
     if (!user) {
-        //window.location.href = 'index.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -60,7 +60,7 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            //window.location.href = "index.html";
+            window.location.href = "index.html";
         }, 5000);
         return;
     }
@@ -68,7 +68,7 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            //window.location.href = "index.html";
+            window.location.href = "index.html";
         }, 5000);
         return;
     }
