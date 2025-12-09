@@ -40,48 +40,6 @@
     bottom: -2vh;
 }
 
-#ach {
-    background-image: url('main/achievements/bronze.png');
-    background-size: cover;
-    width: 150vh;
-    height: 30vh;
-    position: absolute;
-    top: 0;
-    transition: transform 1s;
-    transform: translateY(-120%);
-}
-
-.achActive {
-    transform: translateY(10%) !important;
-}
-
-#achImg {
-    background-image: url('main/achievements/slotSpin100.png');
-    background-size: cover;
-    height: 100%;
-    aspect-ratio: 1 / 1;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-#achName{
-    text-decoration: underline;
-    font-size: 6vh;
-    margin: 1vh;
-    font-weight: bold;
-}
-#achTextDiv {
-    position: absolute;
-    width: 78.5%;
-    left: 19.25%;
-    top: 15%;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-} 
-
 #logoutBtn {
     position: absolute;
     z-index: 100;
