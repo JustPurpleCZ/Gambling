@@ -331,6 +331,7 @@ div, .kostkar {
     cursor: pointer;
     transition: opacity 0.2s;
     position: absolute;
+    right: 0;
 }
 
 /* Forms */
