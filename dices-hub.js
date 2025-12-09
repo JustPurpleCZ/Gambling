@@ -80,10 +80,13 @@ async function displayLobbies() {
         return;
     }
 
-    const lobbiesInfoSnap = await ref(pathRef);
+    const lobbiesInfoSnap = await get(pathRef);
     const lobbiesInfo = lobbiesInfoSnap.val();
 
-    lobbiesInfo.forEach(lobby => {
+    console.log(lobbiesInfo);
+    console.log(lobbiesInfo.array);
+
+    for (const lobby in lobbiesInfo) {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
@@ -112,7 +115,7 @@ async function displayLobbies() {
         const joinBtn = lobbyDiv.querySelector('.join-btn');
         joinBtn.addEventListener('click', () => joinLobby(lobby.lobbyId));
         container.appendChild(lobbyDiv);
-    });
+    }
 }
 
 // Create lobby
