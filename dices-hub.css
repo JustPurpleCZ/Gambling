@@ -147,7 +147,7 @@ div, .kostkar {
 .exit-btn {
     position: absolute;
     top: 2vh;
-    right: 2vh;
+    left: 2vh;
     width: 30vh;
     height: 10vh;
     background-image: url(icon/exit.png);
