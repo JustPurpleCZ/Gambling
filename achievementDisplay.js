@@ -159,6 +159,7 @@ onAuthStateChanged(auth, async (user) => {
             top: 0;
             transition: transform 1s;
             transform: translateY(-120%);
+            z-index: 1000000;
         }
 
         .achActive {
