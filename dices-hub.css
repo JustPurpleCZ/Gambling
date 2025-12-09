@@ -117,13 +117,6 @@ div, .kostkar {
     justify-content: center;
 }
 
-.game-button:hover, .exit-btn:hover, .lobby:hover, .join-btn:hover, .submit-btn:hover, .counter-arrow:hover {
-    opacity: 0.8;
-}
-
-.game-button:active, .counter-arrow:active {
-    opacity: 0.6;
-}
 
 .game-button {
     width: 50vh;
