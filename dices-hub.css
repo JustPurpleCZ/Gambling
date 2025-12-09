@@ -436,7 +436,7 @@ div, .kostkar {
 }
 
 .counter-arrow:hover {
-    background-color: #ccc;
+    filter: brightness(1.1);
 }
 
 .counter-arrow:active {
