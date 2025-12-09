@@ -84,8 +84,8 @@ const particleStyle = document.createElement('style');
 particleStyle.textContent = `
     .particle {
         position: fixed;
-        width: 1.5vh;
-        height: 1.5vh;
+        width: 2vh;
+        height: 2vh;
         pointer-events: none;
         z-index: 9999;
     }
@@ -152,9 +152,10 @@ function triggerAchievementParticles(number) {
     // Create 3 particle pops at random positions
     for (let i = 0; i < number; i++) {
         setTimeout(() => {
-        const randomX = Math.random() * window.innerWidth;
-        const randomY = Math.random() * window.innerHeight;
-        createParticlePop(randomX, randomY, 50);
+            const randomX = Math.random() * window.innerWidth;
+            const randomY = Math.random() * window.innerHeight;
+            createParticlePop(randomX, randomY, 50);
+            pop.play();
         }, i * 200);
         
     }
@@ -255,6 +256,8 @@ let achWaitingList = [];
 let achDisplaying = false;
 let unlockedAchList;
 const confetti = new Audio('sound/confetti.mp3'); 
+const yay = new Audio('sound/yay.mp3');
+const pop = new Audio('sound/pop.mp3');
 
 async function getAchInfo() {
     if (achDisplaying) {
@@ -313,6 +316,9 @@ function showAchievement(achName, achDescription, achValue, achImg) {
                 break;
             case "gold":
                 triggerAchievementParticles(9);
+                setTimeout(() => {
+                    yay.play();
+                }, 1000);
                 break;
         }
     }, 1000);
