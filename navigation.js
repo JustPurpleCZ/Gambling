@@ -227,7 +227,6 @@ async function getAchInfo() {
 
     console.log("Achievement information: ", achName, achDescription, achValue, achImg)
 
-    //Show achievement here
     showAchievement(achName, achDescription, achValue, achImg);
     setTimeout(() => {
         achDisplaying = false;

@@ -25,6 +25,12 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
     uid = user.uid;
+
+    const moneySnap = await get(ref(db, `/users/${uid}/credits`));
+    if (!moneySnap.exists() || moneySnap.val() > 25) {
+        window.location.href = "navigation.html";
+        return;
+    }
 });
 
 // DOM element references

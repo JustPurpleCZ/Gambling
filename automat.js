@@ -1,3 +1,4 @@
+//Firebase (O)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
@@ -18,6 +19,7 @@ const db = getDatabase(app);
 
 const localMode = JSON.parse(localStorage.getItem('localMode'));
 
+//Kontrola přihlášení (O)
 async function checkAuth() {
     const user = await new Promise(resolve => {
         const unsub = onAuthStateChanged(auth, (u) => {
@@ -31,6 +33,7 @@ async function checkAuth() {
         return;
     }
 
+    //Získání informací o uživateli (O)
     if (!localMode) {
         onDisconnect(ref(db, `/users/${user.uid}/slotMachine/lastOnline`)).set(Math.floor(Date.now() / 1000));
 
@@ -74,14 +77,13 @@ async function checkAuth() {
     }
 }
 
-// Get user data
 let localBalance;
-let userData;
 
-// O - Exit function (formerly logout)
+//Odhlášení (O)
 function logout() {
     window.location.href = "navigation.html";
 }
+
 const symbolImages = [
     'icon/1.png',
     'icon/raiden.png',
@@ -124,7 +126,6 @@ document.addEventListener('mousemove', (e) => {
 });
 document.addEventListener('click', () => {
     if (!isDoorOpen) return; // Only allow note pickup when door is open
-    //CLOUDFUNCTIONHERE
     
     const notes = Array.from(document.querySelectorAll('.banknote'));
     if (notes.length === 0) return;
@@ -171,28 +172,23 @@ let playerCredit = 0;
 let betAmount = 5;
 const displayDiv = document.querySelector('.credit-display');
 
-
+//Nastavení peněz v peněžence a automatu (O)
 async function initializeWallet() {
     if (!localMode) {
         await checkAuth();
 
         if (!localBalance) {
-            console.log("NO LOCAL BALANCE, LOGGING OUT")
-            await localBalance;
-            console.log(localBalance)
-            setTimeout(() => {
-            //window.location.href = 'index.html';
+            window.location.href = 'index.html';
             return;
-            }, 10000);
-            
         }
+
         walletBalance = localBalance.walletBalance;
         playerCredit = localBalance.creditBalance;
         updateAvailableBills();
         updateCreditDisplay();
 
     } else {
-        console.log("LOCAL MODE, INITIALISING WALLET WITH DEFAULT VALUES")
+        console.log("Local mode values initialised");
         walletBalance = 500;
         playerCredit = 100;
         updateAvailableBills();
@@ -335,10 +331,6 @@ function playTickSound() {
     currentTickIndex = (currentTickIndex + 1) % tickSoundPool.length;
 }
 
-function checkSymbolPosition(top) {
-    const centerPosition = SYMBOL_HEIGHT;
-    return Math.abs(top - centerPosition) < 0.5;
-}
 function getSymbolsAtPosition(position) {
     return Array.from(reels).map(reel => {
         const symbols = Array.from(reel.children);
@@ -349,6 +341,7 @@ function getSymbolsAtPosition(position) {
         return symbol ? symbol.querySelector('img').src : null;
     });
 }
+
 function playWinSound(win_type) {
     let soundToPlay;
     
@@ -371,11 +364,6 @@ function playWinSound(win_type) {
             console.log('Win sound failed:', error);
         });
     }
-}
-
-// Helper function to convert vh to pixels
-function vhToPx(vh) {
-    return (window.innerWidth * vh) / 100;
 }
 
 function initializeReel(reel) {
@@ -407,12 +395,14 @@ function playLeverAnimation() {
         lever.src = LEVER_STATIC;
     }, 500);
 }
+
 function shakeSound() {
     squeakSound.currentTime = 0;
     squeakSound.play().catch(error => {
         console.log('Sound play failed:', error);
     });
 }
+
 function noSound() {
     wrong.currentTime = 0;
     wrong.play().catch(error => {
@@ -426,6 +416,7 @@ function playLeverSound() {
         console.log('Sound play failed:', error);
     });
 }
+
 let radioClickCount = 0;
 let lastRadioClickTime = 0;
 const RADIO_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
@@ -516,7 +507,6 @@ async function toggleMusic() {
     }
 }
 
-//DEBUG - NOW ONLY VISUAL, WIN CHECKING IS A CLOUDFUNCTION
 function checkWin() {
     const middleRow = getSymbolsAtPosition(1);
     if (middleRow.every(symbol => symbol === middleRow[0])) {
@@ -562,10 +552,6 @@ function checkWin() {
     updateCreditDisplay();
     return false;
 }
-let canSpin, spinPositions, newCredit;
-let reel1stopIndex = 0;
-let reel2stopIndex = 0;
-let reel3stopIndex = 0;
 
 function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
     return new Promise(resolve => {
@@ -710,7 +696,7 @@ async function spin() {
     playLeverSound();
     playLeverAnimation();
     
-    //Send cloud spin request
+    //Cloudová funkce zatočení (O)
     if (!localMode) {
         const token = await auth.currentUser.getIdToken();
         const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/spin", {
@@ -733,6 +719,7 @@ async function spin() {
         let finalSymbols = [];
         let finalNumbers = Object.values(data.winSlots);
 
+        //Nakládání s daty z funkce (O)
         finalNumbers.forEach(number => {
             switch (number) {
                 case 1:
@@ -767,8 +754,8 @@ async function spin() {
         
         isSpinning = false;
     } else {
-        console.log("LOCAL MODE, SIMULATING SPIN RESULT")
-        console.log("Spin result: none")
+        //Nastavení výherních dat v lokálním režimu (O)
+        console.log("Local mode, simulating spin result");
 
         let finalSymbols = [];
         let finalNumbers = [1, 1, 1, 1, 1, 1, 1, 1, 1];
@@ -830,6 +817,7 @@ async function spawnNote(noteValue) {
         }, 100);
     });
 }
+
 async function pickupNote(note) {
     if (note.dataset.isAnimating) return;
     note.dataset.isAnimating = 'true';
@@ -897,6 +885,7 @@ async function pickupNote(note) {
         }, { once: true });
     });
 }
+
 const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
 const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
 const buttonImage = document.querySelector('.button img')
@@ -943,8 +932,8 @@ async function cashout() {
                 pickupSound.play().catch(error => {
                     console.log('Sound play failed:', error);
                 });
-                // Add to credit
-                //DEBUG - SEND CASH IN CLOUD REQUEST
+
+                //Cloudová funkce pro cash in peněz (O)
                 if (!localMode) {
 
                     const token = await auth.currentUser.getIdToken();
@@ -961,11 +950,13 @@ async function cashout() {
                     if (!data.valid) {
                         console.log("CASH IN FAILED");
                     } else {
+                        //Přisání peněz do automatu (O)
                         playerCredit += value;
                         updateCreditDisplay();
                     }
                 } else {
-                    console.log("LOCAL MODE, SIMULATING CASH IN")
+                    //Simulovaný cash in v lokálním režimu (O)
+                    console.log("Local mode, simulating cash in");
                     playerCredit += value;
                     updateCreditDisplay();
                 }
@@ -1011,6 +1002,7 @@ async function cashout() {
     }
 }
 
+//Cloudová funkce pro cash out (O)
 async function sendCashoutRequest() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/cash_out", {
@@ -1027,7 +1019,7 @@ async function sendCashoutRequest() {
     if (data.valid) {
         console.log("Cashout success: ", data);
     } else {
-        console.log("CASH OUT FAILED");
+        console.log("Cash out failed");
     }
 }
 
