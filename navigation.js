@@ -190,8 +190,8 @@ const popSoundPool = Array.from({ length: 5 }, () => {
 let currentPopIndex = 0;
 
 function playPopSound() {
-    PopSoundPool[currentPopIndex].currentTime = 0;
-    PopSoundPool[currentPopIndex].play().catch(error => {
+    popSoundPool[currentPopIndex].currentTime = 0;
+    popSoundPool[currentPopIndex].play().catch(error => {
         console.log('pop sound failed:', error);
     });
     currentPopIndex = (currentPopIndex + 1) % popSoundPool.length;
