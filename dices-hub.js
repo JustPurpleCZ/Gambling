@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, get, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -43,23 +43,22 @@ async function initWallet(user) {
     walletDisplay.textContent = `Wallet: $${balance}`;
 }
 
-const pathRef = ref(db, "games/lobbies/dices");
 
 // Load lobbies
 async function loadLobbies() {
     lobbies = [];
+    const pathRef = ref(db, "games/lobbies/dices");
     const snapshot = await get(pathRef);
     
     if (snapshot.exists()) {
         const data = snapshot.val();
         for (const lobby in data) {
-            lobbies.push(data[lobby.key]);
+            lobbies.push(data[lobby]);
         }
     }
 
     displayLobbies();
 }
-
 const betSelector = document.querySelector('.bet-selector');
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
@@ -71,7 +70,7 @@ document.querySelectorAll('.bet-option').forEach(option => {
     });
 });
 // Display lobbies
-async function displayLobbies() {
+function displayLobbies() {
     const container = document.getElementById("lobbiesContainer");
     container.innerHTML = '';
 
@@ -80,21 +79,12 @@ async function displayLobbies() {
         return;
     }
 
-    const lobbiesInfoSnap = await get(pathRef);
-    const lobbiesInfo = lobbiesInfoSnap.val();
-
-    console.log(lobbiesInfo);
-
-    for (const lobby in lobbiesInfo) {
-        if (!lobby["joinAble"]) {
-            continue;
-        }
-        
+    lobbies.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
         // Set background image based on privacy status
-        if (lobby["isPrivate"]) {
+        if (lobby.isPrivate) {
             lobbyDiv.style.backgroundImage = "url('main/dice/joinlocked.png')";
         } else {
             lobbyDiv.style.backgroundImage = "url('main/dice/joinfree.png')";
@@ -103,22 +93,22 @@ async function displayLobbies() {
         lobbyDiv.innerHTML = `
             <div class="lobby-info">
                 <div>
-                    <div class="lobby-value">${lobby["playerCount"]}/${lobby["maxPlayers"]}</div>
+                    <div class="lobby-value">${lobby.playerCount}/${lobby.maxPlayers}</div>
                 </div>
                 <div>
-                    <div class="lobby-value">${lobby["name"]}</div>
+                    <div class="lobby-value">${lobby.name}</div>
                 </div>
                 <div>
-                    <div class="lobby-value">$${lobby["betSize"]}</div>
+                    <div class="lobby-value">$${lobby.betSize}</div>
                 </div>
             </div>
             <div class="join-btn"></div>
         `;
 
         const joinBtn = lobbyDiv.querySelector('.join-btn');
-        joinBtn.addEventListener('click', () => joinLobby(lobby["lobbyId"]));
+        joinBtn.addEventListener('click', () => joinLobby(lobby.lobbyId));
         container.appendChild(lobbyDiv);
-    }
+    });
 }
 
 // Create lobby
@@ -188,12 +178,11 @@ async function joinLobby(selectedLobbyId) {
 
 // Quick join
 async function quickJoin() {
-    const lobbiesInfoSnap = await get(pathRef);
-    const lobbiesInfo = lobbiesInfoSnap.val();
-
-    for (const lobby of lobbiesInfo) {
-        if (lobby["maxPlayers"] == 2 && lobby["playerCount"] < 2 && lobby["betSize"] == selectedBetSize && !lobby["isPrivate"] && lobby["joinAble"]) {
-            await joinLobby(lobby["lobbyId"]);
+    await loadLobbies();
+    for (const lobby of lobbies) {
+        if (lobby.maxPlayers == 2 && lobby.playerCount < 2 && 
+            lobby.betSize == selectedBetSize && !lobby.isPrivate) {
+            await joinLobby(lobby.lobbyId);
             return;
         }
     }
@@ -240,7 +229,7 @@ document.getElementById('quickJoinBtn').addEventListener('click', quickJoin);
 // Lobbies button - opens both menus side by side
 document.getElementById('lobbiesBtn').addEventListener('click', () => {
     lobbiesModal.classList.add('active');
-    displayLobbies();
+    loadLobbies();
 });
 
 // Dealer button
@@ -308,5 +297,8 @@ document.getElementById('playerCountDown').addEventListener('click', (e) => {
 checkAuth();
 
 // Auto-refresh lobbies every 5 seconds when modal is open
-onChildAdded(pathRef, () => { displayLobbies(); });
-onChildRemoved(pathRef, () => { displayLobbies(); });
+setInterval(() => {
+    if (lobbiesModal.classList.contains('active')) {
+        loadLobbies();
+    }
+}, 5000);
