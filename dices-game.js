@@ -8,7 +8,7 @@ const firebaseConfig = {
     authDomain: "gambling-goldmine.firebaseapp.com",
     databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.firebasestorage.app",
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
