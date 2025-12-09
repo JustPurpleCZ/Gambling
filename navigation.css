@@ -45,6 +45,8 @@
     z-index: 100;
     top: 1vh;
     left: 1vh;
+    width: 15vh;
+    aspect-ratio: 76 / 19;
 
     /* match icon size and use nearest-neighbor scaling for pixel art */
     width: var(--base-icon-size);
