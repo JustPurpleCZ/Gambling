@@ -148,12 +148,15 @@ function moveParticles() {
     }
 }
 
-function triggerAchievementParticles() {
+function triggerAchievementParticles(number) {
     // Create 3 particle pops at random positions
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < number; i++) {
+        setTimeout(() => {
         const randomX = Math.random() * window.innerWidth;
         const randomY = Math.random() * window.innerHeight;
         createParticlePop(randomX, randomY, 50);
+        }, i * 200);
+        
     }
 }
 
@@ -294,14 +297,24 @@ function showAchievement(achName, achDescription, achValue, achImg) {
     const achname = document.getElementById('achName');
     const achds = document.getElementById('achDescription');
     ach.classList.add("achActive");
-    achicon.style.backgroundImage = `url('main/achievements/${achImg}.png')`;
+    achicon.style.backgroundImage = `url('main/achievements/${achImg}')`;
     ach.style.backgroundImage = `url('main/achievements/${achValue}.png')`;
     achname.textContent = achName;
     achds.textContent = achDescription;
     
     setTimeout(() => {
         confetti.play();
-        triggerAchievementParticles(); // <-- PARTICLE POPS TRIGGERED HERE
+        switch (achValue) {
+            case "bronze":
+                triggerAchievementParticles(3);
+                break;
+            case "silver":
+                triggerAchievementParticles(6);
+                break;
+            case "gold":
+                triggerAchievementParticles(9);
+                break;
+        }
     }, 1000);
     
     setTimeout(() => {
