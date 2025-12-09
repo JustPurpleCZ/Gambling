@@ -1,3 +1,4 @@
+//Firebase inicializace (O)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -19,7 +20,7 @@ const auth = getAuth(app);
 let lobbies = [];
 let selectedBetSize = 100;
 
-// Check authentication
+//Kontrola přihlášení (O)
 async function checkAuth() {
     const user = await new Promise(resolve => {
         const unsub = onAuthStateChanged(auth, (u) => {
@@ -36,6 +37,7 @@ async function checkAuth() {
     initWallet(user);
 }
 
+//Nastavení peněženky (O)
 async function initWallet(user) {
     const balanceSnap = await get(ref(db, `/users/${user.uid}/credits`));
     const balance = balanceSnap.val();
@@ -43,13 +45,13 @@ async function initWallet(user) {
     walletDisplay.textContent = `Wallet: $${balance}`;
 }
 
-
-// Load lobbies
+//Načtení dostupných lobby (O)
 async function loadLobbies() {
     lobbies = [];
     const pathRef = ref(db, "games/lobbies/dices");
     const snapshot = await get(pathRef);
     
+    //Tvorba seznamu lobby (O)
     if (snapshot.exists()) {
         const data = snapshot.val();
         for (const lobby in data) {
@@ -59,6 +61,7 @@ async function loadLobbies() {
 
     displayLobbies();
 }
+
 const betSelector = document.querySelector('.bet-selector');
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
@@ -106,17 +109,19 @@ function displayLobbies() {
     });
 }
 
-// Create lobby
+//Vytvoření lobby (O)
 async function createLobby() {
     const inputLobbyName = document.getElementById("inputName").value;
     const inputMaxPlayers = document.getElementById("inputMaxPlayers").value;
     let inputPassword = document.getElementById("inputCreatePassword").value;
     const inputBetSize = document.getElementById("inputCreateBetSize").value;
 
+    //Veřejné lobby (O)
     if (inputPassword === "") {
         inputPassword = null;
     }
 
+    //Funkce pro vytvoření (O)
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-create-gtw5ppnvta-ey.a.run.app", {
         method: "POST",
@@ -134,6 +139,7 @@ async function createLobby() {
 
     const response = await res.json();
 
+    //Nastavení v localStorage a přesměrování (O)
     if (response.success) {
         localStorage.setItem("dicesLobbyId", response.lobbyId);
         localStorage.setItem("dicesIsHost", true);
@@ -144,7 +150,7 @@ async function createLobby() {
     }
 }
 
-// Join lobby
+//Připojení k lobby (O)
 async function joinLobby(selectedLobbyId) {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_join", {
@@ -171,7 +177,7 @@ async function joinLobby(selectedLobbyId) {
     }
 }
 
-// Quick join
+//Quick join (v podstatě join, jenom předtím lobby vyfiltruje na pouze lobby pro 2 hráče, které jsou veřejné) (O)
 async function quickJoin() {
     await loadLobbies();
     for (const lobby of lobbies) {
@@ -182,7 +188,7 @@ async function quickJoin() {
         }
     }
 
-    // Create new lobby if none found
+    //Vytvoření lobby v případě že žádné není (O)
     const inputName = document.getElementById("inputName");
     const inputMaxPlayers = document.getElementById("inputMaxPlayers");
     const inputBetSize = document.getElementById("inputCreateBetSize");
@@ -211,7 +217,7 @@ document.querySelectorAll('.bet-option').forEach(option => {
     });
 });
 
-// Quick join button
+//Quick join tlačítko (O)
 document.getElementById('quickJoinBtn').addEventListener('click', quickJoin);
 
 // Lobbies button - opens both menus side by side
@@ -238,7 +244,7 @@ document.getElementById('createForm').addEventListener('submit', (e) => {
     createLobby();
 });
 
-// Exit button
+//Exit tlačítko (O)
 document.getElementById('exitBtn').addEventListener('click', () => {
     window.location.href = 'navigation.html';
 });

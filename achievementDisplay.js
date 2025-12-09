@@ -1,4 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+//Inicializace Firebase (O)
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { getDatabase, ref, get, onChildAdded } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
@@ -12,7 +13,14 @@ const firebaseConfig = {
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
 
-const app = initializeApp(firebaseConfig);
+//Prevence opakovaného nastavení (O)
+let app;
+if (getApps().length > 0) {
+    app = getApps()[0];
+} else {
+    app = initializeApp(firebaseConfig);
+}
+
 const auth = getAuth(app);
 const db = getDatabase(app);
 

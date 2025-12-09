@@ -417,6 +417,7 @@ let radioClickCount = 0;
 let lastRadioClickTime = 0;
 const RADIO_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
 const RADIO_CLICK_TARGET = 10;
+let radioVladCount = 0;
 
 async function toggleMusic() {
     const noteContainer = document.querySelector('.music-container');
@@ -446,6 +447,7 @@ async function toggleMusic() {
         }
         // Trigger robot's special sequence
         await robotController.playRadioSpecialSequence();
+
         return;
     }
 

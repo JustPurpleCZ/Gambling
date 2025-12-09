@@ -1,3 +1,9 @@
+*{
+    font-family: "Tiny5", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 3vh;
+}
 body {
     font-family: 'Inter', sans-serif;
     touch-action: none; /* Prevents scrolling on touch devices when interacting with the wheel */

@@ -8,19 +8,21 @@ const firebaseConfig = {
     authDomain: "gambling-goldmine.firebaseapp.com",
     databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.firebasestorage.app",
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+const auth = getAuth(fbApp);
 
 const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
 const CARD_BG_ACTIVE = 'main/dice/playercard_playing.png';
+
+//Deklarace hodnot (O)
 let farkledThisTurn = false;
 let farkledDiceValues = null;
 let waitingForFarkleRelease = false;
@@ -49,7 +51,7 @@ let uid;
 
 let lobbyInfo;
 
-//Získání informace (O) 
+//Získání informace o 
 async function getLobbyInfo() {
     try {
         const snapshot = await get(lobbyRef);
@@ -71,23 +73,29 @@ let gameStarted = false;
 const activeGameRef = ref(db, `/games/active/dices/${lobbyId}`);
 console.log("Host: ", isHost, "LobbyId: ", lobbyId);
 
+//Hlavní game loop před začátkem hry (O)
 (async () => {
     await checkAuth();
     await getLobbyInfo();
 
+    //Kontrola, jestli je hra už spuštěná (O)
     const snapshot = await get(ref(db, `/games/active/dices/${lobbyId}`));
     if (snapshot.exists()) {
       console.log("Game already active, skipping lobby");
       gameStart();
     } else {
+    
+    //Nastavení prezence (stav připojení) (O)
     presenceRef = ref(db, `/games/lobbies/dices/${lobbyId}/players/${uid}/connected`);
     console.log("Setting presence for", uid);
     set(presenceRef, true);
     onDisconnect(presenceRef).set(false);
 
+    //Updatování playerlistu (O)
     onChildAdded(playersRef, () => { updatePlayerList(); });
     onChildRemoved(playersRef, () => { updatePlayerList(); });
 
+    //Odpojení v případě smazání lobby (O)
     onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId && !gameStarted) {
             onDisconnect(presenceRef).cancel();
@@ -95,6 +103,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
         }
     });
 
+    //Start hry v případě detekování že hra začala v databázi (O)
     onChildAdded(ref(db, `/games/active/dices`), (addedLobby) => {
         if (addedLobby.key === lobbyId) {
             gameStarted = true;
@@ -106,6 +115,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
   }
 })();
 
+//Start hry (pouze pro hosta) (O)
 let startBtn = document.getElementById("startBtn");
 if (isHost) {
     startBtn.style.display = "inline";
@@ -117,39 +127,53 @@ if (isHost) {
 const playerCountPar = document.getElementById("playerCountPar");
 let playerCount;
 
+//Funkce aktualizace hráčského listu (O)
 async function updatePlayerList() {
     console.log("Updating player list");
     let players;
+
     get(playersRef).then((snapshot) => {
+
         if (snapshot.exists()) {
             players = snapshot.val();
             console.log("Player list:", players);
             playerCount = 0;
+
+            //Vyčištění a přidání hráčů a informací o nich z databáze (O)
             playerList.replaceChildren();
             Object.values(players).forEach(player => {
+
                 console.log("Adding player:", player.username);
                 playerCount++;
                 const playerDiv = document.createElement("div");
                 const name = document.createElement("p");
                 playerList.appendChild(playerDiv);
                 playerDiv.appendChild(name);
+
+                /*
+                Vyhazování není plně implementováno (O)
                 if (isHost) {
                     const kickBtn = document.createElement("button");
                     playerDiv.appendChild(kickBtn);
                     kickBtn.textContent = "kick player";
                     kickBtn.addEventListener("click", () => { kick(player); });
                 }
+                */
+
                 name.textContent = player.username;
             });
+
             playerCountPar.textContent = playerCount + "/" + lobbyInfo.maxPlayers;
         } else {
             console.log("Not found");
         }
+
     }).catch(console.error);
 }
 
-async function kick(kickPlayer) { console.log("Kicking disabled"); }
+//async function kick(kickPlayer) { console.log("Kicking disabled"); }
 
+//Opuštění lobby (O)
 async function leaveLobby() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://dices-leave-gtw5ppnvta-ey.a.run.app", {
@@ -159,18 +183,16 @@ async function leaveLobby() {
     });
     const response = await res.json();
     console.log(response);
-    if (response.success) {
-        onDisconnect(presenceRef).cancel();
-        localStorage.removeItem("dicesLobbyId");
-        localStorage.removeItem("dicesIsHost");
-        window.location.href = "dices-hub.html";
-    } else {
-        console.log("Failed to leave:", response.reply);
-    }
+    
+    onDisconnect(presenceRef).cancel();
+    localStorage.removeItem("dicesLobbyId");
+    localStorage.removeItem("dicesIsHost");
+    window.location.href = "dices-hub.html";
 }
 
 document.getElementById("leaveBtn").addEventListener("click", () => { leaveLobby(); })
 
+//Spouštění hry (O)
 async function startGame() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_start", {
@@ -183,12 +205,14 @@ async function startGame() {
     if (!response.success) { console.log("Failed to start game:", response.reply); }
 }
 
+//Deklarování (O)
 let activePresenceRef;
 let playerOrder;
 const errorMessage = document.getElementById("errMessage");
 const activePlayerList = document.getElementById("activePlayerList");
 const activePlayersRef = ref(db, `/games/active/dices/${lobbyId}/players`);
 
+//Začátek hry, vše pod tímto bodem je related k aktivní hře (O)
 async function gameStart() {
     console.log("Game is starting");
     gameStarted = true;
@@ -197,6 +221,7 @@ async function gameStart() {
     set(activePresenceRef, true);
     onDisconnect(activePresenceRef).set(false);
 
+    //Odpojení při smazání aktivního lobby
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId) {
             onDisconnect(activePresenceRef).cancel();
@@ -204,6 +229,7 @@ async function gameStart() {
         }
     });
 
+    //Update hráčovských karet při změně dat (O)
     onValue(ref(db, `/games/active/dices/${lobbyId}/playerOrder`), (snap) => {
         if (snap.val() != null) {
           playerOrder = snap.val()
@@ -218,6 +244,7 @@ async function gameStart() {
     });
 }
 
+// UPDATED: Complete rewrite of updateActivePlayerList
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
@@ -236,7 +263,7 @@ async function updateActivePlayerList() {
     let myPlayerIndex = -1;
     let allPlayersData = [];
 
-    // Build array of all players with their data and index
+    //Přidání hráčů (O)
     for (let i = 0; i < playerOrder.length; i++) {
         const playerId = playerOrder[i];
         const playerData = playersInfo.val()[playerId];
@@ -286,6 +313,7 @@ async function updateActivePlayerList() {
     if (myPlayerData) { updateMyPlayerInfo(myPlayerData); }
     updateBottomControlPanel(isMyTurnThisUpdate);
 
+    //Detekce konce hry (O)
     if (gameEnded) {
     const idSnap = await get(ref(db, `/games/active/dices/${lobbyId}/winnerId`));
     const winnerId = idSnap.val();
@@ -396,6 +424,15 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
     return result;
 }
 
+// NEW FUNCTION
+function hideCurrentPlayerDisplay() {
+    const displayDiv = document.querySelector(".current-player-display");
+    if (displayDiv) {
+        displayDiv.style.display = "none";
+    }
+}
+
+// NEW FUNCTION
 function hideOtherPlayersPanel() {
     const panel = document.querySelector(".other-players-panel");
     if (panel) {
@@ -632,10 +669,8 @@ let isRolling = false;
 let pendingRollValues = null;
 let cupCanCollect = true;
 let wasMyTurnLastUpdate = false;
-let lastOtherPlayerData = null;
 
 let rollPending = false;
-let rollResponse = null;
 let previousDiceValues = [];
 let waitingForRelease = false;
 let allDiceLockedRollPending = false;
@@ -645,7 +680,6 @@ const cupImg = 'main/dice/cup.png';
 const cupSpillImg = 'main/dice/cup_spillF.gif';
 const diceImages = [];
 for (let i = 1; i <= 6; i++) { diceImages.push(`main/dice/dice_${i}.png`); }
-const lockedOverlay = 'main/dice/dice_lock_1.gif';
 
 cup.style.backgroundImage = `url(main/dice/cup.png)`;
 cup.style.backgroundSize = 'contain';
@@ -774,10 +808,12 @@ async function performRoll() {
   rollPending = true;
   
   try {
+
     const snap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rollCount`));
     const rollCount = snap.val();
 
-    if (rollCount < 3) {
+    if (rollCount < 67) {
+      //Hození koskami (O)
       const token = await auth.currentUser.getIdToken();
       const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/dices_roll", {
         method: "POST",
@@ -805,6 +841,7 @@ async function performRoll() {
         });
         console.log("Perm locked count after roll:", permLockedCount);
         
+        //Získávání hozených kostek z databáze
         const rolledSnap = await get(ref(db, `/games/active/dices/${lobbyId}/players/${uid}/rolledDice`));
         pendingRollValues = rolledSnap.val();
         console.log("Dice values from server:", pendingRollValues);
@@ -1489,11 +1526,4 @@ window.addEventListener('resize', () => {
   updateCupPosition();
   dice.forEach(die => { renderDiePosition(die); });
   repositionLockedDice();
-});
-
-window.addEventListener("keydown", (key) => {
-  if (key.key === "l") {
-    localStorage.removeItem("lobbyName");
-    window.location.href = "dices-hub.html";
-  }
 });

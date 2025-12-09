@@ -17,6 +17,7 @@ const auth = getAuth(app);
 
 // Wait for auth
 onAuthStateChanged(auth, async (user) => {
+    //Kontrola, je li uživatel přihlášený (O)
     if (user) {
         window.location.href = 'navigation.html';
         return;
@@ -76,6 +77,7 @@ onAuthStateChanged(auth, async (user) => {
             if (isLogin) {
                 // Login with Firebase
                 try {
+                    //Funkce pro inicializaci účtu (O)
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
                     const token = await userCredential.user.accessToken;
 
@@ -127,6 +129,7 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
+                //Kontrola, zda li je jméno volné (O)
                 const res1 = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/username_check", {
                         method: "POST",
                         headers: {
@@ -146,6 +149,7 @@ onAuthStateChanged(auth, async (user) => {
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const token = await userCredential.user.accessToken;
 
+                    //Inicializace účtu (O)
                     const res = await fetch("https://europe-west3-gambling-goldmine.cloudfunctions.net/account_init", {
                         method: "POST",
                         headers: {
