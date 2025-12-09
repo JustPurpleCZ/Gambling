@@ -25,7 +25,7 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = 'index.html';
         return;
     }
-    uid = user.uid;
+    let uid = user.uid;
 
     let achWaitingList = [];
     let achDisplaying = false;
