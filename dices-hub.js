@@ -86,7 +86,7 @@ async function displayLobbies() {
     console.log(lobbiesInfo);
     console.log(lobbiesInfo.array);
 
-    lobbiesInfo.array.forEach(lobby => {
+    for (const lobby in lobbiesInfo) {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
@@ -115,7 +115,7 @@ async function displayLobbies() {
         const joinBtn = lobbyDiv.querySelector('.join-btn');
         joinBtn.addEventListener('click', () => joinLobby(lobby.lobbyId));
         container.appendChild(lobbyDiv);
-    });
+    }
 }
 
 // Create lobby
