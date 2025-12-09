@@ -183,7 +183,19 @@ const achHTML = `
 `;
 
 document.body.insertAdjacentHTML('beforeend', achHTML);
+const popSoundPool = Array.from({ length: 5 }, () => {
+    const audio = new Audio('sound/pop.mp3');
+    return audio;
+});
+let currentPopIndex = 0;
 
+function playPopSound() {
+    PopSoundPool[currentPopIndex].currentTime = 0;
+    PopSoundPool[currentPopIndex].play().catch(error => {
+        console.log('pop sound failed:', error);
+    });
+    currentPopIndex = (currentPopIndex + 1) % popSoundPool.length;
+}
 async function getAchInfo() {
     if (achDisplaying) {
         return;
@@ -372,7 +384,7 @@ function triggerAchievementParticles(number) {
             const randomX = Math.random() * window.innerWidth;
             const randomY = Math.random() * window.innerHeight;
             createParticlePop(randomX, randomY, 50);
-            pop.play();
+            playPopSound();
         }, i * 200);
         
     }

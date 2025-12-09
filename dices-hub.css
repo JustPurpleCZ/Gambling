@@ -325,17 +325,12 @@ div, .kostkar {
 }
 .join-btn {
     width: 100px;
-    height: 35px;
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
+    height: 100%;
     border: none;
     color: transparent;
     cursor: pointer;
     transition: opacity 0.2s;
     position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
 }
 
 /* Forms */
