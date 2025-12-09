@@ -159,7 +159,14 @@ div, .kostkar {
     background-image: url(icon/exit.png);
 }
 
-/* Bet Selector */
+.game-button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.game-button:active {
+  transform: scale(0.95);
+}
 .bros {
     position: relative;
 }
