@@ -6,9 +6,9 @@ import { getDatabase, ref, get, set, onDisconnect } from "https://www.gstatic.co
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
@@ -115,7 +115,7 @@ let mouseX = 0;
 let mouseY = 0;
 let screenClickCount = 0;
 let lastScreenClickTime = 0;
-const SCREEN_CLICK_RESET_TIME = 2000; // Reset counter after 2 seconds of no clicks
+const SCREEN_CLICK_RESET_TIME = 2000;
 const SCREEN_CLICK_TARGET = 10;
 const screenClickSound = new Audio('sound/screentap.mp3');
 
@@ -125,7 +125,7 @@ document.addEventListener('mousemove', (e) => {
     mouseY = e.clientY;
 });
 document.addEventListener('click', () => {
-    if (!isDoorOpen) return; // Only allow note pickup when door is open
+    if (!isDoorOpen) return;
     
     const notes = Array.from(document.querySelectorAll('.banknote'));
     if (notes.length === 0) return;
@@ -160,7 +160,7 @@ const MUSIC_STATES = {
     PLAYING_START: 'main/radio/ni.gif'
 };
 
-// Add note sprites
+// Music note sprites
 const NOTE_SPRITES = [
     'main/radio/notes/note1.png',
     'main/radio/notes/note2.png',
@@ -227,10 +227,6 @@ function closeDoor() {
     
     // Move wallet back down after door closes
     updateWalletPosition(false);
-    
-    // Clean up any remaining notes in the door
-
-    
     // Reset states
     enableWalletNoteTransfer(false);
     isProcessingCashout = false;
@@ -260,12 +256,12 @@ class MusicNote {
         this.element.src = NOTE_SPRITES[Math.floor(Math.random() * NOTE_SPRITES.length)];
         
         // Random starting position near the radio
-        this.x = -20; // -10 to 10vh
+        this.x = -20;
         this.y = -26;
         
         // Random movement parameters
-        this.speedX = (Math.random() - 0.5) * 0.2; // -1 to 1
-        this.speedY = -Math.random() * 0.1 - 0.2; // -3 to -1
+        this.speedX = (Math.random() - 0.5) * 0.2;
+        this.speedY = -Math.random() * 0.1 - 0.2;
         this.rotation = Math.random() * 360;
         this.rotationSpeed = (Math.random() - 0.5) * 4;
         
@@ -298,7 +294,7 @@ class MusicNote {
 let musicNotes = [];
 let noteInterval = null;
 
-// Create audio elements
+// audio elements because i couldnt be bothered to rewrite the sound system
 const leverSound = new Audio('sound/lever.mp3');
 const backgroundMusic = new Audio('sound/background_music.mp3');
 const yaySound = new Audio('sound/yay.mp3');
@@ -499,8 +495,6 @@ async function toggleMusic() {
         }
         
         // Let existing notes continue moving until they're off screen
-        // The animation loop will continue until all notes are gone
-        
         await new Promise(resolve => setTimeout(resolve, 500));
         musicToggle.src = MUSIC_STATES.STATIC;
         isMusicPlaying = false;
@@ -557,7 +551,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
     return new Promise(resolve => {
         const symbols = Array.from(reel.children);
         let symbolsPassed = 0;
-        const speed = 4; // vh per frame
+        const speed = 4; // vh
         
         // Create random symbols array + winning symbols at the end
         const symbolQueue = [];
@@ -568,9 +562,9 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
         }
         
         // Add winning symbols at the end (top, middle, bottom for this reel)
-        symbolQueue.push(finalSymbols[reelIndex]); // top (0vh)
-        symbolQueue.push(finalSymbols[reelIndex + 3]); // middle (14vh)
-        symbolQueue.push(finalSymbols[reelIndex + 6]); // bottom (28vh)
+        symbolQueue.push(finalSymbols[reelIndex]);
+        symbolQueue.push(finalSymbols[reelIndex + 3]);
+        symbolQueue.push(finalSymbols[reelIndex + 6]);
         
         let queueIndex = 0;
         let allWinningSymbolsPlaced = false;
@@ -591,7 +585,6 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                 
                 // When symbol goes off screen, wrap it and assign next symbol from queue
                 if (top >= SYMBOL_HEIGHT * (VISIBLE_SYMBOLS + 1)) {
-                    // KEY FIX: Properly normalize the position
                     top = top - (SYMBOL_HEIGHT * TOTAL_SYMBOLS);
                     
                     // Update the image
@@ -629,11 +622,11 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                     
                     if (winningSymbolElements.length >= 3) {
                         const targetPositions = [
-                            -SYMBOL_HEIGHT,           // -14vh (top buffer)
-                            0,                        // 0vh (visible top)
-                            SYMBOL_HEIGHT,            // 14vh (visible middle)
-                            SYMBOL_HEIGHT * 2,        // 28vh (visible bottom)
-                            SYMBOL_HEIGHT * 3         // 42vh (bottom buffer)
+                            -SYMBOL_HEIGHT,
+                            0,
+                            SYMBOL_HEIGHT,
+                            SYMBOL_HEIGHT * 2,
+                            SYMBOL_HEIGHT * 3
                         ];
                         
                         // Assign each winning symbol to its target position
@@ -641,7 +634,7 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                             parseFloat(a.style.top) - parseFloat(b.style.top)
                         );
                         
-                        // The three winning symbols should be at positions 1, 2, 3 (0vh, 14vh, 28vh)
+                        // The three winning symbols should be their positions
                         sortedWinningSymbols.forEach((symbol, idx) => {
                             symbol.style.transition = 'top 0.15s ease-out';
                             symbol.style.top = `${targetPositions[idx + 1]}vh`;
@@ -649,8 +642,8 @@ function animateReelSimple(reel, reelIndex, totalSymbolsToSpin, finalSymbols) {
                         
                         // Position remaining symbols
                         const nonWinningSymbols = symbols.filter(s => !winningSymbolElements.includes(s));
-                        const usedPositions = [1, 2, 3]; // Winning symbols use these
-                        const availablePositions = [0, 4]; // Buffer positions
+                        const usedPositions = [1, 2, 3];
+                        const availablePositions = [0, 4];
                         
                         nonWinningSymbols.forEach((symbol, idx) => {
                             symbol.style.transition = 'top 0.15s ease-out';
@@ -742,7 +735,6 @@ async function spin() {
             // Reel 1: base amount, Reel 2: +10, Reel 3: +25 (10+15)
             const extraSymbols = reelIndex * 10 + (reelIndex === 2 ? 15 : 0);
             const totalSymbols = 20 + extraSymbols;
-            // Add 1 extra symbol for reel 3 to compensate
             const adjustedTotal = reelIndex === 2 ? totalSymbols + 1 : totalSymbols;
             return animateReelSimple(reel, reelIndex, adjustedTotal, finalSymbols);
         });
@@ -830,8 +822,6 @@ async function pickupNote(note) {
     
     // Get the value of the note and add it to wallet balance
     const noteValue = parseInt(note.src.match(/\/(\d+)\.png/)[1]);
-
-    //DEBUG - CASH OUT
     walletBalance += noteValue;
     updateAvailableBills();
     
@@ -886,8 +876,8 @@ async function pickupNote(note) {
     });
 }
 
-const BUTTON_NORMAL = 'main/automat/cash.png'; // Replace with your actual path
-const BUTTON_PRESSED = 'main/automat/cash2.png'; // Replace with your actual path
+const BUTTON_NORMAL = 'main/automat/cash.png';
+const BUTTON_PRESSED = 'main/automat/cash2.png';
 const buttonImage = document.querySelector('.button img')
 
 let isDoorOpen = false;
@@ -923,8 +913,7 @@ async function cashout() {
         // Close the door first
 
         closeDoor();
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for door close animation
-        // Now process the saved note values - isProcessingCashout still true during this
+        await new Promise(resolve => setTimeout(resolve, 500));
         if (noteValues.length > 0) {
             for (const value of noteValues) {
                 // Play collection sound
@@ -1040,8 +1029,6 @@ async function transferNoteFromWallet(bill) {
     // Deduct from wallet and update database
     walletBalance -= value;
     updateAvailableBills();
-    
-    // Rest of your existing animation code
     const billRect = bill.getBoundingClientRect();
     const doorRect = door.getBoundingClientRect();
     
@@ -1055,28 +1042,19 @@ async function transferNoteFromWallet(bill) {
     flyingBill.style.top = `${billRect.top}px`;
     flyingBill.style.zIndex = '100';
     flyingBill.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-    
-    // Add to body for the animation
     document.body.appendChild(flyingBill);
     
     // Calculate target position
     const targetX = doorRect.left + (doorRect.width * 0.15); // 17.5% from left to match door position
     const targetY = doorRect.top + (doorRect.height * 0.21); // 10% from top
-    
-    // Force reflow
     flyingBill.offsetHeight;
-    
-    // Start animation to door position
     flyingBill.style.transform = `translate(${targetX - billRect.left}px, ${targetY - billRect.top}px)`;
 
     
     // Wait for animation to complete then create the final note in the door
     await new Promise(resolve => {
         flyingBill.addEventListener('transitionend', () => {
-            // Remove the flying bill
             flyingBill.remove();
-            
-            // Create the final note in the door
             const note = document.createElement('img');
             note.src = `money/${value}.png`;
             note.className = 'banknote';
@@ -1094,7 +1072,7 @@ async function transferNoteFromWallet(bill) {
     });
 }
 
-// Define the robot's states and animations
+// Vlads states and animations
 const ROBOT_STATES = {
     IDLE: {
         position: '2vh',
@@ -1137,7 +1115,7 @@ const TUTORIAL_SEQUENCE = {
     STEPS: [
         {
             id: 'intro',
-            sound: 'robot/dialogue/part1.mp3', // You'll need to add these audio files
+            sound: 'robot/dialogue/part1.mp3', 
             animations: [
                 { gif: 'robot/talk2.gif', duration: 2300 },
                 { gif: 'robot/talk2end.gif', duration: 250 },
@@ -1207,7 +1185,7 @@ const TUTORIAL_SEQUENCE = {
         }
     ]
 };
-// Define dialogue sequences with their corresponding animations
+// Predefined dialogue sequences
 const DIALOGUE_SEQUENCES = [
     {
         id: 'motivation',
@@ -1343,12 +1321,11 @@ class RobotController {
                     await this.closeOptionsAndReturn();
                     return;
                 }
-                
-                // Handle first two buttons - fixed mapping
+
                 if (option === '1') {
-                    await this.handleOptionSequence('invest'); // My Chances
+                    await this.handleOptionSequence('chances');
                 } else if (option === '2') {
-                    await this.handleOptionSequence('stats');  // My Stats
+                    await this.handleOptionSequence('stats');
                 }
             });
         });
@@ -1427,14 +1404,13 @@ class RobotController {
             }
         } else {
             // Local mode test values
-            spinCount = 127;
-            moneyWon = 4250;
+            spinCount = 67;
+            moneyWon = 420;
         }
         
         // Convert numbers to digit arrays
         const spinDigits = String(spinCount).split('');
         const moneyDigits = String(moneyWon).split('');
-        // "You have spun..." 
         this.dialogueAudio.src = 'robot/dialogue/youhavespun.mp3';
         this.robot.src = 'robot/speakstart.gif';
         await this.delay(250);
@@ -1461,10 +1437,9 @@ class RobotController {
             
             this.dialogueAudio.src = `robot/dialogue/${digit}.mp3`;
             await this.dialogueAudio.play().catch(err => console.error('Digit sound failed:', err));
-            await this.delay(1000); // Small pause between digits
+            await this.delay(1000);
         }
         
-        // "...times!"
         this.dialogueAudio.src = 'robot/dialogue/timesnwon.mp3';
         await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
         
@@ -1490,7 +1465,6 @@ class RobotController {
             await this.delay(1000);
         }
         
-        // "...dollars!"
         this.dialogueAudio.src = 'robot/dialogue/dollars.mp3';
         await this.dialogueAudio.play().catch(err => console.error('Audio playback failed:', err));
         this.robot.src = 'robot/idle.gif';
@@ -1523,8 +1497,6 @@ class RobotController {
         
         // Remove active class from menu
         menu.classList.remove('active');
-        
-        // Reset flags
         this.isPlayingOptionSequence = false;
         
         await this.returnToIdle();
@@ -1541,11 +1513,8 @@ class RobotController {
         try {
             await this.growthSequence();
             await this.transformAndReturn();
-            
-            // Create abort controller for initial dialogue
+
             this.currentDialogueAbortController = new AbortController();
-            
-            // Get random sequence from DIALOGUE_SEQUENCES
             const sequence = DIALOGUE_SEQUENCES[Math.floor(Math.random() * DIALOGUE_SEQUENCES.length)];
             await this.playDialogueSequence(sequence, this.currentDialogueAbortController.signal);
             
@@ -1573,18 +1542,16 @@ class RobotController {
         this.idleCheckInterval = setInterval(() => {
             this.idleTimer++;
             
-            // Check for 30 seconds
             if (this.idleTimer === 30 && !this.hasPlayedShortSound) {
                 this.shortIdleSound.play().catch(err => console.error('Short idle sound failed:', err));
                 this.hasPlayedShortSound = true;
             }
             
-            // Check for 120 seconds
             if (this.idleTimer === 120 && !this.hasPlayedLongSound) {
                 this.longIdleSound.play().catch(err => console.error('Long idle sound failed:', err));
                 this.hasPlayedLongSound = true;
             }
-        }, 1000); // Check every second
+        }, 1000);
     }
     stopIdleTimer() {
         if (this.idleCheckInterval) {
@@ -1639,16 +1606,14 @@ class RobotController {
         let hasPlayedLongSound = false;
     
         while (this.isInActiveState && !this.isAnimating) {
-            await this.delay(1000); // Check every second
+            await this.delay(1000);
             totalIdleTime += 1;
     
-            // Play sound at 30 seconds
             if (totalIdleTime === 30 && !hasPlayedShortSound) {
                 hasPlayedShortSound = true;
                 IDLE_SOUNDS.SHORT.play().catch(err => console.error('Short idle sound failed:', err));
             }
-    
-            // Play sound at 120 seconds
+
             if (totalIdleTime === 120 && !hasPlayedLongSound) {
                 hasPlayedLongSound = true;
                 IDLE_SOUNDS.LONG.play().catch(err => console.error('Long idle sound failed:', err));
@@ -1844,9 +1809,6 @@ class RobotController {
         
         await audioPromise;
         
-        
-        
-        // Show hand if needed
         if (sequence.pointTo) {
             this.showHand(sequence.pointTo);
         } else {
@@ -1879,8 +1841,6 @@ class RobotController {
         // Reposition offscreen to the right (no transition)
         this.container.style.transition = 'none';
         this.container.style.left = '100vw';
-        
-        // Force reflow
         this.container.offsetHeight;
         
         // Slide in from the right to the right position
@@ -1898,8 +1858,6 @@ class RobotController {
         // Reposition offscreen to the left (no transition)
         this.container.style.transition = 'none';
         this.container.style.left = '-80vh';
-        
-        // Force reflow
         this.container.offsetHeight;
         
         // Slide in from the left to the left position
@@ -2019,9 +1977,6 @@ document.addEventListener('mousemove', (e) => {
     const screen = document.querySelector('.screen');
     const rect = screen.getBoundingClientRect();
     isMouseOverScreen = isWithinScreenBounds(mouseX, mouseY);
-    
-    // Log these values to see what's happening:
-    
 });
 document.addEventListener('mousedown', (e) => {
     if (!isMouseOverScreen) return;

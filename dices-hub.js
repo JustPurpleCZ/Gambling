@@ -62,10 +62,7 @@ async function loadLobbies() {
 const betSelector = document.querySelector('.bet-selector');
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
-        // Update selected bet size
         selectedBetSize = parseInt(option.dataset.bet);
-        
-        // Update the background image based on selected bet
         betSelector.className = 'bet-selector bet-' + selectedBetSize;
     });
 });
@@ -82,8 +79,6 @@ function displayLobbies() {
     lobbies.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
-        
-        // Set background image based on privacy status
         if (lobby.isPrivate) {
             lobbyDiv.style.backgroundImage = "url('main/dice/joinlocked.png')";
         } else {
@@ -201,19 +196,12 @@ async function quickJoin() {
     await createLobby();
 }
 
-// UI Controls
 const lobbiesModal = document.getElementById('lobbiesModal');
 
-// Bet selector - single component with three sections
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
-        // Remove active class from all options
         document.querySelectorAll('.bet-option').forEach(opt => opt.classList.remove('active'));
-        
-        // Add active class to clicked option
         option.classList.add('active');
-        
-        // Update selected bet size
         selectedBetSize = parseInt(option.dataset.bet);
         
         // Move indicator
@@ -232,7 +220,7 @@ document.getElementById('lobbiesBtn').addEventListener('click', () => {
     loadLobbies();
 });
 
-// Dealer button
+// Dealer button that wont do anything yet
 document.getElementById('dealerBtn').addEventListener('click', () => {
     alert('Dealer mode coming soon!');
 });

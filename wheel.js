@@ -5,9 +5,9 @@ import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
@@ -128,7 +128,6 @@ function activateTV() {
     // Add active class to TV
     tv.classList.add('active');
     bg.classList.add('active');
-    // Pick a random video (1-4)
     const randomVideo = Math.floor(Math.random() * 7) + 1;
     
     // Small delay before changing video
@@ -194,10 +193,8 @@ function startFreeSpin() {
             const result = calculateResult();
             const finalAngle = (rotation % 360 + 360) % 360;
             
-            // Check if NOT in segment 0 (0-45 degrees)
-            // Segment 0 is when finalAngle is between 0 and 45
             if (wheelResult != 8) {
-                console.log("Landed on segment other than 0, activating TV");
+                console.log("Landed on segment other than 0, ITS TV TIME");
                 activateTV();
             } else {
                 console.log("Landed on segment 0 (0-45 degrees), no TV activation");

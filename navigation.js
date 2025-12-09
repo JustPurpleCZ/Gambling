@@ -16,7 +16,7 @@ const fadeHint = () => {
         hintFaded = true;
     }
 };
-
+// should fix this
 const handleMouseMove = (e) => {
     fadeHint();
 

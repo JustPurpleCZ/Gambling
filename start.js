@@ -2,18 +2,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-// Your Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -63,8 +61,6 @@ onAuthStateChanged(auth, async (user) => {
             displayNameInput.setAttribute('required', '');
             displayNameInput.parentElement.style.display = 'block';
         }
-        
-        // Reset the form and error message
         errorMessage.textContent = '';
         authForm.reset();
     });
@@ -147,7 +143,6 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 try {
-                    // Sign up with Firebase
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const token = await userCredential.user.accessToken;
 

@@ -17,7 +17,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// NEW: Background images for player cards - UPDATE THESE PATHS
 const CARD_BG_NOT_PLAYED = 'main/dice/playercard.png';
 const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
@@ -50,7 +49,7 @@ let uid;
 
 let lobbyInfo;
 
-//Získání informace o 
+//Získání informace (O) 
 async function getLobbyInfo() {
     try {
         const snapshot = await get(lobbyRef);
@@ -219,7 +218,6 @@ async function gameStart() {
     });
 }
 
-// UPDATED: Complete rewrite of updateActivePlayerList
 async function updateActivePlayerList() {
     const playersInfo = await get(activePlayersRef);
     console.log("Updating active player list");
@@ -337,11 +335,10 @@ async function updateActivePlayerList() {
     popup.appendChild(message);
     popup.appendChild(backBtn);
     document.body.appendChild(popup);
-    
-    // Show button after sound plays (adjust delay based on sound length)
+
     setTimeout(() => {
         backBtn.style.display = 'block';
-    }, 2000); // 2 second delay, adjust as needed
+    }, 2000);
 }
     
     if (wasMyTurnLastUpdate && !isMyTurnThisUpdate) {
@@ -356,7 +353,6 @@ async function updateActivePlayerList() {
     wasMyTurnLastUpdate = isMyTurnThisUpdate;
 }
 
-// NEW FUNCTION: Categorize ALL players for the right panel
 function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, myUid) {
     const totalPlayers = allPlayers.length;
     const result = [];
@@ -400,15 +396,6 @@ function categorizePlayersForRightPanel(allPlayers, currentTurnIndex, myIndex, m
     return result;
 }
 
-// NEW FUNCTION
-function hideCurrentPlayerDisplay() {
-    const displayDiv = document.querySelector(".current-player-display");
-    if (displayDiv) {
-        displayDiv.style.display = "none";
-    }
-}
-
-// NEW FUNCTION
 function hideOtherPlayersPanel() {
     const panel = document.querySelector(".other-players-panel");
     if (panel) {
@@ -416,7 +403,6 @@ function hideOtherPlayersPanel() {
     }
 }
 
-// NEW FUNCTION: Updated panel with all players
 function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
     let panel = document.querySelector(".other-players-panel");
     if (!panel) {
@@ -472,8 +458,6 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         panel.appendChild(card);
     });
 }
-
-// UPDATED: Now shows yourself at top when it's your turn
 function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     let displayDiv = document.querySelector(".current-player-display");
     if (!displayDiv) {
@@ -631,11 +615,6 @@ function renderDiePosition(die) {
     die.element.style.transform = `rotate(${die.rotation}deg)`;
 }
 
-function getRelativeMousePos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
 let dice = [];
 let lockedDice = [];
 let isDraggingCup = false;
@@ -784,7 +763,7 @@ document.addEventListener('mouseup', async () => {
         } else if (!rollResult.success && rollResult.needsSelection) {
             spillDiceWithPreviousValues();
         } else if (rollResult.farkled) {
-            // Farkled! Spill the dice to show them
+
             spillFarkledDice();
         }
     }
@@ -910,7 +889,7 @@ function spillFarkledDice() {
             rollTime: 0,
             element: null,
             serverIndex: i,
-            isFarkled: true // Mark as farkled dice - can't be selected
+            isFarkled: true
         });
     }
     
@@ -922,7 +901,7 @@ function spillFarkledDice() {
         gameContainer.appendChild(el);
         die.element = el;
         renderDiePosition(die);
-        // No click handler for farkled dice - they can't be selected
+
     });
     
     isRolling = true;
@@ -937,7 +916,7 @@ function spillFarkledDice() {
         console.log("Collecting farkled dice after display");
         collectAllDiceIntoCup();
         farkledThisTurn = false;
-    }, 3000); // Wait 3 seconds so player can see the farkle
+    }, 3000);
 }
 function spillDiceWithPreviousValues() {
   console.log("Spilling dice with previous values - need to select at least one");
