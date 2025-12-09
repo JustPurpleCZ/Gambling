@@ -139,7 +139,9 @@ button:active {
     text-decoration: underline;
     padding: 5px;
 }
-
+#playButton{
+    font-size: 8vh;
+}
 .form-group input:invalid {
     border-color: #dc3545;
 }
@@ -170,4 +172,5 @@ button:active {
     filter: blur(2px) brightness(70%);
     background-image: url(robot/idlefull.gif);
     background-size: contain;
+
 }
