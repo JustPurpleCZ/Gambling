@@ -452,9 +452,12 @@ async function toggleMusic() {
         // Trigger robot's special sequence
         await robotController.playRadioSpecialSequence();
         radioVladCount++;
+        console.log("Vlads radio count increased");
 
         if (radioVladCount >= 3) {
+            console.log("Getting achievement");
             set(ref(db, `/users/${auth.currentUser.uid}/achievements/slotSpamRadio`, true));
+            console.log("Success");
         }
 
         return;
