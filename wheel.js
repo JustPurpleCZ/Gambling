@@ -1,3 +1,4 @@
+//Firebase inicializace (O)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
@@ -5,9 +6,9 @@ import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.6.0
 const firebaseConfig = {
     apiKey: "AIzaSyCmZPkDI0CRrX4_OH3-xP9HA0BYFZ9jxiE",
     authDomain: "gambling-goldmine.firebaseapp.com",
-    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app", // Add this line
+    databaseURL: "https://gambling-goldmine-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "gambling-goldmine",
-    storageBucket: "gambling-goldmine.appspot.com", // Fix this line
+    storageBucket: "gambling-goldmine.appspot.com",
     messagingSenderId: "159900206701",
     appId: "1:159900206701:web:01223c4665df6f7377a164"
 };
@@ -18,6 +19,7 @@ const db = getDatabase(app);
 
 let uid;
 
+//Kontrola přihlášení (O)
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         localStorage.clear();
@@ -26,6 +28,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     uid = user.uid;
 
+    //Vyhození pokud má kolo být zamčené (O)
     const moneySnap = await get(ref(db, `/users/${uid}/credits`));
     if (!moneySnap.exists() || moneySnap.val() > 25) {
         window.location.href = "navigation.html";
@@ -104,6 +107,7 @@ function onDragEnd(event) {
     startFreeSpin();
 }
 
+//Výsledek zatočení z backendu (O)
 async function getWheelResult() {
     const token = await auth.currentUser.getIdToken();
     const res = await fetch("https://wheel-spin-gtw5ppnvta-ey.a.run.app", {
@@ -123,7 +127,6 @@ async function getWheelResult() {
 }
 
 // --- TV Animation Logic ---
-
 function activateTV() {
     // Add active class to TV
     tv.classList.add('active');
@@ -164,6 +167,7 @@ function startFreeSpin() {
     const spin = () => {
         rotation += angularVelocity;
 
+        //Kolo se nezastaví dokud nedostane výsledek (O)
         if (Math.abs(angularVelocity) > 0.4 || calculateResult() == wheelResult) {
             angularVelocity *= friction;
         }
@@ -201,6 +205,9 @@ function startFreeSpin() {
                 activateTV();
             } else {
                 console.log("Landed on segment 0 (0-45 degrees), no TV activation");
+                setTimeout(() => {
+                    window.location.href = "navigation.html";
+                }, 1000);
             }
         } else {
             animationFrameId = requestAnimationFrame(spin);
@@ -219,7 +226,7 @@ function calculateResult() {
     return result;
 }
 
-// --- Event Listeners ---
+//Event listenery na kolo (O)
 wheel.addEventListener('mousedown', onDragStart);
 document.addEventListener('mousemove', onDragMove);
 document.addEventListener('mouseup', onDragEnd);
