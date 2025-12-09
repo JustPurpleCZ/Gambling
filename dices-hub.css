@@ -117,19 +117,13 @@ div, .kostkar {
     justify-content: center;
 }
 
-.game-button:hover, .exit-btn:hover, .lobby:hover, .join-btn:hover, .submit-btn:hover, .counter-arrow:hover {
-    opacity: 0.8;
-}
-
-.game-button:active, .counter-arrow:active {
-    opacity: 0.6;
-}
 
 .game-button {
     width: 50vh;
     height: 16vh;
     position: relative;
     z-index: 2;
+    transition: all 0.2s;
 }
 
 #quickJoinBtn {
@@ -153,7 +147,7 @@ div, .kostkar {
 .exit-btn {
     position: absolute;
     top: 2vh;
-    right: 2vh;
+    left: 2vh;
     width: 30vh;
     height: 10vh;
     background-image: url(icon/exit.png);
