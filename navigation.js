@@ -423,7 +423,3 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     signOut(auth);
 })
-
-document.getElementById("profileBtn").addEventListener("click", () => {
-    window.location.href = "profile.html";
-})

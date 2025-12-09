@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, get, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -43,23 +43,22 @@ async function initWallet(user) {
     walletDisplay.textContent = `Wallet: $${balance}`;
 }
 
-const pathRef = ref(db, "games/lobbies/dices");
 
 // Load lobbies
 async function loadLobbies() {
     lobbies = [];
+    const pathRef = ref(db, "games/lobbies/dices");
     const snapshot = await get(pathRef);
     
     if (snapshot.exists()) {
         const data = snapshot.val();
         for (const lobby in data) {
-            lobbies.push(data[lobby.key]);
+            lobbies.push(data[lobby]);
         }
     }
 
     displayLobbies();
 }
-
 const betSelector = document.querySelector('.bet-selector');
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
@@ -71,7 +70,7 @@ document.querySelectorAll('.bet-option').forEach(option => {
     });
 });
 // Display lobbies
-async function displayLobbies() {
+function displayLobbies() {
     const container = document.getElementById("lobbiesContainer");
     container.innerHTML = '';
 
@@ -80,13 +79,7 @@ async function displayLobbies() {
         return;
     }
 
-    const lobbiesInfoSnap = await get(pathRef);
-    const lobbiesInfo = lobbiesInfoSnap.val();
-
-    console.log(lobbiesInfo);
-    console.log(lobbiesInfo.array);
-
-    for (const lobby in lobbiesInfo) {
+    lobbies.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
@@ -115,7 +108,7 @@ async function displayLobbies() {
         const joinBtn = lobbyDiv.querySelector('.join-btn');
         joinBtn.addEventListener('click', () => joinLobby(lobby.lobbyId));
         container.appendChild(lobbyDiv);
-    }
+    });
 }
 
 // Create lobby
@@ -304,5 +297,8 @@ document.getElementById('playerCountDown').addEventListener('click', (e) => {
 checkAuth();
 
 // Auto-refresh lobbies every 5 seconds when modal is open
-onChildAdded(pathRef, () => { loadLobbies(); });
-onChildRemoved(pathRef, () => { loadLobbies(); });
+setInterval(() => {
+    if (lobbiesModal.classList.contains('active')) {
+        loadLobbies();
+    }
+}, 5000);
