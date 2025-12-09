@@ -74,7 +74,6 @@ window.addEventListener('mousemove', handleMouseMove);
 setInitialState();
 });
 
-
 //Firebase importy (O)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
