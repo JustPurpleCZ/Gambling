@@ -83,7 +83,10 @@ async function displayLobbies() {
     const lobbiesInfoSnap = await get(pathRef);
     const lobbiesInfo = lobbiesInfoSnap.val();
 
-    lobbiesInfo.forEach(lobby => {
+    console.log(lobbiesInfo);
+    console.log(lobbiesInfo.array);
+
+    lobbiesInfo.array.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
