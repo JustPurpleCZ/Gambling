@@ -398,11 +398,10 @@ div, .kostkar {
     gap: 1vh;
 }
 .counter-up{
-    color: greenyellow;
+    background-color: greenyellow;
 }
 .counter-down{
-    color: crimson;
-
+    background-color: crimson;
 }
 .counter-display {
     flex: 1;
@@ -422,8 +421,6 @@ div, .kostkar {
 .counter-arrow {
     width: 4vh;
     height: 3vh;
-    background-color: #ddd;
-    border: 2px solid #333;
     display: flex;
     align-items: center;
     justify-content: center;
