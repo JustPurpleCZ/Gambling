@@ -1236,7 +1236,7 @@ const DIALOGUE_SEQUENCES = [
         sound: 'robot/dialogue/99.wav',
         animations: [
             { gif: 'robot/speakstart.gif', duration: 250 },
-            { gif: 'robot/talk.gif', duration: 4000 },
+            { gif: 'robot/talk.gif', duration: 4500 },
             { gif: 'robot/talkend.gif', duration: 600 }
         ]
     },
