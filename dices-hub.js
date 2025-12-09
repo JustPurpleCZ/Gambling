@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, get} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, get, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -43,11 +43,11 @@ async function initWallet(user) {
     walletDisplay.textContent = `Wallet: $${balance}`;
 }
 
+const pathRef = ref(db, "games/lobbies/dices");
 
 // Load lobbies
 async function loadLobbies() {
     lobbies = [];
-    const pathRef = ref(db, "games/lobbies/dices");
     const snapshot = await get(pathRef);
     
     if (snapshot.exists()) {
@@ -297,8 +297,5 @@ document.getElementById('playerCountDown').addEventListener('click', (e) => {
 checkAuth();
 
 // Auto-refresh lobbies every 5 seconds when modal is open
-setInterval(() => {
-    if (lobbiesModal.classList.contains('active')) {
-        loadLobbies();
-    }
-}, 5000);
+onChildAdded(pathRef, () => { loadLobbies(); });
+onChildRemoved(pathRef, () => { loadLobbies(); });
