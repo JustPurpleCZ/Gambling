@@ -1,3 +1,4 @@
+//Firebase inicializace (O)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, onChildAdded, onChildRemoved, get, onDisconnect, set, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -26,6 +27,7 @@ let farkledDiceValues = null;
 let waitingForFarkleRelease = false;
 let presenceRef;
 
+//Kontrola přihlášení (O)
 async function checkAuth() {
     const user = await new Promise(resolve => {
         const unsub = onAuthStateChanged(auth, (u) => {
@@ -40,12 +42,15 @@ async function checkAuth() {
     uid = user.uid;
 }
 
+//Deklarace hodnot (O)
 const lobbyId = localStorage.getItem("dicesLobbyId");
 const playersRef = ref(db, `/games/lobbies/dices/${lobbyId}/players`);
 const lobbyRef = ref(db, `/games/lobbies/dices/${lobbyId}`);
 let uid;
 
 let lobbyInfo;
+
+//Získání informace o 
 async function getLobbyInfo() {
     try {
         const snapshot = await get(lobbyRef);
