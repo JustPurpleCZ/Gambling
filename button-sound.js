@@ -1,4 +1,4 @@
-const clickSound = new Audio('sounds/buttonClick.m4a');
+const clickSound = new Audio('sound/buttonClick.m4a');
 //clickSound.volume = 0.5;
 
 document.addEventListener('click', (e) => {
