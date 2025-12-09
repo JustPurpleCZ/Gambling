@@ -53,12 +53,13 @@ async function loadLobbies() {
     if (snapshot.exists()) {
         const data = snapshot.val();
         for (const lobby in data) {
-            lobbies.push(data[lobby]);
+            lobbies.push(data[lobby.key]);
         }
     }
 
     displayLobbies();
 }
+
 const betSelector = document.querySelector('.bet-selector');
 document.querySelectorAll('.bet-option').forEach(option => {
     option.addEventListener('click', () => {
@@ -70,7 +71,7 @@ document.querySelectorAll('.bet-option').forEach(option => {
     });
 });
 // Display lobbies
-function displayLobbies() {
+async function displayLobbies() {
     const container = document.getElementById("lobbiesContainer");
     container.innerHTML = '';
 
@@ -79,7 +80,10 @@ function displayLobbies() {
         return;
     }
 
-    lobbies.forEach(lobby => {
+    const lobbiesInfoSnap = await ref(pathRef);
+    const lobbiesInfo = lobbiesInfoSnap.val();
+
+    lobbiesInfo.forEach(lobby => {
         const lobbyDiv = document.createElement("div");
         lobbyDiv.className = "lobby";
         
