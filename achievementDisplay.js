@@ -148,7 +148,7 @@ onAuthStateChanged(auth, async (user) => {
             width: 2vh;
             height: 2vh;
             pointer-events: none;
-            z-index: 9999;
+            z-index: 1000001;
         }
         #ach {
             background-image: url('main/achievements/bronze.png');
