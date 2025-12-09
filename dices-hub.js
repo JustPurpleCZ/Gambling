@@ -80,7 +80,7 @@ async function displayLobbies() {
         return;
     }
 
-    const lobbiesInfoSnap = await ref(pathRef);
+    const lobbiesInfoSnap = await get(pathRef);
     const lobbiesInfo = lobbiesInfoSnap.val();
 
     lobbiesInfo.forEach(lobby => {
