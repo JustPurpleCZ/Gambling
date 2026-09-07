@@ -1,6 +1,7 @@
-const CLOSE_GIF = '/assets/curtain-close.gif';
-const OPEN_GIF = '/assets/curtain-open.gif';
-const ANIMATION_DURATION = 1200; // Duration of your GIF in milliseconds
+// Adjust these relative paths to match your exact curtain folder structure
+const CLOSE_GIF = 'curtains/curtain-close.gif'; 
+const OPEN_GIF = 'curtains/curtain-open.gif';   
+const ANIMATION_DURATION = 1200; // Duration of GIF in ms
 
 const overlay = document.getElementById('curtain-overlay');
 const curtainImg = document.getElementById('curtain-img');
@@ -8,14 +9,13 @@ const curtainImg = document.getElementById('curtain-img');
 // 1. ON PAGE LOAD: Check if we navigated from another page
 window.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem('curtainTransition') === 'closing') {
-    // Show overlay on top layer with OPENING gif
+    // Play opening GIF
     curtainImg.src = `${OPEN_GIF}?t=${Date.now()}`;
     overlay.classList.add('curtain-visible');
     overlay.classList.remove('curtain-hidden');
 
     sessionStorage.removeItem('curtainTransition');
 
-    // Hide overlay and drop z-index back down after animation finishes
     setTimeout(() => {
       overlay.classList.remove('curtain-visible');
       overlay.classList.add('curtain-hidden');
@@ -23,27 +23,31 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// 2. ON LINK CLICK: Intercept navigation and play CLOSING gif
-document.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', (e) => {
-    const targetUrl = link.getAttribute('href');
+// Helper function to trigger transition manually or via event
+window.triggerCurtainTransition = function(targetUrl) {
+  sessionStorage.setItem('curtainTransition', 'closing');
+  curtainImg.src = `${CLOSE_GIF}?t=${Date.now()}`;
+  overlay.classList.add('curtain-visible');
+  overlay.classList.remove('curtain-hidden');
 
-    if (!targetUrl || targetUrl.startsWith('#') || link.target === '_blank' || link.origin !== window.location.origin) {
-      return;
-    }
+  setTimeout(() => {
+    window.location.href = targetUrl;
+  }, ANIMATION_DURATION);
+};
 
-    e.preventDefault();
+// 2. GLOBAL CLICK INTERCEPTOR (Handles <a> tags, buttons, and destination cards)
+document.addEventListener('click', (e) => {
+  // Check for standard <a> tags or elements with data-href / onclick navigation
+  const clickable = e.target.closest('a, [data-href], .destinations-row > div');
+  if (!clickable) return;
 
-    sessionStorage.setItem('curtainTransition', 'closing');
+  let targetUrl = clickable.getAttribute('href') || clickable.getAttribute('data-href');
 
-    // Bring overlay to z-index 9999 and play closing GIF
-    curtainImg.src = `${CLOSE_GIF}?t=${Date.now()}`;
-    overlay.classList.add('curtain-visible');
-    overlay.classList.remove('curtain-hidden');
+  // Ignore disabled/unavailable destinations or anchor links
+  if (clickable.classList.contains('unavailable') || !targetUrl || targetUrl.startsWith('#')) {
+    return;
+  }
 
-    // Navigate once closing animation finishes
-    setTimeout(() => {
-      window.location.href = targetUrl;
-    }, ANIMATION_DURATION);
-  });
+  e.preventDefault();
+  window.triggerCurtainTransition(targetUrl);
 });
