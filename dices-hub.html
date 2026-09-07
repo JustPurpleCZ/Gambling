@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dices: LOBBIES</title>
+    <link rel="stylesheet" href="curtains/style.css">
     <link rel="stylesheet" href="dices-hub.css">
     <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,6 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="curtain-overlay" class="curtain-hidden">
+    <img id="curtain-img" src="" alt="" />
+  </div>
     <div class="exit-btn" id="exitBtn"></div>
 
     <div class="main-container">
@@ -133,5 +137,6 @@
     <script src="button-sound.js"></script>
     <script type="module" src="dices-hub.js"></script>
     <script src="achievementDisplay.js" type="module"></script>
+    <script src="curtains/curtains.js"></script>
 </body>
 </html>
