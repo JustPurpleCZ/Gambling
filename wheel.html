@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wheel of Fortune</title>
+    <link rel="stylesheet" href="curtains/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="wheel.css">
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen overflow-hidden p-4">
+    <div id="curtain-overlay" class="curtain-hidden">
+    <img id="curtain-img" src="" alt="" />
+  </div>
     <div id="wheelContainer" class="wheel-container">
         
         <img src="main/wheel/pointer.png" alt="Pointer" class="arrow">
@@ -35,5 +39,6 @@
     </div>
    <script src="wheel.js" type="module"></script>
    <script src="achievementDisplay.js" type="module"></script>
+   <script src="curtains/curtains.js"></script>
 </body>
 </html>

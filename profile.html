@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile</title>
     <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="curtains/style.css">
 </head>
 <body>
+    <div id="curtain-overlay" class="curtain-hidden">
+    <img id="curtain-img" src="" alt="" />
+  </div>
     <button id="exitBtn">Exit</button>
     <h1>Your Profile</h1>
     <div id="playerCard">
@@ -62,5 +66,6 @@
     </div>
     <script type="module" src="profile.js"></script>
     <script src="achievementDisplay.js" type="module"></script>
+    <script src="curtains/curtains.js"></script>
 </body>
 </html>

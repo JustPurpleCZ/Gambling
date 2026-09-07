@@ -3,6 +3,7 @@
     <head>
         <link rel="stylesheet" href="start.css">
         <title>Vlad's Gambling Paradise</title>
+        <link rel="stylesheet" href="curtains/style.css">
         <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +13,9 @@
         <script src="button-sound.js"></script>
     </head>
 <body>
+    <div id="curtain-overlay" class="curtain-hidden">
+    <img id="curtain-img" src="" alt="" />
+  </div>
     <div class="orientation-overlay">
         <img src="side.gif" alt="Please rotate your device">
         <div class="overlay-text">Please rotate your device</div>
@@ -47,5 +51,6 @@
             <button id="closeModal" class="close-button">&times;</button>
         </div>
     </div>
+    <script src="curtains/curtains.js"></script>
 </body>
 </html>

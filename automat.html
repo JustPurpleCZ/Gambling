@@ -4,12 +4,15 @@
     <link rel="stylesheet" href="automat.css">
     <title>Vlad's Gambling Paradise</title>
     <link rel="icon" type="image/x-icon" href="icon/vlad2.png">
-
+    <link rel="stylesheet" href="curtains/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div id="curtain-overlay" class="curtain-hidden">
+        <img id="curtain-img" src="" alt="" />
+    </div>
     <div class="orientation-overlay">
         <img src="side.gif" alt="Please rotate your device">
         <div class="overlay-text">Please rotate your device</div>
@@ -92,5 +95,6 @@
     <script type="module" src="automat.js"></script>
     <script src="achievementDisplay.js" type="module"></script>
     <script src="button-sound.js"></script>
+    <script src="curtains/curtains.js"></script>
 </body>
 </html>
