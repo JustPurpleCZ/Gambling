@@ -34,6 +34,7 @@ async function loadData() {
     const playerData = dataSnap.val();
 
     //Set profile picture here
+    document.getElementById("profilePicture").src = playerData["accountInfo"]["profilePicture"];
     document.getElementById("username").textContent = "Username: " + playerData["accountInfo"]["username"];
     document.getElementById("money").textContent = "Net worth: $" + playerData["credits"];
 

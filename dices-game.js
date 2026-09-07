@@ -486,7 +486,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         const nameDisplay = player.username;
         
         card.innerHTML = `
-            <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
+            <div class="other-player-pfp" style="background-image: url('${player.profilePicture}');"></div>
             <div class="other-player-details">
                 <div class="other-player-name">${nameDisplay}</div>
                 <div class="other-player-score">Score: ${player.score}</div>
@@ -514,7 +514,7 @@ function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     const turnText = isMe ? "Your Turn" : `${playerData.username}'s Turn`;
     
     displayDiv.innerHTML = `
-        <div class="current-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
+        <div class="current-player-pfp" style="background-image: url('${playerData.profilePicture}');"></div>
         <div class="current-player-info">
             <div class="current-player-name">${turnText}</div>
             <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
@@ -546,7 +546,7 @@ function updateMyPlayerInfo(playerData) {
     document.getElementById("game-container").appendChild(myInfoDiv);
   }
   myInfoDiv.innerHTML = `
-    <div class="my-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
+    <div class="my-player-pfp" style="background-image: url('${playerData.profilePicture}');"></div>
     <div class="my-player-details">
       <div class="my-player-name">${playerData.username}</div>
       <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
