@@ -701,7 +701,9 @@ updateCupPosition();
 
 cup.addEventListener('mousedown', async (e) => {
   if (isRolling || allDiceLockedRollPending || rollPending) return;
+  
   if (waitingForFarkleRelease) {
+    waitingForFarkleRelease = false; // Reset flag so release behaves cleanly
     isDraggingCup = true;
     cup.classList.add('dragging');
     const rect = cup.getBoundingClientRect();
@@ -955,12 +957,18 @@ function spillFarkledDice() {
     
     setTimeout(() => { moveCupToBottomRight(); }, 500);
     
-    // After dice settle, wait a moment then collect everything
-    setTimeout(() => {
-        console.log("Collecting farkled dice after display");
-        collectAllDiceIntoCup();
-        farkledThisTurn = false;
-    }, 3000);
+    // Check when rolling animation finishes instead of using a fixed delay
+    const checkStoppedInterval = setInterval(() => {
+        if (!isRolling) {
+            clearInterval(checkStoppedInterval);
+            // Give player 2 seconds to view the stopped farkled dice
+            setTimeout(() => {
+                console.log("Collecting farkled dice after display");
+                collectAllDiceIntoCup();
+                farkledThisTurn = false;
+            }, 2000);
+        }
+    }, 100);
 }
 function spillDiceWithPreviousValues() {
   console.log("Spilling dice with previous values - need to select at least one");
@@ -1431,7 +1439,7 @@ function collectAllDiceIntoCup() {
   permLockedCount = 0;
   
   dice.forEach((die) => {
-    if (die.element && !die.rolling) {
+    if (die.element) {
       const delay = animationIndex * 100;
       animationIndex++;
       setTimeout(() => {
