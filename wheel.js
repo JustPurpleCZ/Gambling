@@ -19,11 +19,18 @@ const db = getDatabase(app);
 
 let uid;
 
+function navigateWithCurtain(targetUrl) {
+    if (typeof window.triggerCurtainTransition === 'function') {
+        window.triggerCurtainTransition(targetUrl);
+    } else {
+        window.location.href = targetUrl;
+    }
+}
 //Kontrola přihlášení (O)
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         localStorage.clear();
-        window.location.href = 'index.html';
+        navigateWithCurtain('index.html');
         return;
     }
     uid = user.uid;
@@ -31,7 +38,7 @@ onAuthStateChanged(auth, async (user) => {
     //Vyhození pokud má kolo být zamčené (O)
     const moneySnap = await get(ref(db, `/users/${uid}/credits`));
     if (!moneySnap.exists() || moneySnap.val() > 25) {
-        window.location.href = "navigation.html";
+        navigateWithCurtain('navigation.html');
         return;
     }
 });
@@ -203,7 +210,7 @@ function startFreeSpin() {
             } else {
                 console.log("Landed on segment 0 (0-45 degrees), no TV activation");
                 setTimeout(() => {
-                    window.location.href = "navigation.html";
+                    navigateWithCurtain('navigation.html');
                 }, 1000);
             }
         } else {

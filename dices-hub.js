@@ -19,7 +19,13 @@ const auth = getAuth(app);
 
 let lobbies = [];
 let selectedBetSize = 100;
-
+function navigateWithCurtain(targetUrl) {
+    if (typeof window.triggerCurtainTransition === 'function') {
+        window.triggerCurtainTransition(targetUrl);
+    } else {
+        window.location.href = targetUrl;
+    }
+}
 //Kontrola přihlášení (O)
 async function checkAuth() {
     const user = await new Promise(resolve => {
@@ -30,7 +36,7 @@ async function checkAuth() {
     });
 
     if (!user) {
-        window.location.href = 'index.html';
+        navigateWithCurtain("index.html");
         return;
     }
 
@@ -144,7 +150,7 @@ async function createLobby() {
         localStorage.setItem("dicesLobbyId", response.lobbyId);
         localStorage.setItem("dicesIsHost", true);
         localStorage.setItem("selfUID", response.uid);
-        window.location.href = "dices-game.html";
+        navigateWithCurtain("dices-game.html");
     } else {
         alert("Failed to create lobby: " + response.reply);
     }
@@ -171,7 +177,7 @@ async function joinLobby(selectedLobbyId) {
         localStorage.setItem("dicesLobbyId", selectedLobbyId);
         localStorage.setItem("dicesIsHost", response.isHost);
         localStorage.setItem("selfUID", response.uid);
-        window.location.href = "dices-game.html";
+        navigateWithCurtain("dices-game.html");
     } else {
         alert("Failed to join lobby: " + response.reply);
     }
@@ -246,7 +252,7 @@ document.getElementById('createForm').addEventListener('submit', (e) => {
 
 //Exit tlačítko (O)
 document.getElementById('exitBtn').addEventListener('click', () => {
-    window.location.href = 'navigation.html';
+    navigateWithCurtain("navigation.html");
 });
 let targetScore = 10;
 let maxPlayers = 2;

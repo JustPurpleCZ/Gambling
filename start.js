@@ -15,11 +15,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+function navigateWithCurtain(targetUrl) {
+    if (typeof window.triggerCurtainTransition === 'function') {
+        window.triggerCurtainTransition(targetUrl);
+    } else {
+        window.location.href = targetUrl;
+    }
+}
 // Wait for auth
 onAuthStateChanged(auth, async (user) => {
     //Kontrola, je li uživatel přihlášený (O)
     if (user) {
-        window.location.href = 'navigation.html';
+        navigateWithCurtain('navigation.html');
         return;
     }
 
@@ -92,7 +99,7 @@ onAuthStateChanged(auth, async (user) => {
 
                     const data = await res.json();
                     console.log("Account init data: ", data);
-                    window.location.href = 'navigation.html';
+                    navigateWithCurtain('navigation.html');
                 } catch (error) {
                     console.error('Login error:', error);
                     switch (error.code) {
@@ -161,7 +168,7 @@ onAuthStateChanged(auth, async (user) => {
 
                     const data = await res.json();
                     console.log("Account init data: ", data);
-                    window.location.href = 'navigation.html';
+                    navigateWithCurtain('navigation.html');
                     return;
                 } catch (error) {
                     console.error('Signup error:', error.code);

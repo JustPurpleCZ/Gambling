@@ -22,6 +22,13 @@ const CARD_BG_PLAYED = 'main/dice/playercard_played.png';
 const CARD_BG_FARKLED = 'main/dice/playercard_zero.png';
 const CARD_BG_ACTIVE = 'main/dice/playercard_playing.png';
 
+function navigateWithCurtain(targetUrl) {
+    if (typeof window.triggerCurtainTransition === 'function') {
+        window.triggerCurtainTransition(targetUrl);
+    } else {
+        window.location.href = targetUrl;
+    }
+}
 //Deklarace hodnot (O)
 let farkledThisTurn = false;
 let farkledDiceValues = null;
@@ -37,7 +44,7 @@ async function checkAuth() {
         });
     });
     if (!user) {
-        window.location.href = 'index.html';
+        navigateWithCurtain('index.html');
         return;
     }
     uid = user.uid;
@@ -99,7 +106,7 @@ console.log("Host: ", isHost, "LobbyId: ", lobbyId);
     onChildRemoved(ref(db, `/games/lobbies/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId && !gameStarted) {
             onDisconnect(presenceRef).cancel();
-            window.location.href = "dices-hub.html";
+            navigateWithCurtain('dices-hub.html');
         }
     });
 
@@ -187,7 +194,7 @@ async function leaveLobby() {
     onDisconnect(presenceRef).cancel();
     localStorage.removeItem("dicesLobbyId");
     localStorage.removeItem("dicesIsHost");
-    window.location.href = "dices-hub.html";
+    navigateWithCurtain('dices-hub.html');
 }
 
 document.getElementById("leaveBtn").addEventListener("click", () => { leaveLobby(); })
@@ -225,7 +232,7 @@ async function gameStart() {
     onChildRemoved(ref(db, `/games/active/dices`), (removedLobby) => {
         if (removedLobby.key === lobbyId) {
             onDisconnect(activePresenceRef).cancel();
-            window.location.href = "dices-hub.html";
+            navigateWithCurtain('dices-hub.html');
         }
     });
 
@@ -357,7 +364,7 @@ async function updateActivePlayerList() {
         localStorage.removeItem("dicesLobbyId");
         localStorage.removeItem("dicesIsHost");
         localStorage.removeItem("selfUID");
-        window.location.href = "dices-hub.html";
+        navigateWithCurtain('dices-hub.html');
     });
     
     popup.appendChild(message);
@@ -486,7 +493,7 @@ function updateOtherPlayersPanelNew(categorizedPlayers, myUid) {
         const nameDisplay = player.username;
         
         card.innerHTML = `
-            <div class="other-player-pfp" style="background-image: url('${player.profilePicture}');"></div>
+            <div class="other-player-pfp" style="background-image: url('main/profiles/${player.profilePicture.type}/${player.profilePicture.id}.png');"></div>
             <div class="other-player-details">
                 <div class="other-player-name">${nameDisplay}</div>
                 <div class="other-player-score">Score: ${player.score}</div>
@@ -514,7 +521,7 @@ function updateCurrentPlayerDisplay(playerData, isMe, isCurrentTurn = true) {
     const turnText = isMe ? "Your Turn" : `${playerData.username}'s Turn`;
     
     displayDiv.innerHTML = `
-        <div class="current-player-pfp" style="background-image: url('${playerData.profilePicture}');"></div>
+        <div class="current-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
         <div class="current-player-info">
             <div class="current-player-name">${turnText}</div>
             <div class="current-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>
@@ -546,7 +553,7 @@ function updateMyPlayerInfo(playerData) {
     document.getElementById("game-container").appendChild(myInfoDiv);
   }
   myInfoDiv.innerHTML = `
-    <div class="my-player-pfp" style="background-image: url('${playerData.profilePicture}');"></div>
+    <div class="my-player-pfp" style="background-image: url('main/profiles/${playerData.profilePicture.type}/${playerData.profilePicture.id}.png');"></div>
     <div class="my-player-details">
       <div class="my-player-name">${playerData.username}</div>
       <div class="my-player-score">Score: ${playerData.score} | Turn: ${playerData.turnScore || 0}</div>

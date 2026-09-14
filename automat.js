@@ -19,6 +19,13 @@ const db = getDatabase(app);
 
 const localMode = JSON.parse(localStorage.getItem('localMode'));
 
+function navigateWithCurtain(targetUrl) {
+    if (typeof window.triggerCurtainTransition === 'function') {
+        window.triggerCurtainTransition(targetUrl);
+    } else {
+        window.location.href = targetUrl;
+    }
+}
 //Kontrola přihlášení (O)
 async function checkAuth() {
     const user = await new Promise(resolve => {
@@ -29,7 +36,7 @@ async function checkAuth() {
     });
 
     if (!user) {
-        window.location.href = 'index.html';
+        navigateWithCurtain("index.html");
         return;
     }
 
@@ -63,7 +70,7 @@ async function checkAuth() {
     } catch (e) {
         console.log("Error fetching balance:", e);
         setTimeout(() => {
-            window.location.href = "index.html";
+            navigateWithCurtain("index.html");
         }, 5000);
         return;
     }
@@ -71,7 +78,7 @@ async function checkAuth() {
     if (!localBalance) {
         console.log("NO BALANCE, LOGGING OUT");
         setTimeout(() => {
-            window.location.href = "index.html";
+            navigateWithCurtain("index.html");
         }, 5000);
         return;
     }
@@ -81,7 +88,7 @@ let localBalance;
 
 //Odhlášení (O)
 function logout() {
-    window.location.href = "navigation.html";
+    navigateWithCurtain("navigation.html");
 }
 
 const symbolImages = [
@@ -178,7 +185,7 @@ async function initializeWallet() {
         await checkAuth();
 
         if (!localBalance) {
-            window.location.href = 'index.html';
+            navigateWithCurtain("index.html");
             return;
         }
 

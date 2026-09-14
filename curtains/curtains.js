@@ -1,6 +1,6 @@
 // Adjust these relative paths to match your exact curtain folder structure
-const CLOSE_GIF = 'curtains/curtain-close2.gif'; 
-const OPEN_GIF = 'curtains/curtain-open2.gif';   
+const CLOSE_GIF = 'curtains/curtain-close3.gif'; 
+const OPEN_GIF = 'curtains/curtain-open3.gif';   
 const ANIMATION_DURATION = 1200; // Duration of GIF in ms
 
 const overlay = document.getElementById('curtain-overlay');
