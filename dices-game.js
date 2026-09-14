@@ -947,7 +947,6 @@ function spillFarkledDice() {
         gameContainer.appendChild(el);
         die.element = el;
         renderDiePosition(die);
-
     });
     
     isRolling = true;
@@ -957,16 +956,19 @@ function spillFarkledDice() {
     
     setTimeout(() => { moveCupToBottomRight(); }, 500);
     
-    // Check when rolling animation finishes instead of using a fixed delay
-    const checkStoppedInterval = setInterval(() => {
-        if (!isRolling) {
-            clearInterval(checkStoppedInterval);
-            // Give player 2 seconds to view the stopped farkled dice
+    // Poll until the player has let go of the cup AND the dice have stopped rolling
+    const checkFarkleCleanup = setInterval(() => {
+        if (!isDraggingCup && !isRolling) {
+            clearInterval(checkFarkleCleanup);
+            // Give player 2.5 seconds to inspect the outcome after releasing the cup
             setTimeout(() => {
-                console.log("Collecting farkled dice after display");
-                collectAllDiceIntoCup();
-                farkledThisTurn = false;
-            }, 2000);
+                // Double check they didn't grab the cup again during the delay
+                if (!isDraggingCup) {
+                    console.log("Collecting farkled dice after release and display");
+                    collectAllDiceIntoCup();
+                    farkledThisTurn = false;
+                }
+            }, 2500);
         }
     }, 100);
 }
@@ -1408,6 +1410,12 @@ function moveCupToBottomRight() {
 }
 
 function collectAllDiceIntoCup() {
+  // Do not collect dice if the player is still holding/dragging the cup
+  if (isDraggingCup) {
+    console.log("Cleanup postponed: Player is currently holding the cup.");
+    return;
+  }
+
   const finalCupXPercent = 75;
   const finalCupYPercent = 70;
   
@@ -1439,7 +1447,8 @@ function collectAllDiceIntoCup() {
   permLockedCount = 0;
   
   dice.forEach((die) => {
-    if (die.element) {
+    if (die.element) { // Ensure rolling state doesn't leave orphaned elements
+      die.rolling = false;
       const delay = animationIndex * 100;
       animationIndex++;
       setTimeout(() => {
