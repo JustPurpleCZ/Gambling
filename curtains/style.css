@@ -9,7 +9,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: black;
   
   /* Smooth opacity transition */
   transition: opacity 0.1s ease, z-index 0s linear 0.1s;
